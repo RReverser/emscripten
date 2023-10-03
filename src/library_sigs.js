@@ -337,7 +337,7 @@ sigs = {
   _emval_as_int64__sig: 'jpp',
   _emval_as_uint64__sig: 'jpp',
   _emval_await__sig: 'pp',
-  _emval_call__sig: 'ppipp',
+  _emval_call__sig: 'dpppp',
   _emval_call_method__sig: 'dppppp',
   _emval_decref__sig: 'vp',
   _emval_delete__sig: 'ipp',
