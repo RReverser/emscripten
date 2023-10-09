@@ -65,23 +65,6 @@ void _embind_register_bindings(InitFunc* f) {
 }
 
 namespace {
-template <typename T> static void register_integer(const char* name) {
-  using namespace internal;
-  _embind_register_integer(TypeID<T>::get(), name, sizeof(T), std::numeric_limits<T>::min(),
-    std::numeric_limits<T>::max());
-}
-
-template <typename T> static void register_bigint(const char* name) {
-  using namespace internal;
-  _embind_register_bigint(TypeID<T>::get(), name, sizeof(T), std::numeric_limits<T>::min(),
-    std::numeric_limits<T>::max());
-}
-
-template <typename T> static void register_float(const char* name) {
-  using namespace internal;
-  _embind_register_float(TypeID<T>::get(), name, sizeof(T));
-}
-
 // matches typeMapping in embind.js
 enum TypedArrayIndex {
   Int8Array,
@@ -118,30 +101,6 @@ EMSCRIPTEN_BINDINGS(builtin) {
   using namespace emscripten::internal;
 
   _embind_register_void(TypeID<void>::get(), "void");
-
-  _embind_register_bool(TypeID<bool>::get(), "bool", true, false);
-  static_assert(sizeof(bool) == 1);
-
-  register_integer<char>("char");
-  register_integer<signed char>("signed char");
-  register_integer<unsigned char>("unsigned char");
-  register_integer<signed short>("short");
-  register_integer<unsigned short>("unsigned short");
-  register_integer<signed int>("int");
-  register_integer<unsigned int>("unsigned int");
-#if __wasm64__
-  register_bigint<signed long>("long");
-  register_bigint<unsigned long>("unsigned long");
-#else
-  register_integer<signed long>("long");
-  register_integer<unsigned long>("unsigned long");
-#endif
-
-  register_bigint<int64_t>("int64_t");
-  register_bigint<uint64_t>("uint64_t");
-
-  register_float<float>("float");
-  register_float<double>("double");
 
   _embind_register_std_string(TypeID<std::string>::get(), "std::string");
   _embind_register_std_string(

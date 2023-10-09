@@ -37,7 +37,77 @@ constexpr bool has_unbound_type_names = true;
 constexpr bool has_unbound_type_names = false;
 #endif
 
+template<typename ElementType> struct memory_view {
+  memory_view() = delete;
+  explicit memory_view(size_t size, const ElementType* data)
+    : size(size), data(data) {}
+
+  const size_t size; // in elements, not bytes
+  const void* const data;
+};
+
+// Note that 'data' is marked const just so it can accept both
+// const and nonconst pointers.  It is certainly possible for
+// JavaScript to modify the C heap through the typed array given,
+// as it merely aliases the C heap.
+template<typename T>
+inline memory_view<T> typed_memory_view(size_t size, const T* data) {
+  static_assert(internal::typeSupportsMemoryView<T>(),
+                "type of typed_memory_view is invalid");
+  return memory_view<T>(size, data);
+}
+
 namespace internal {
+
+extern "C" {
+
+void _embind_register_bool(
+    TYPEID boolType,
+    const char* name,
+    bool trueValue,
+    bool falseValue);
+
+void _embind_register_integer(
+    TYPEID integerType,
+    const char* name,
+    size_t size,
+    int32_t minRange,
+    uint32_t maxRange);
+
+void _embind_register_bigint(
+    TYPEID integerType,
+    const char* name,
+    size_t size,
+    int64_t minRange,
+    uint64_t maxRange);
+
+void _embind_register_float(
+    TYPEID floatType,
+    const char* name,
+    size_t size);
+
+void _embind_register_memory_view(
+    TYPEID memoryViewType,
+    unsigned typedArrayIndex,
+    const char* name);
+
+// Register an InitFunc in the global linked list of init functions.
+void _embind_register_bindings(struct InitFunc* f);
+
+// Binding initialization functions registerd by EMSCRIPTEN_BINDINGS macro
+// below.  Stored as linked list of static data object avoiding std containers
+// to avoid static contructor ordering issues.
+struct InitFunc {
+  InitFunc(void (*init_func)()) : init_func(init_func) {
+    // This the function immediately upon constructions, and also register
+    // it so that it can be called again on each worker that starts.
+    init_func();
+    _embind_register_bindings(this);
+  }
+  void (*init_func)();
+  InitFunc* next = nullptr;
+};
+}
 
 typedef const void* TYPEID;
 
@@ -241,20 +311,74 @@ struct WithPolicies {
 
 // The second typename is an unused stub so it's possible to
 // specialize groups of classes via SFINAE.
-template<typename T, typename = void>
-struct BindingType;
+template<typename T, typename = void> struct BindingType;
 
-#define EMSCRIPTEN_DEFINE_NATIVE_BINDING_TYPE(type)                 \
-template<>                                                  \
-struct BindingType<type> {                                  \
-    typedef type WireType;                                  \
-    constexpr static WireType toWireType(const type& v) {   \
-        return v;                                           \
-    }                                                       \
-    constexpr static type fromWireType(WireType v) {        \
-        return v;                                           \
-    }                                                       \
+template<typename T> void register_native_type(const char* name) {
+  using namespace internal;
+  if constexpr (std::is_floating_point<T>::value) {
+    static_assert(sizeof(T) == 4 || sizeof(T) == 8);
+    _embind_register_float(TypeID<T>::get(), name, sizeof(T));
+  } else {
+    static_assert(std::is_integral<T>::value);
+    if constexpr (sizeof(T) == 1 || sizeof(T) == 2 || sizeof(T) == 4) {
+      _embind_register_integer(TypeID<T>::get(),
+                               name,
+                               sizeof(T),
+                               std::numeric_limits<T>::min(),
+                               std::numeric_limits<T>::max());
+    } else {
+      static_assert(sizeof(T) == 8);
+      _embind_register_bigint(TypeID<T>::get(),
+                              name,
+                              sizeof(T),
+                              std::numeric_limits<T>::min(),
+                              std::numeric_limits<T>::max());
+    }
+  }
 }
+
+// Note: we don't put this into struct because then it will compile to lazy init
+// and guard checks on each access, whereas global static const is initialized
+// at startup and checks are compiled away. We still need to use this variable
+// as `(void)var;` for linker to include it though.
+template<typename T>
+inline static InitFunc bindingTypeRegistration =
+  InitFunc(BindingType<T>::register_js);
+
+// Note: the non-word-sized WireType in BindingType<memory_view<...>> only works
+// because I happen to know that clang will pass aggregates as pointers to stack
+// elements and we never support converting JavaScript typed arrays back into
+// memory_view.  (That is, fromWireType is not implemented
+// on the C++ side, nor is toWireType implemented in
+// JavaScript.)
+#define EMSCRIPTEN_DEFINE_NATIVE_BINDING_TYPE(type)                            \
+  template<> struct BindingType<type> {                                        \
+    typedef type WireType;                                                     \
+    static void register_js() { register_native_type<type>(#type); }           \
+    constexpr static WireType toWireType(const type& v) {                      \
+      (void)nativeTypeRegistrationToken<type>;                                 \
+      return v;                                                                \
+    }                                                                          \
+    constexpr static type fromWireType(WireType v) {                           \
+      (void)nativeTypeRegistrationToken<type>;                                 \
+      return v;                                                                \
+    }                                                                          \
+  };                                                                           \
+  template<typename ElementType>                                               \
+  struct BindingType<memory_view<ElementType>> {                               \
+    typedef memory_view<ElementType> WireType;                                 \
+    static void register_js() {                                                \
+      register_native_type<memory_view<ElementType>>(#type);                   \
+      _embind_register_memory_view(                                            \
+        TypeID<memory_view<T>>::get(),                                         \
+        getTypedArrayIndex<T>(),                                               \
+        "emscripten::memory_view<" #type ">");                                 \
+    }                                                                          \
+    static WireType toWireType(const memory_view<ElementType>& mv) {           \
+      (void)nativeTypeRegistrationToken<memory_view<ElementType>>;             \
+      return mv;                                                               \
+    }                                                                          \
+  };
 
 EMSCRIPTEN_DEFINE_NATIVE_BINDING_TYPE(char);
 EMSCRIPTEN_DEFINE_NATIVE_BINDING_TYPE(signed char);
@@ -278,10 +402,16 @@ struct BindingType<void> {
 template<>
 struct BindingType<bool> {
     typedef bool WireType;
+    static void register_bool() {
+        static_assert(sizeof(bool) == 1);
+        _embind_register_bool(TypeID<bool>::get(), "bool", true, false);
+    }
     static WireType toWireType(bool b) {
+        (void)bindingTypeRegistration<bool>;
         return b;
     }
     static bool fromWireType(WireType wt) {
+        (void)bindingTypeRegistration<bool>;
         return wt;
     }
 };
@@ -403,48 +533,6 @@ constexpr bool typeSupportsMemoryView() {
                 (sizeof(T) == 1 || sizeof(T) == 2 ||
                  sizeof(T) == 4 || sizeof(T) == 8));
 }
-
-} // namespace internal
-
-template<typename ElementType>
-struct memory_view {
-    memory_view() = delete;
-    explicit memory_view(size_t size, const ElementType* data)
-        : size(size)
-        , data(data)
-    {}
-
-    const size_t size; // in elements, not bytes
-    const void* const data;
-};
-
-// Note that 'data' is marked const just so it can accept both
-// const and nonconst pointers.  It is certainly possible for
-// JavaScript to modify the C heap through the typed array given,
-// as it merely aliases the C heap.
-template<typename T>
-inline memory_view<T> typed_memory_view(size_t size, const T* data) {
-    static_assert(internal::typeSupportsMemoryView<T>(),
-        "type of typed_memory_view is invalid");
-    return memory_view<T>(size, data);
-}
-
-namespace internal {
-
-template<typename ElementType>
-struct BindingType<memory_view<ElementType>> {
-    // This non-word-sized WireType only works because I
-    // happen to know that clang will pass aggregates as
-    // pointers to stack elements and we never support
-    // converting JavaScript typed arrays back into
-    // memory_view.  (That is, fromWireType is not implemented
-    // on the C++ side, nor is toWireType implemented in
-    // JavaScript.)
-    typedef memory_view<ElementType> WireType;
-    static WireType toWireType(const memory_view<ElementType>& mv) {
-        return mv;
-    }
-};
 
 } // namespace internal
 

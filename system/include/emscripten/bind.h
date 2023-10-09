@@ -53,31 +53,6 @@ void _embind_register_void(
     TYPEID voidType,
     const char* name);
 
-void _embind_register_bool(
-    TYPEID boolType,
-    const char* name,
-    bool trueValue,
-    bool falseValue);
-
-void _embind_register_integer(
-    TYPEID integerType,
-    const char* name,
-    size_t size,
-    int32_t minRange,
-    uint32_t maxRange);
-
-void _embind_register_bigint(
-    TYPEID integerType,
-    const char* name,
-    size_t size,
-    int64_t minRange,
-    uint64_t maxRange);
-
-void _embind_register_float(
-    TYPEID floatType,
-    const char* name,
-    size_t size);
-
 void _embind_register_std_string(
     TYPEID stringType,
     const char* name);
@@ -89,11 +64,6 @@ void _embind_register_std_wstring(
 
 void _embind_register_emval(
     TYPEID emvalType,
-    const char* name);
-
-void _embind_register_memory_view(
-    TYPEID memoryViewType,
-    unsigned typedArrayIndex,
     const char* name);
 
 void _embind_register_function(
@@ -252,23 +222,6 @@ void _embind_register_constant(
 void _embind_register_user_type(
     TYPEID type,
     const char* typeName);
-
-// Register an InitFunc in the global linked list of init functions.
-void _embind_register_bindings(struct InitFunc* f);
-
-// Binding initialization functions registerd by EMSCRIPTEN_BINDINGS macro
-// below.  Stored as linked list of static data object avoiding std containers
-// to avoid static contructor ordering issues.
-struct InitFunc {
-  InitFunc(void (*init_func)()) : init_func(init_func) {
-    // This the function immediately upon constructions, and also register
-    // it so that it can be called again on each worker that starts.
-    init_func();
-    _embind_register_bindings(this);
-  }
-  void (*init_func)();
-  InitFunc* next = nullptr;
-};
 
 } // end extern "C"
 
