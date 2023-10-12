@@ -592,10 +592,10 @@ typedef struct proxied_js_func_t {
   bool owned;
 } proxied_js_func_t;
 
-static void run_js_func(void* arg) {
+static void run_js_func(em_proxying_ctx* ctx, void* arg) {
   proxied_js_func_t* f = (proxied_js_func_t*)arg;
   f->result = _emscripten_receive_on_main_thread_js(
-    f->funcIndex, f->callingThread, f->numArgs, f->argBuffer);
+    ctx, f->funcIndex, f->callingThread, f->numArgs, f->argBuffer, &f->result);
   if (f->owned) {
     free(f->argBuffer);
     free(f);
@@ -618,7 +618,7 @@ double _emscripten_run_on_main_thread_js(int index,
   pthread_t target = emscripten_main_runtime_thread_id();
 
   if (sync) {
-    if (!emscripten_proxy_sync(q, target, run_js_func, &f)) {
+    if (!emscripten_proxy_sync_with_ctx(q, target, run_js_func, &f)) {
       assert(false && "emscripten_proxy_sync failed");
       return 0;
     }

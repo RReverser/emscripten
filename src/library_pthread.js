@@ -568,7 +568,7 @@ var LibraryPThread = {
     // Called when a thread needs to be strongly referenced.
     // Currently only used for:
     // - keeping the "main" thread alive in PROXY_TO_PTHREAD mode;
-    // - crashed threads that needs to propagate the uncaught exception 
+    // - crashed threads that needs to propagate the uncaught exception
     //   back to the main thread.
 #if ENVIRONMENT_MAY_BE_NODE
     if (ENVIRONMENT_IS_NODE) {
@@ -997,9 +997,10 @@ var LibraryPThread = {
   $proxiedJSCallArgs: '=[]',
 
   _emscripten_receive_on_main_thread_js__deps: [
+    'emscripten_proxy_finish',
     '$proxyToMainThread',
     '$proxiedJSCallArgs'],
-  _emscripten_receive_on_main_thread_js: (index, callingThread, numCallArgs, args) => {
+  _emscripten_receive_on_main_thread_js: (proxyingCtx, index, callingThread, numCallArgs, args, result) => {
     // Sometimes we need to backproxy events to the calling thread (e.g.
     // HTML5 DOM events handlers such as
     // emscripten_set_mousemove_callback()), so keep track in a globally
@@ -1034,9 +1035,29 @@ var LibraryPThread = {
     assert(func.length == numCallArgs, 'Call args mismatch in _emscripten_receive_on_main_thread_js');
 #endif
     PThread.currentProxiedOperationCallerThread = callingThread;
-    var rtn = func.apply(null, proxiedJSCallArgs);
-    PThread.currentProxiedOperationCallerThread = 0;
-    return rtn;
+    function onDone(value) {
+      {{{ makeSetValue('result', 0, 'value', 'double') }}};
+      emscripten_proxy_finish(proxyingCtx);
+    }
+    let startedSleep = false;
+#if ASYNCIFY
+    let oldHandleSleep = Asyncify.handleSleep;
+    Asyncify.handleSleep = (startSleep) => {
+      startedSleep = true;
+      startSleep(onDone);
+    };
+#endif
+    try {
+      var rtn = func.apply(null, proxiedJSCallArgs);
+      if (!startedSleep) {
+        onDone(rtn);
+      }
+    } finally {
+#if ASYNCIFY
+      Asyncify.handleSleep = oldHandleSleep;
+#endif
+      PThread.currentProxiedOperationCallerThread = 0;
+    }
   },
 
   $establishStackSpace__internal: true,

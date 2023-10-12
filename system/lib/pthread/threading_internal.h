@@ -8,6 +8,7 @@
 #pragma once
 
 #include <pthread.h>
+#include <emscripten/proxying.h>
 
 #define EM_THREAD_NAME_MAX 32
 
@@ -54,7 +55,7 @@ hidden void _emscripten_tls_free(void);
 // Node.js application from exiting as long as there are strongly referenced
 // threads still running. Normally you don't need to call this function, and
 // the pthread behaviour will match native in that background threads won't
-// keep runtime alive, but waiting for them via e.g. pthread_join will. 
+// keep runtime alive, but waiting for them via e.g. pthread_join will.
 // However, this is useful for features like PROXY_TO_PTHREAD where we want to
 // keep running as long as the detached pthread is.
 void _emscripten_thread_set_strongref(pthread_t thread);
@@ -95,7 +96,7 @@ int __pthread_create_js(struct __pthread *thread, const pthread_attr_t *attr, vo
 int _emscripten_default_pthread_stack_size();
 void __set_thread_state(pthread_t ptr, int is_main, int is_runtime, int can_block);
 
-double _emscripten_receive_on_main_thread_js(int functionIndex, pthread_t callingThread, int numCallArgs, double* args);
+void _emscripten_receive_on_main_thread_js(em_proxying_ctx* ctx, int functionIndex, pthread_t callingThread, int numCallArgs, double* args, double* result);
 
 // Return non-zero if the calling thread supports Atomic.wait (For example
 // if called from the main browser thread, this function will return zero
