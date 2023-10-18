@@ -683,8 +683,14 @@ f.close()
     self.assertContained('hello, world!', self.run_js('a.out.js'))
 
   @crossplatform
-  def test_emcc_print_search_dirs(self):
-    output = self.run_process([EMCC, '-print-search-dirs'], stdout=PIPE).stdout
+  @parameterized({
+    '': ([],),
+    'lto': (['-flto'],),
+    'wasm64': (['-sMEMORY64', '-Wno-experimental'],),
+  })
+  def test_emcc_print_search_dirs(self, args):
+    self.emcc_args += args
+    output = self.run_process([EMCC, '-print-search-dirs'] + self.get_emcc_args(), stdout=PIPE).stdout
     self.assertContained('programs: =', output)
     self.assertContained('libraries: =', output)
     libpath = output.split('libraries: =', 1)[1].strip()
@@ -694,9 +700,15 @@ f.close()
     self.assertIn(cache.get_lib_dir(absolute=True), libpath)
 
   @crossplatform
-  def test_emcc_print_file_name(self):
-    self.run_process([EMBUILDER, 'build', 'libc'])
-    output = self.run_process([EMCC, '-print-file-name=libc.a'], stdout=PIPE).stdout
+  @parameterized({
+    '': ([],),
+    'lto': (['-flto'],),
+    'wasm64': (['-sMEMORY64', '-Wno-experimental'],),
+  })
+  def test_emcc_print_file_name(self, args):
+    self.emcc_args += args
+    # self.run_process([EMBUILDER, 'build', 'libc'])
+    output = self.run_process([EMCC, '-print-file-name=libc.a'] + self.get_emcc_args(), stdout=PIPE).stdout
     filename = Path(output)
     self.assertContained(cache.get_lib_name('libc.a'), str(filename))
 
