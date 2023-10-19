@@ -115,7 +115,7 @@ function getSourceMapPromise() {
       .then((response) => response['json']())
       .catch(() => getSourceMap());
   }
-  return new Promise(function(resolve, reject) {
+  return new Promise((resolve, reject) => {
     resolve(getSourceMap());
   });
 }

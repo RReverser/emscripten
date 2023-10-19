@@ -256,7 +256,7 @@ var LibraryEmbind = {
 
   $registerType__deps: ['$sharedRegisterType'],
   $registerType__docs: '/** @param {Object=} options */',
-  $registerType: function(rawType, registeredInstance, options = {}) {
+  $registerType: (rawType, registeredInstance, options = {}) => {
     if (!('argPackAdvance' in registeredInstance)) {
       throw new TypeError('registerType registeredInstance requires argPackAdvance');
     }
@@ -282,14 +282,12 @@ var LibraryEmbind = {
     name = readLatin1String(name);
     registerType(rawType, {
         name,
-        'fromWireType': function(wt) {
-            // ambiguous emscripten ABI: sometimes return values are
-            // true or false, and sometimes integers (0 or 1)
-            return !!wt;
+        'fromWireType': (wt) => {
+          // ambiguous emscripten ABI: sometimes return values are
+          // true or false, and sometimes integers (0 or 1)
+          return !!wt;
         },
-        'toWireType': function(destructors, o) {
-            return o ? trueValue : falseValue;
-        },
+        'toWireType': (destructors, o) => o ? trueValue : falseValue;,
         'argPackAdvance': GenericWireTypeSize,
         'readValueFromPointer': function(pointer) {
             return this['fromWireType'](HEAPU8[pointer]);
@@ -746,7 +744,9 @@ var LibraryEmbind = {
      * issue.  Doublely-unfortunately, there's no way to write a test for this
      * behavior.  -NRD 2013.02.22
      */
-    var dummy = createNamedFunction(constructor.name || 'unknownFunctionName', function(){});
+    var dummy = createNamedFunction(constructor.name || 'unknownFunctionName', () => {
+      
+    });
     dummy.prototype = constructor.prototype;
     var obj = new dummy;
 
@@ -1009,11 +1009,11 @@ var LibraryEmbind = {
 
     rawInvoker = embind__requireFunction(signature, rawInvoker);
 
-    exposePublicSymbol(name, function() {
+    exposePublicSymbol(name, () => {
       throwUnboundTypeError(`Cannot call ${name} due to unbound types`, argTypes);
     }, argCount - 1);
 
-    whenDependentTypesAreResolved([], argTypes, function(argTypes) {
+    whenDependentTypesAreResolved([], argTypes, (argTypes) => {
       var invokerArgsArray = [argTypes[0] /* return value */, null /* no class 'this'*/].concat(argTypes.slice(1) /* actual params */);
       replacePublicSymbol(name, craftInvokerFunction(name, invokerArgsArray, null /* no class 'this'*/, rawInvoker, fn, isAsync), argCount - 1);
       return [];
@@ -1075,7 +1075,7 @@ var LibraryEmbind = {
     var rawConstructor = reg.rawConstructor;
     var rawDestructor = reg.rawDestructor;
 
-    whenDependentTypesAreResolved([rawTupleType], elementTypes, function(elementTypes) {
+    whenDependentTypesAreResolved([rawTupleType], elementTypes, (elementTypes) => {
       elements.forEach((elt, i) => {
         var getterReturnType = elementTypes[i];
         var getter = elt.getter;
@@ -1090,7 +1090,7 @@ var LibraryEmbind = {
           runDestructors(destructors);
         };
       });
-
+    
       return [{
         name: reg.name,
         'fromWireType': (ptr) => {
@@ -1720,7 +1720,8 @@ var LibraryEmbind = {
   $ClassHandle__deps: ['$init_ClassHandle'],
   $ClassHandle__postset: 'init_ClassHandle()',
   // root of all pointer and smart pointer handles in embind
-  $ClassHandle: function() {
+  $ClassHandle: () => {
+    
   },
 
   $throwInstanceAlreadyDeleted__deps: ['$throwBindingError'],
@@ -1815,7 +1816,7 @@ var LibraryEmbind = {
     rawDestructor = embind__requireFunction(destructorSignature, rawDestructor);
     var legalFunctionName = makeLegalFunctionName(name);
 
-    exposePublicSymbol(legalFunctionName, function() {
+    exposePublicSymbol(legalFunctionName, () => {
       // this code cannot run if baseClassRawType is zero
       throwUnboundTypeError(`Cannot construct ${name} due to unbound types`, [baseClassRawType]);
     });
@@ -1923,10 +1924,10 @@ var LibraryEmbind = {
     var args = [rawConstructor];
     var destructors = [];
 
-    whenDependentTypesAreResolved([], [rawClassType], function(classType) {
+    whenDependentTypesAreResolved([], [rawClassType], (classType) => {
       classType = classType[0];
       var humanName = `constructor ${classType.name}`;
-
+    
       if (undefined === classType.registeredClass.constructor_body) {
         classType.registeredClass.constructor_body = [];
       }
@@ -1936,7 +1937,7 @@ var LibraryEmbind = {
       classType.registeredClass.constructor_body[argCount - 1] = () => {
         throwUnboundTypeError(`Cannot construct ${classType.name} due to unbound types`, rawArgTypes);
       };
-
+    
       whenDependentTypesAreResolved([], rawArgTypes, (argTypes) => {
         // Insert empty slot for context type (argTypes[1]).
         argTypes.splice(1, 0, null);
@@ -2010,22 +2011,22 @@ var LibraryEmbind = {
     methodName = getFunctionName(methodName);
     rawInvoker = embind__requireFunction(invokerSignature, rawInvoker);
 
-    whenDependentTypesAreResolved([], [rawClassType], function(classType) {
+    whenDependentTypesAreResolved([], [rawClassType], (classType) => {
       classType = classType[0];
       var humanName = `${classType.name}.${methodName}`;
-
+    
       if (methodName.startsWith("@@")) {
         methodName = Symbol[methodName.substring(2)];
       }
-
+    
       if (isPureVirtual) {
         classType.registeredClass.pureVirtualFunctions.push(methodName);
       }
-
+    
       function unboundTypesHandler() {
         throwUnboundTypeError(`Cannot call ${humanName} due to unbound types`, rawArgTypes);
       }
-
+    
       var proto = classType.registeredClass.instancePrototype;
       var method = proto[methodName];
       if (undefined === method || (undefined === method.overloadTable && method.className !== classType.name && method.argCount === argCount - 2)) {
@@ -2040,10 +2041,10 @@ var LibraryEmbind = {
         ensureOverloadTable(proto, methodName, humanName);
         proto[methodName].overloadTable[argCount - 2] = unboundTypesHandler;
       }
-
-      whenDependentTypesAreResolved([], rawArgTypes, function(argTypes) {
+    
+      whenDependentTypesAreResolved([], rawArgTypes, (argTypes) => {
         var memberFunction = craftInvokerFunction(humanName, argTypes, classType, rawInvoker, context, isAsync);
-
+          
         // Replace the initial unbound-handler-stub function with the appropriate member function, now that all types
         // are resolved. If multiple overloads are registered for this function, the function goes into an overload table.
         if (undefined === proto[methodName].overloadTable) {
@@ -2053,7 +2054,7 @@ var LibraryEmbind = {
         } else {
           proto[methodName].overloadTable[argCount - 2] = memberFunction;
         }
-
+          
         return [];
       });
       return [];
@@ -2143,18 +2144,18 @@ var LibraryEmbind = {
     methodName = readLatin1String(methodName);
     methodName = getFunctionName(methodName);
     rawInvoker = embind__requireFunction(invokerSignature, rawInvoker);
-    whenDependentTypesAreResolved([], [rawClassType], function(classType) {
+    whenDependentTypesAreResolved([], [rawClassType], (classType) => {
       classType = classType[0];
       var humanName = `${classType.name}.${methodName}`;
-
+    
       function unboundTypesHandler() {
         throwUnboundTypeError(`Cannot call ${humanName} due to unbound types`, rawArgTypes);
       }
-
+    
       if (methodName.startsWith("@@")) {
         methodName = Symbol[methodName.substring(2)];
       }
-
+    
       var proto = classType.registeredClass.constructor;
       if (undefined === proto[methodName]) {
         // This is the first function to be registered with this name.
@@ -2166,8 +2167,8 @@ var LibraryEmbind = {
         ensureOverloadTable(proto, methodName, humanName);
         proto[methodName].overloadTable[argCount-1] = unboundTypesHandler;
       }
-
-      whenDependentTypesAreResolved([], rawArgTypes, function(argTypes) {
+    
+      whenDependentTypesAreResolved([], rawArgTypes, (argTypes) => {
         // Replace the initial unbound-types-handler stub with the proper
         // function. If multiple overloads are registered, the function handlers
         // go into an overload table.
@@ -2179,7 +2180,7 @@ var LibraryEmbind = {
         } else {
           proto[methodName].overloadTable[argCount-1] = func;
         }
-
+          
         if (classType.registeredClass.__derivedClasses) {
           for (const derivedClass of classType.registeredClass.__derivedClasses) {
             if (!derivedClass.constructor.hasOwnProperty(methodName)) {
@@ -2188,7 +2189,7 @@ var LibraryEmbind = {
             }
           }
         }
-
+          
         return [];
       });
       return [];
@@ -2210,7 +2211,7 @@ var LibraryEmbind = {
     fieldName = readLatin1String(fieldName);
     getter = embind__requireFunction(getterSignature, getter);
 
-    whenDependentTypesAreResolved([], [rawClassType], function(classType) {
+    whenDependentTypesAreResolved([], [rawClassType], (classType) => {
       classType = classType[0];
       var humanName = `${classType.name}.${fieldName}`;
       var desc = {
@@ -2229,10 +2230,10 @@ var LibraryEmbind = {
           throwBindingError(`${humanName} is a read-only property`);
         };
       }
-
+    
       Object.defineProperty(classType.registeredClass.constructor, fieldName, desc);
-
-      whenDependentTypesAreResolved([], [rawFieldType], function(fieldType) {
+    
+      whenDependentTypesAreResolved([], [rawFieldType], (fieldType) => {
         fieldType = fieldType[0];
         var desc = {
           get() {
@@ -2240,7 +2241,7 @@ var LibraryEmbind = {
           },
           enumerable: true
         };
-
+          
         if (setter) {
           setter = embind__requireFunction(setterSignature, setter);
           desc.set = (v) => {
@@ -2249,11 +2250,11 @@ var LibraryEmbind = {
             runDestructors(destructors);
           };
         }
-
+          
         Object.defineProperty(classType.registeredClass.constructor, fieldName, desc);
         return [];
       });
-
+    
       return [];
     });
   },
@@ -2358,9 +2359,9 @@ var LibraryEmbind = {
     rawShare = embind__requireFunction(shareSignature, rawShare);
     rawDestructor = embind__requireFunction(destructorSignature, rawDestructor);
 
-    whenDependentTypesAreResolved([rawType], [rawPointeeType], function(pointeeType) {
+    whenDependentTypesAreResolved([rawType], [rawPointeeType], (pointeeType) => {
       pointeeType = pointeeType[0];
-
+    
       var registeredPointer = new RegisteredPointer(name,
                                                     pointeeType.registeredClass,
                                                     false,
@@ -2409,7 +2410,9 @@ var LibraryEmbind = {
 
     var Value = Object.create(enumType.constructor.prototype, {
       value: {value: enumValue},
-      constructor: {value: createNamedFunction(`${enumType.name}_${name}`, function() {})},
+      constructor: {value: createNamedFunction(`${enumType.name}_${name}`, () => {
+        
+      })},
     });
     Enum.values[enumValue] = Value;
     Enum[name] = Value;
@@ -2418,7 +2421,7 @@ var LibraryEmbind = {
   _embind_register_constant__deps: ['$readLatin1String', '$whenDependentTypesAreResolved'],
   _embind_register_constant: (name, type, value) => {
     name = readLatin1String(name);
-    whenDependentTypesAreResolved([], [type], function(type) {
+    whenDependentTypesAreResolved([], [type], (type) => {
       type = type[0];
       Module[name] = type['fromWireType'](value);
       return [];

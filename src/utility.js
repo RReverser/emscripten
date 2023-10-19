@@ -86,7 +86,7 @@ function range(size) {
 }
 
 function bind(self, func) {
-  return function(...args) {
+  return (...args) => {
     func.apply(self, args);
   };
 }
@@ -240,7 +240,7 @@ function Benchmarker() {
   const totals = {};
   const ids = [];
   const lastTime = 0;
-  this.start = function(id) {
+  this.start = (id) => {
     const now = Date.now();
     if (ids.length > 0) {
       totals[ids[ids.length - 1]] += now - lastTime;
@@ -249,14 +249,14 @@ function Benchmarker() {
     ids.push(id);
     totals[id] = totals[id] || 0;
   };
-  this.stop = function(id) {
+  this.stop = (id) => {
     const now = Date.now();
     assert(id === ids[ids.length - 1]);
     totals[id] += now - lastTime;
     lastTime = now;
     ids.pop();
   };
-  this.print = function(text) {
+  this.print = (text) => {
     const ids = Object.keys(totals);
     if (ids.length > 0) {
       ids.sort((a, b) => totals[b] - totals[a]);

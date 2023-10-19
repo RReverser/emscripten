@@ -43,7 +43,7 @@ var window = {
       func,
       when: window.fakeNow + (ms || 0)
     });
-    window.timeouts.sort((x, y) => { return y.when - x.when });
+    window.timeouts.sort((x, y) => y.when - x.when);
   },
   runEventLoop() {
     // run forever until an exception stops this replay
@@ -185,7 +185,7 @@ var document = {
   exitPointerLock() {},
   exitFullscreen() {},
 };
-var alert = function(x) {
+var alert = (x) => {
   print(x);
 };
 var performance = {

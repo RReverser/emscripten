@@ -88,15 +88,13 @@ addToLibrary({
   // Reads a 64-bit signed integer from the WebAssembly heap and
   // converts it to a JavaScript Number, which can represent 53 integer bits precisely.
   // TODO: Add $readI53FromI64Signaling() variant.
-  $readI53FromI64: (ptr) => {
-    return {{{ makeGetValue('ptr', 0, 'u32') }}} + {{{ makeGetValue('ptr', 4, 'i32') }}} * 4294967296;
+  $readI53FromI64: (ptr) => {{{ makeGetValue('ptr', 0, 'u32')}} + {{{ makeGetValue('ptr', 4, 'i32') }}} * 4294967296;
   },
 
   // Reads a 64-bit unsigned integer from the WebAssembly heap and
   // converts it to a JavaScript Number, which can represent 53 integer bits precisely.
   // TODO: Add $readI53FromU64Signaling() variant.
-  $readI53FromU64: (ptr) => {
-    return {{{ makeGetValue('ptr', 0, 'u32') }}} + {{{ makeGetValue('ptr', 4, 'u32') }}} * 4294967296;
+  $readI53FromU64: (ptr) => {{{ makeGetValue('ptr', 0, 'u32')}} + {{{ makeGetValue('ptr', 4, 'u32') }}} * 4294967296;
   },
 
   // Converts the given signed 32-bit low-high pair to a JavaScript Number that
@@ -125,9 +123,7 @@ addToLibrary({
   // Converts the given unsigned 32-bit low-high pair to a JavaScript Number that can
   // represent 53 bits of precision.
   // TODO: Add $convertU32PairToI53Checked() variant.
-  $convertU32PairToI53: (lo, hi) => {
-    return (lo >>> 0) + (hi >>> 0) * 4294967296;
-  },
+  $convertU32PairToI53: (lo, hi) => (lo >>> 0) + (hi >>> 0) * 4294967296;,
 
 #if WASM_BIGINT
   $MAX_INT53: '{{{ Math.pow(2, 53) }}}',

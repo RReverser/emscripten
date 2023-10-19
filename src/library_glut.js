@@ -336,19 +336,19 @@ var LibraryGLUT = {
     // Firefox
     window.addEventListener("DOMMouseScroll", GLUT.onMouseWheel, true);
 
-    Browser.resizeListeners.push(function(width, height) {
+    Browser.resizeListeners.push((width, height) => {
       if (GLUT.reshapeFunc) {
         {{{ makeDynCall('vii', 'GLUT.reshapeFunc') }}}(width, height);
       }
     });
 
-    __ATEXIT__.push(function() {
+    __ATEXIT__.push(() => {
       if (isTouchDevice) {
         window.removeEventListener("touchmove", GLUT.touchHandler, true);
         window.removeEventListener("touchstart", GLUT.touchHandler, true);
         window.removeEventListener("touchend", GLUT.touchHandler, true);
       }
-
+    
       window.removeEventListener("keydown", GLUT.onKeydown, true);
       window.removeEventListener("keyup", GLUT.onKeyup, true);
       window.removeEventListener("mousemove", GLUT.onMousemove, true);
@@ -358,7 +358,7 @@ var LibraryGLUT = {
       window.removeEventListener("mousewheel", GLUT.onMouseWheel, true);
       // Firefox
       window.removeEventListener("DOMMouseScroll", GLUT.onMouseWheel, true);
-
+    
       Module["canvas"].width = Module["canvas"].height = 1;
     });
   },
@@ -620,9 +620,9 @@ var LibraryGLUT = {
   glutPostRedisplay: () => {
     if (GLUT.displayFunc && !GLUT.requestedAnimationFrame) {
       GLUT.requestedAnimationFrame = true;
-      Browser.requestAnimationFrame(function() {
+      Browser.requestAnimationFrame(() => {
         GLUT.requestedAnimationFrame = false;
-        Browser.mainLoop.runIter(function() {
+        Browser.mainLoop.runIter(() => {
           {{{ makeDynCall('v', 'GLUT.displayFunc') }}}();
         });
       });

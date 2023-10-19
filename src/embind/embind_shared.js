@@ -32,7 +32,7 @@ var LibraryEmbindShared = {
     '$typeDependencies', '$throwBindingError',
     '$whenDependentTypesAreResolved'],
   $sharedRegisterType__docs: '/** @param {Object=} options */',
-  $sharedRegisterType: function(rawType, registeredInstance, options = {}) {
+  $sharedRegisterType: (rawType, registeredInstance, options = {}) => {
     var name = registeredInstance.name;
     if (!rawType) {
       throwBindingError(`type "${name}" must have a positive integer typeid pointer`);
@@ -44,10 +44,10 @@ var LibraryEmbindShared = {
         throwBindingError(`Cannot register type '${name}' twice`);
       }
     }
-
+  
     registeredTypes[rawType] = registeredInstance;
     delete typeDependencies[rawType];
-
+  
     if (awaitingDependencies.hasOwnProperty(rawType)) {
       var callbacks = awaitingDependencies[rawType];
       delete awaitingDependencies[rawType];
@@ -59,8 +59,8 @@ var LibraryEmbindShared = {
     '$awaitingDependencies', '$registeredTypes',
     '$typeDependencies', '$throwInternalError'],
   $whenDependentTypesAreResolved: (myTypes, dependentTypes, getTypeConverters) => {
-    myTypes.forEach(function(type) {
-        typeDependencies[type] = dependentTypes;
+    myTypes.forEach((type) => {
+      typeDependencies[type] = dependentTypes;
     });
 
     function onComplete(typeConverters) {

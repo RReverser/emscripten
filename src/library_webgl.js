@@ -982,7 +982,7 @@ var LibraryGL = {
       };
 
 #if WORKAROUND_OLD_WEBGL_UNIFORM_UPLOAD_IGNORED_OFFSET_BUG
-      context.cannotHandleOffsetsInUniformArrayViews = (function(g) {
+      context.cannotHandleOffsetsInUniformArrayViews = ((g) => {
         function b(c, t) {
           var s = g.createShader(t);
           g.shaderSource(s, c);
@@ -1051,9 +1051,7 @@ var LibraryGL = {
       return !(contextHandle && !GLctx);
     },
 
-    getContext: (contextHandle) => {
-      return GL.contexts[contextHandle];
-    },
+    getContext: (contextHandle) => GL.contexts[contextHandle];,
 
     deleteContext: (contextHandle) => {
       if (GL.currentContext === GL.contexts[contextHandle]) GL.currentContext = null;
@@ -2897,9 +2895,7 @@ var LibraryGL = {
     GLctx.vertexAttrib4f(index, HEAPF32[v>>2], HEAPF32[v+4>>2], HEAPF32[v+8>>2], HEAPF32[v+12>>2]);
   },
 
-  glGetAttribLocation: (program, name) => {
-    return GLctx.getAttribLocation(GL.programs[program], UTF8ToString(name));
-  },
+  glGetAttribLocation: (program, name) => GLctx.getAttribLocation(GL.programs[program], UTF8ToString(name));,
 
   $__glGetActiveAttribOrUniform__deps: ['$stringToUTF8'],
   $__glGetActiveAttribOrUniform: (funcName, program, index, bufSize, length, size, type, name) => {
@@ -3541,36 +3537,36 @@ var LibraryGL = {
   , '$emulGlGenVertexArrays'
 #endif
   ],
-  glGenVertexArrays: function (n, arrays) {
-#if LEGACY_GL_EMULATION
-    emulGlGenVertexArrays(n, arrays);
-#else
-#if GL_ASSERTIONS
-    assert(GLctx.createVertexArray, 'Must have WebGL2 or OES_vertex_array_object to use vao');
-#endif
-    __glGenObject(n, arrays, 'createVertexArray', GL.vaos
-#if GL_ASSERTIONS
-    , 'glGenVertexArrays'
-#endif
-      );
-#endif
-  },
-
-#if LEGACY_GL_EMULATION
-  glDeleteVertexArrays__deps: ['$emulGlDeleteVertexArrays'],
-#endif
-  glDeleteVertexArrays: (n, vaos) => {
-#if LEGACY_GL_EMULATION
-    emulGlDeleteVertexArrays(n, vaos);
-#else
-#if GL_ASSERTIONS
-    assert(GLctx.deleteVertexArray, 'Must have WebGL2 or OES_vertex_array_object to use vao');
-#endif
-    for (var i = 0; i < n; i++) {
-      var id = {{{ makeGetValue('vaos', 'i*4', 'i32') }}};
-      GLctx.deleteVertexArray(GL.vaos[id]);
-      GL.vaos[id] = null;
-    }
+  glGenVertexArrays: (n, arrays) => {
+    #if LEGACY_GL_EMULATION
+        emulGlGenVertexArrays(n, arrays);
+    #else
+    #if GL_ASSERTIONS
+        assert(GLctx.createVertexArray, 'Must have WebGL2 or OES_vertex_array_object to use vao');
+    #endif
+        __glGenObject(n, arrays, 'createVertexArray', GL.vaos
+    #if GL_ASSERTIONS
+        , 'glGenVertexArrays'
+    #endif
+          );
+    #endif
+      },
+    
+    #if LEGACY_GL_EMULATION
+      glDeleteVertexArrays__deps: ['$emulGlDeleteVertexArrays'],
+    #endif
+      glDeleteVertexArrays: (n, vaos) => {
+    #if LEGACY_GL_EMULATION
+        emulGlDeleteVertexArrays(n, vaos);
+    #else
+    #if GL_ASSERTIONS
+        assert(GLctx.deleteVertexArray, 'Must have WebGL2 or OES_vertex_array_object to use vao');
+    #endif
+        for (var i = 0; i < n; i++) {
+          var id = {{{ makeGetValue('vaos', 'i*4', 'i32') }}};
+          GLctx.deleteVertexArray(GL.vaos[id]);
+          GL.vaos[id] = null;
+  }
 #endif
   },
 

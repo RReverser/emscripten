@@ -18,9 +18,7 @@ var LibraryDylink = {
     // also uses string keys.
     var wasmPlugin = {
       'promiseChainEnd': Promise.resolve(),
-      'canHandle': (name) => {
-        return !Module.noWasmDecoding && name.endsWith('.so')
-      },
+      'canHandle': (name) => !Module.noWasmDecoding && name.endsWith('.so'),
       'handle': (byteArray, name, onload, onerror) => {
         // loadWebAssemblyModule can not load modules out-of-order, so rather
         // than just running the promises in parallel, this makes a chain of
@@ -73,26 +71,24 @@ var LibraryDylink = {
 #if !DISABLE_EXCEPTION_CATCHING || SUPPORT_LONGJMP == 'emscripten'
   $createInvokeFunction__internal: true,
   $createInvokeFunction__deps: ['$dynCall', 'setThrew'],
-  $createInvokeFunction: (sig) => {
-    return function() {
-      var sp = stackSave();
-      try {
-        return dynCall(sig, arguments[0], Array.prototype.slice.call(arguments, 1));
-      } catch(e) {
-        stackRestore(sp);
-        // Create a try-catch guard that rethrows the Emscripten EH exception.
-#if EXCEPTION_STACK_TRACES
-        // Exceptions thrown from C++ and longjmps will be an instance of
-        // EmscriptenEH.
-        if (!(e instanceof EmscriptenEH)) throw e;
-#else
-        // Exceptions thrown from C++ will be a pointer (number) and longjmp
-        // will throw the number Infinity. Use the compact and fast "e !== e+0"
-        // test to check if e was not a Number.
-        if (e !== e+0) throw e;
-#endif
-        _setThrew(1, 0);
-      }
+  $createInvokeFunction: (sig) => function() {
+    var sp = stackSave();
+    try {
+      return dynCall(sig, arguments[0], Array.prototype.slice.call(arguments, 1));
+    } catch(e) {
+      stackRestore(sp);
+      // Create a try-catch guard that rethrows the Emscripten EH exception.
+  #if EXCEPTION_STACK_TRACES
+      // Exceptions thrown from C++ and longjmps will be an instance of
+      // EmscriptenEH.
+      if (!(e instanceof EmscriptenEH)) throw e;
+  #else
+      // Exceptions thrown from C++ will be a pointer (number) and longjmp
+      // will throw the number Infinity. Use the compact and fast "e !== e+0"
+      // test to check if e was not a Number.
+      if (e !== e+0) throw e;
+  #endif
+      _setThrew(1, 0);
     }
   },
 #endif
@@ -1012,7 +1008,7 @@ var LibraryDylink = {
 
       var libFile = locateFile(libName);
       if (flags.loadAsync) {
-        return new Promise(function(resolve, reject) {
+        return new Promise((resolve, reject) => {
           asyncLoad(libFile, (data) => resolve(data), reject);
         });
       }

@@ -275,99 +275,102 @@ addToLibrary({
       handlePeerEvents(sock, peer) {
         var first = true;
 
-        var handleOpen = function () {
-#if SOCKET_DEBUG
-          dbg('websocket handle open');
-#endif
-
-          Module['websocket'].emit('open', sock.stream.fd);
-
-          try {
-            var queued = peer.dgram_send_queue.shift();
-            while (queued) {
-#if SOCKET_DEBUG
-              dbg('websocket sending queued data (' + queued.byteLength + ' bytes): ' + [Array.prototype.slice.call(new Uint8Array(queued))]);
-#endif
-              peer.socket.send(queued);
-              queued = peer.dgram_send_queue.shift();
-            }
-          } catch (e) {
-            // not much we can do here in the way of proper error handling as we've already
-            // lied and said this data was sent. shut it down.
-            peer.socket.close();
-          }
-        };
-
-        function handleMessage(data) {
-          if (typeof data == 'string') {
-            var encoder = new TextEncoder(); // should be utf-8
-            data = encoder.encode(data); // make a typed array from the string
-          } else {
-            assert(data.byteLength !== undefined); // must receive an ArrayBuffer
-            if (data.byteLength == 0) {
-              // An empty ArrayBuffer will emit a pseudo disconnect event
-              // as recv/recvmsg will return zero which indicates that a socket
-              // has performed a shutdown although the connection has not been disconnected yet.
-              return;
-            }
-            data = new Uint8Array(data); // make a typed array view on the array buffer
-          }
-
-#if SOCKET_DEBUG
-          dbg('websocket handle message (' + data.byteLength + ' bytes): ' + [Array.prototype.slice.call(data)]);
-#endif
-
-          // if this is the port message, override the peer's port with it
-          var wasfirst = first;
-          first = false;
-          if (wasfirst &&
-              data.length === 10 &&
-              data[0] === 255 && data[1] === 255 && data[2] === 255 && data[3] === 255 &&
-              data[4] === 'p'.charCodeAt(0) && data[5] === 'o'.charCodeAt(0) && data[6] === 'r'.charCodeAt(0) && data[7] === 't'.charCodeAt(0)) {
-            // update the peer's port and it's key in the peer map
-            var newport = ((data[8] << 8) | data[9]);
-            SOCKFS.websocket_sock_ops.removePeer(sock, peer);
-            peer.port = newport;
-            SOCKFS.websocket_sock_ops.addPeer(sock, peer);
-            return;
-          }
-
-          sock.recv_queue.push({ addr: peer.addr, port: peer.port, data: data });
-          Module['websocket'].emit('message', sock.stream.fd);
-        };
-
-        if (ENVIRONMENT_IS_NODE) {
-          peer.socket.on('open', handleOpen);
-          peer.socket.on('message', function(data, isBinary) {
-            if (!isBinary) {
-              return;
-            }
-            handleMessage((new Uint8Array(data)).buffer); // copy from node Buffer -> ArrayBuffer
-          });
-          peer.socket.on('close', function() {
-            Module['websocket'].emit('close', sock.stream.fd);
-          });
-          peer.socket.on('error', function(error) {
-            // Although the ws library may pass errors that may be more descriptive than
-            // ECONNREFUSED they are not necessarily the expected error code e.g.
-            // ENOTFOUND on getaddrinfo seems to be node.js specific, so using ECONNREFUSED
-            // is still probably the most useful thing to do.
-            sock.error = {{{ cDefs.ECONNREFUSED }}}; // Used in getsockopt for SOL_SOCKET/SO_ERROR test.
-            Module['websocket'].emit('error', [sock.stream.fd, sock.error, 'ECONNREFUSED: Connection refused']);
-            // don't throw
-          });
-        } else {
-          peer.socket.onopen = handleOpen;
-          peer.socket.onclose = function() {
-            Module['websocket'].emit('close', sock.stream.fd);
-          };
-          peer.socket.onmessage = function peer_socket_onmessage(event) {
-            handleMessage(event.data);
-          };
-          peer.socket.onerror = function(error) {
-            // The WebSocket spec only allows a 'simple event' to be thrown on error,
-            // so we only really know as much as ECONNREFUSED.
-            sock.error = {{{ cDefs.ECONNREFUSED }}}; // Used in getsockopt for SOL_SOCKET/SO_ERROR test.
+        var handleOpen = () => {
+          #if SOCKET_DEBUG
+                    dbg('websocket handle open');
+          #endif
+          
+                    Module['websocket'].emit('open', sock.stream.fd);
+          
+                    try {
+                      var queued = peer.dgram_send_queue.shift();
+                      while (queued) {
+          #if SOCKET_DEBUG
+                        dbg('websocket sending queued data (' + queued.byteLength + ' bytes): ' + [Array.prototype.slice.call(new Uint8Array(queued))]);
+          #endif
+                        peer.socket.send(queued);
+                        queued = peer.dgram_send_queue.shift();
+                      }
+                    } catch (e) {
+                      // not much we can do here in the way of proper error handling as we've already
+                      // lied and said this data was sent. shut it down.
+                      peer.socket.close();
+                    }
+                  };
+          
+                  function handleMessage(data) {
+                    if (typeof data == 'string') {
+                      var encoder = new TextEncoder(); // should be utf-8
+                      data = encoder.encode(data); // make a typed array from the string
+                    } else {
+                      assert(data.byteLength !== undefined); // must receive an ArrayBuffer
+                      if (data.byteLength == 0) {
+                        // An empty ArrayBuffer will emit a pseudo disconnect event
+                        // as recv/recvmsg will return zero which indicates that a socket
+                        // has performed a shutdown although the connection has not been disconnected yet.
+                        return;
+                      }
+                      data = new Uint8Array(data); // make a typed array view on the array buffer
+                    }
+          
+          #if SOCKET_DEBUG
+                    dbg('websocket handle message (' + data.byteLength + ' bytes): ' + [Array.prototype.slice.call(data)]);
+          #endif
+          
+                    // if this is the port message, override the peer's port with it
+                    var wasfirst = first;
+                    first = false;
+                    if (wasfirst &&
+                        data.length === 10 &&
+                        data[0] === 255 && data[1] === 255 && data[2] === 255 && data[3] === 255 &&
+                        data[4] === 'p'.charCodeAt(0) && data[5] === 'o'.charCodeAt(0) && data[6] === 'r'.charCodeAt(0) && data[7] === 't'.charCodeAt(0)) {
+                      // update the peer's port and it's key in the peer map
+                      var newport = ((data[8] << 8) | data[9]);
+                      SOCKFS.websocket_sock_ops.removePeer(sock, peer);
+                      peer.port = newport;
+                      SOCKFS.websocket_sock_ops.addPeer(sock, peer);
+                      return;
+                    }
+          
+                    sock.recv_queue.push({ addr: peer.addr, port: peer.port, data: data });
+                    Module['websocket'].emit('message', sock.stream.fd);
+                  };
+          
+                  if (ENVIRONMENT_IS_NODE) {
+                    peer.socket.on('open', handleOpen);
+                    peer.socket.on('message', (data, isBinary) => {
+                      if (!isBinary) {
+                        return;
+                      }
+                      handleMessage((new Uint8Array(data)).buffer); // copy from node Buffer -> ArrayBuffer
+                    });
+                    peer.socket.on('close', () => {
+                      Module['websocket'].emit('close', sock.stream.fd);
+                    });
+                    peer.socket.on('error', (error) => {
+                      // Although the ws library may pass errors that may be more descriptive than
+                      // ECONNREFUSED they are not necessarily the expected error code e.g.
+                      // ENOTFOUND on getaddrinfo seems to be node.js specific, so using ECONNREFUSED
+                      // is still probably the most useful thing to do.
+                      sock.error = {{{ cDefs.ECONNREFUSED
+                    }}}; // Used in getsockopt for SOL_SOCKET/SO_ERROR test.
+                      Module['websocket'].emit('error', [sock.stream.fd, sock.error, 'ECONNREFUSED: Connection refused']);
+                      // don't throw
+                    });
+                  } else {
+                    peer.socket.onopen = handleOpen;
+                    peer.socket.onclose = () => {
+                      Module['websocket'].emit('close', sock.stream.fd);
+                    };
+                    peer.socket.onmessage = function peer_socket_onmessage(event) {
+                      handleMessage(event.data);
+                    };
+                    peer.socket.onerror = (error) => {
+                      // The WebSocket spec only allows a 'simple event' to be thrown on error,
+                      // so we only really know as much as ECONNREFUSED.
+                      sock.error = {{{ cDefs.ECONNREFUSED
+                    }
+        }}; // Used in getsockopt for SOL_SOCKET/SO_ERROR test.
             Module['websocket'].emit('error', [sock.stream.fd, sock.error, 'ECONNREFUSED: Connection refused']);
           };
         }
@@ -516,41 +519,42 @@ addToLibrary({
         });
         Module['websocket'].emit('listen', sock.stream.fd); // Send Event with listen fd.
 
-        sock.server.on('connection', function(ws) {
-#if SOCKET_DEBUG
-          dbg('received connection from: ' + ws._socket.remoteAddress + ':' + ws._socket.remotePort);
-#endif
-          if (sock.type === {{{ cDefs.SOCK_STREAM }}}) {
-            var newsock = SOCKFS.createSocket(sock.family, sock.type, sock.protocol);
-
-            // create a peer on the new socket
-            var peer = SOCKFS.websocket_sock_ops.createPeer(newsock, ws);
-            newsock.daddr = peer.addr;
-            newsock.dport = peer.port;
-
-            // push to queue for accept to pick up
-            sock.pending.push(newsock);
-            Module['websocket'].emit('connection', newsock.stream.fd);
-          } else {
-            // create a peer on the listen socket so calling sendto
-            // with the listen socket and an address will resolve
-            // to the correct client
-            SOCKFS.websocket_sock_ops.createPeer(sock, ws);
-            Module['websocket'].emit('connection', sock.stream.fd);
-          }
+        sock.server.on('connection', (ws) => {
+          #if SOCKET_DEBUG
+                    dbg('received connection from: ' + ws._socket.remoteAddress + ':' + ws._socket.remotePort);
+          #endif
+                    if (sock.type === {{{ cDefs.SOCK_STREAM }}}) {
+                      var newsock = SOCKFS.createSocket(sock.family, sock.type, sock.protocol);
+          
+                      // create a peer on the new socket
+                      var peer = SOCKFS.websocket_sock_ops.createPeer(newsock, ws);
+                      newsock.daddr = peer.addr;
+                      newsock.dport = peer.port;
+          
+                      // push to queue for accept to pick up
+                      sock.pending.push(newsock);
+                      Module['websocket'].emit('connection', newsock.stream.fd);
+                    } else {
+                      // create a peer on the listen socket so calling sendto
+                      // with the listen socket and an address will resolve
+                      // to the correct client
+                      SOCKFS.websocket_sock_ops.createPeer(sock, ws);
+                      Module['websocket'].emit('connection', sock.stream.fd);
+        }
         });
-        sock.server.on('close', function() {
+        sock.server.on('close', () => {
           Module['websocket'].emit('close', sock.stream.fd);
           sock.server = null;
         });
-        sock.server.on('error', function(error) {
+        sock.server.on('error', (error) => {
           // Although the ws library may pass errors that may be more descriptive than
           // ECONNREFUSED they are not necessarily the expected error code e.g.
           // ENOTFOUND on getaddrinfo seems to be node.js specific, so using EHOSTUNREACH
           // is still probably the most useful thing to do. This error shouldn't
           // occur in a well written app as errors should get trapped in the compiled
           // app's own getaddrinfo call.
-          sock.error = {{{ cDefs.EHOSTUNREACH }}}; // Used in getsockopt for SOL_SOCKET/SO_ERROR test.
+          sock.error = {{{ cDefs.EHOSTUNREACH
+        }}}; // Used in getsockopt for SOL_SOCKET/SO_ERROR test.
           Module['websocket'].emit('error', [sock.stream.fd, sock.error, 'EHOSTUNREACH: Host is unreachable']);
           // don't throw
         });
@@ -732,7 +736,7 @@ addToLibrary({
     function _callback(data) {
       try {
         if (event === 'error') {
-          withStackSave(function() {
+          withStackSave(() => {
             var msg = stringToUTF8OnStack(data[2]);
             {{{ makeDynCall('viiii', 'callback') }}}(data[0], data[1], msg, userData);
           });

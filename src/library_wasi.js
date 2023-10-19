@@ -141,8 +141,7 @@ var WasiLibrary = {
   },
 #endif
 
-  $checkWasiClock: (clock_id) => {
-    return clock_id == {{{ cDefs.__WASI_CLOCKID_REALTIME }}} ||
+  $checkWasiClock: (clock_id) => clock_id == {{{ cDefs.__WASI_CLOCKID_REALTIME}} ||
            clock_id == {{{ cDefs.__WASI_CLOCKID_MONOTONIC }}} ||
            clock_id == {{{ cDefs.__WASI_CLOCKID_PROCESS_CPUTIME_ID }}} ||
            clock_id == {{{ cDefs.__WASI_CLOCKID_THREAD_CPUTIME_ID }}};

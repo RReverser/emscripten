@@ -20,14 +20,18 @@ var emscriptenThreadProfiler = {
       document.body.appendChild(div);
       this.threadProfilerDiv = document.getElementById('threadprofiler');
     }
-    var i = setInterval(function() { emscriptenThreadProfiler.updateUi() }, this.uiUpdateIntervalMsecs);
+    var i = setInterval(() => {
+      emscriptenThreadProfiler.updateUi()
+    }, this.uiUpdateIntervalMsecs);
     addOnExit(() => clearInterval(i));
   },
 
   initializeNode() {
     addOnInit(() => {
       emscriptenThreadProfiler.dumpState();
-      var i = setInterval(function() { emscriptenThreadProfiler.dumpState() }, this.uiUpdateIntervalMsecs);
+      var i = setInterval(() => {
+        emscriptenThreadProfiler.dumpState()
+      }, this.uiUpdateIntervalMsecs);
       addOnExit(() => clearInterval(i));
     });
   },

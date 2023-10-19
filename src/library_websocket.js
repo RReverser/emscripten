@@ -150,12 +150,12 @@ var LibraryWebSocket = {
 #if WEBSOCKET_DEBUG
     dbg(`emscripten_websocket_set_onopen_callback(socketId=${socketId},userData=${userData},callbackFunc='+callbackFunc})`);
 #endif
-    socket.onopen = function(e) {
-#if WEBSOCKET_DEBUG
-      dbg(`websocket event "open": socketId=${socketId},userData=${userData},callbackFunc=${callbackFunc})`);
-#endif
-      HEAPU32[WS.socketEvent>>2] = socketId;
-      {{{ makeDynCall('iiii', 'callbackFunc') }}}(0/*TODO*/, WS.socketEvent, userData);
+    socket.onopen = (e) => {
+      #if WEBSOCKET_DEBUG
+            dbg(`websocket event "open": socketId=${socketId},userData=${userData},callbackFunc=${callbackFunc})`);
+      #endif
+            HEAPU32[WS.socketEvent>>2] = socketId;
+            {{{ makeDynCall('iiii', 'callbackFunc') }}}(0/*TODO*/, WS.socketEvent, userData);
     }
     return {{{ cDefs.EMSCRIPTEN_RESULT_SUCCESS }}};
   },
@@ -176,12 +176,12 @@ var LibraryWebSocket = {
 #if WEBSOCKET_DEBUG
     dbg(`emscripten_websocket_set_onerror_callback(socketId=${socketId},userData=${userData},callbackFunc=${callbackFunc})`);
 #endif
-    socket.onerror = function(e) {
-#if WEBSOCKET_DEBUG
-      dbg(`websocket event "error": socketId=${socketId},userData=${userData},callbackFunc=${callbackFunc})`);
-#endif
-      HEAPU32[WS.socketEvent>>2] = socketId;
-      {{{ makeDynCall('iiii', 'callbackFunc') }}}(0/*TODO*/, WS.socketEvent, userData);
+    socket.onerror = (e) => {
+      #if WEBSOCKET_DEBUG
+            dbg(`websocket event "error": socketId=${socketId},userData=${userData},callbackFunc=${callbackFunc})`);
+      #endif
+            HEAPU32[WS.socketEvent>>2] = socketId;
+            {{{ makeDynCall('iiii', 'callbackFunc') }}}(0/*TODO*/, WS.socketEvent, userData);
     }
     return {{{ cDefs.EMSCRIPTEN_RESULT_SUCCESS }}};
   },
@@ -202,15 +202,15 @@ var LibraryWebSocket = {
 #if WEBSOCKET_DEBUG
     dbg(`emscripten_websocket_set_onclose_callback(socketId=${socketId},userData=${userData},callbackFunc=${callbackFunc})`);
 #endif
-    socket.onclose = function(e) {
-#if WEBSOCKET_DEBUG
-      dbg(`websocket event "close": socketId=${socketId},userData=${userData},callbackFunc=${callbackFunc})`);
-#endif
-      HEAPU32[WS.socketEvent>>2] = socketId;
-      HEAPU32[(WS.socketEvent+4)>>2] = e.wasClean;
-      HEAPU32[(WS.socketEvent+8)>>2] = e.code;
-      stringToUTF8(e.reason, WS.socketEvent+10, 512);
-      {{{ makeDynCall('iiii', 'callbackFunc') }}}(0/*TODO*/, WS.socketEvent, userData);
+    socket.onclose = (e) => {
+      #if WEBSOCKET_DEBUG
+            dbg(`websocket event "close": socketId=${socketId},userData=${userData},callbackFunc=${callbackFunc})`);
+      #endif
+            HEAPU32[WS.socketEvent>>2] = socketId;
+            HEAPU32[(WS.socketEvent+4)>>2] = e.wasClean;
+            HEAPU32[(WS.socketEvent+8)>>2] = e.code;
+            stringToUTF8(e.reason, WS.socketEvent+10, 512);
+            {{{ makeDynCall('iiii', 'callbackFunc') }}}(0/*TODO*/, WS.socketEvent, userData);
     }
     return {{{ cDefs.EMSCRIPTEN_RESULT_SUCCESS }}};
   },
@@ -231,39 +231,39 @@ var LibraryWebSocket = {
 #if WEBSOCKET_DEBUG
     dbg(`emscripten_websocket_set_onmessage_callback(socketId=${socketId},userData=${userData},callbackFunc=${callbackFunc})`);
 #endif
-    socket.onmessage = function(e) {
-#if WEBSOCKET_DEBUG == 2
-      dbg(`websocket event "message": socketId=${socketId},userData=${userData},callbackFunc=${callbackFunc})`);
-#endif
-      HEAPU32[WS.socketEvent>>2] = socketId;
-      if (typeof e.data == 'string') {
-        var buf = stringToNewUTF8(e.data);
-        var len = lengthBytesUTF8(e.data)+1;
-#if WEBSOCKET_DEBUG
-        var s = (e.data.length < 256) ? e.data : (e.data.substr(0, 256) + ` (${e.data.length-256} more characters)`);
-        dbg(`WebSocket onmessage, received data: "${e.data}", ${e.data.length} chars, ${len} bytes encoded as UTF-8: "${s}"`);
-#endif
-        HEAPU32[(WS.socketEvent+12)>>2] = 1; // text data
-      } else {
-        var len = e.data.byteLength;
-        var buf = _malloc(len);
-        HEAP8.set(new Uint8Array(e.data), buf);
-#if WEBSOCKET_DEBUG
-        var s = `WebSocket onmessage, received data: ${len} bytes of binary:`;
-        for (var i = 0; i < Math.min(len, 256); ++i) s += ' ' + HEAPU8[buf+i].toString(16);
-        s += ', "';
-        for (var i = 0; i < Math.min(len, 256); ++i) s += (HEAPU8[buf+i] >= 32 && HEAPU8[buf+i] <= 127) ? String.fromCharCode(HEAPU8[buf+i]) : '\uFFFD';
-        s += '"';
-        if (len > 256) s + ` ... (${len - 256} more bytes)`;
-
-        dbg(s);
-#endif
-        HEAPU32[(WS.socketEvent+12)>>2] = 0; // binary data
-      }
-      HEAPU32[(WS.socketEvent+4)>>2] = buf;
-      HEAPU32[(WS.socketEvent+8)>>2] = len;
-      {{{ makeDynCall('iiii', 'callbackFunc') }}}(0/*TODO*/, WS.socketEvent, userData);
-      _free(buf);
+    socket.onmessage = (e) => {
+      #if WEBSOCKET_DEBUG == 2
+            dbg(`websocket event "message": socketId=${socketId},userData=${userData},callbackFunc=${callbackFunc})`);
+      #endif
+            HEAPU32[WS.socketEvent>>2] = socketId;
+            if (typeof e.data == 'string') {
+              var buf = stringToNewUTF8(e.data);
+              var len = lengthBytesUTF8(e.data)+1;
+      #if WEBSOCKET_DEBUG
+              var s = (e.data.length < 256) ? e.data : (e.data.substr(0, 256) + ` (${e.data.length-256} more characters)`);
+              dbg(`WebSocket onmessage, received data: "${e.data}", ${e.data.length} chars, ${len} bytes encoded as UTF-8: "${s}"`);
+      #endif
+              HEAPU32[(WS.socketEvent+12)>>2] = 1; // text data
+            } else {
+              var len = e.data.byteLength;
+              var buf = _malloc(len);
+              HEAP8.set(new Uint8Array(e.data), buf);
+      #if WEBSOCKET_DEBUG
+              var s = `WebSocket onmessage, received data: ${len} bytes of binary:`;
+              for (var i = 0; i < Math.min(len, 256); ++i) s += ' ' + HEAPU8[buf+i].toString(16);
+              s += ', "';
+              for (var i = 0; i < Math.min(len, 256); ++i) s += (HEAPU8[buf+i] >= 32 && HEAPU8[buf+i] <= 127) ? String.fromCharCode(HEAPU8[buf+i]) : '\uFFFD';
+              s += '"';
+              if (len > 256) s + ` ... (${len - 256} more bytes)`;
+      
+              dbg(s);
+      #endif
+              HEAPU32[(WS.socketEvent+12)>>2] = 0; // binary data
+            }
+            HEAPU32[(WS.socketEvent+4)>>2] = buf;
+            HEAPU32[(WS.socketEvent+8)>>2] = len;
+            {{{ makeDynCall('iiii', 'callbackFunc') }}}(0/*TODO*/, WS.socketEvent, userData);
+            _free(buf);
     }
     return {{{ cDefs.EMSCRIPTEN_RESULT_SUCCESS }}};
   },

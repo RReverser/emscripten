@@ -59,7 +59,7 @@ if (typeof globalThis.BigInt64Array === "undefined") {
           byteLength: array.byteLength,
           byteOffset: array.byteOffset,
           length: array.length / 2,
-          copyWithin: function (target, start, end) {
+          copyWithin: (target, start, end) => {
             array.copyWithin(target * 2, start * 2, end * 2);
             return proxy;
           },

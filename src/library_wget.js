@@ -33,8 +33,8 @@ var LibraryWget = {
     function doCallback(callback) {
       if (callback) {
         {{{ runtimeKeepalivePop() }}}
-        callUserCallback(function() {
-          withStackSave(function() {
+        callUserCallback(() => {
+          withStackSave(() => {
             {{{ makeDynCall('vi', 'callback') }}}(stringToUTF8OnStack(_file));
           });
         });
@@ -45,21 +45,22 @@ var LibraryWget = {
       destinationDirectory,
       PATH.basename(_file),
       _url, true, true,
-      function() {
+      () => {
         doCallback(onload);
       },
-      function() {
+      () => {
         doCallback(onerror);
       },
       false, // dontCreateFile
       false, // canOwn
-      function() { // preFinish
-        // if a file exists there, we overwrite it
-        try {
-          FS_unlink(_file);
-        } catch (e) {}
-        // if the destination directory does not yet exist, create it
-        FS_mkdirTree(destinationDirectory);
+      () => {
+        // preFinish
+          // if a file exists there, we overwrite it
+          try {
+            FS_unlink(_file);
+          } catch (e) {}
+          // if the destination directory does not yet exist, create it
+          FS_mkdirTree(destinationDirectory);
       }
     );
   },
@@ -68,18 +69,18 @@ var LibraryWget = {
   emscripten_async_wget_data__proxy: 'sync',
   emscripten_async_wget_data: (url, arg, onload, onerror) => {
     {{{ runtimeKeepalivePush() }}}
-    asyncLoad(UTF8ToString(url), function(byteArray) {
+    asyncLoad(UTF8ToString(url), (byteArray) => {
       {{{ runtimeKeepalivePop() }}}
-      callUserCallback(function() {
+      callUserCallback(() => {
         var buffer = _malloc(byteArray.length);
         HEAPU8.set(byteArray, buffer);
         {{{ makeDynCall('viii', 'onload') }}}(arg, buffer, byteArray.length);
         _free(buffer);
       });
-    }, function() {
+    }, () => {
       if (onerror) {
         {{{ runtimeKeepalivePop() }}}
-        callUserCallback(function() {
+        callUserCallback(() => {
           {{{ makeDynCall('vi', 'onerror') }}}(arg);
         });
       }
@@ -119,7 +120,7 @@ var LibraryWget = {
 
         FS.createDataFile( _file.substr(0, index), _file.substr(index + 1), new Uint8Array(/** @type{ArrayBuffer}*/(http.response)), true, true, false);
         if (onload) {
-          withStackSave(function() {
+          withStackSave(() => {
             {{{ makeDynCall('viii', 'onload') }}}(handle, arg, stringToUTF8OnStack(_file));
           });
         }

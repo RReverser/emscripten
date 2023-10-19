@@ -488,22 +488,20 @@ addToLibrary({
 
   emscripten_wget_data__deps: ['$asyncLoad', 'malloc'],
   emscripten_wget_data__async: true,
-  emscripten_wget_data: (url, pbuffer, pnum, perror) => {
-    return Asyncify.handleSleep((wakeUp) => {
-      asyncLoad(UTF8ToString(url), (byteArray) => {
-        // can only allocate the buffer after the wakeUp, not during an asyncing
-        var buffer = _malloc(byteArray.length); // must be freed by caller!
-        HEAPU8.set(byteArray, buffer);
-        {{{ makeSetValue('pbuffer', 0, 'buffer', '*') }}};
-        {{{ makeSetValue('pnum',  0, 'byteArray.length', 'i32') }}};
-        {{{ makeSetValue('perror',  0, '0', 'i32') }}};
-        wakeUp();
-      }, () => {
-        {{{ makeSetValue('perror',  0, '1', 'i32') }}};
-        wakeUp();
-      }, true /* no need for run dependency, this is async but will not do any prepare etc. step */ );
-    });
-  },
+  emscripten_wget_data: (url, pbuffer, pnum, perror) => Asyncify.handleSleep((wakeUp) => {
+    asyncLoad(UTF8ToString(url), (byteArray) => {
+      // can only allocate the buffer after the wakeUp, not during an asyncing
+      var buffer = _malloc(byteArray.length); // must be freed by caller!
+      HEAPU8.set(byteArray, buffer);
+      {{{ makeSetValue('pbuffer', 0, 'buffer', '*') }}};
+      {{{ makeSetValue('pnum',  0, 'byteArray.length', 'i32') }}};
+      {{{ makeSetValue('perror',  0, '0', 'i32') }}};
+      wakeUp();
+    }, () => {
+      {{{ makeSetValue('perror',  0, '1', 'i32') }}};
+      wakeUp();
+    }, true /* no need for run dependency, this is async but will not do any prepare etc. step */ );
+  });,
 
   emscripten_scan_registers__deps: ['$safeSetTimeout'],
   emscripten_scan_registers__async: true,

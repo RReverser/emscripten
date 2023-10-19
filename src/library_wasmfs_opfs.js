@@ -69,7 +69,7 @@ addToLibrary({
   },
 
   _wasmfs_opfs_init_root_directory__deps: ['$wasmfsOPFSDirectoryHandles', '$wasmfsOPFSProxyFinish'],
-  _wasmfs_opfs_init_root_directory: async function(ctx) {
+  _wasmfs_opfs_init_root_directory: (ctx) => {
     // allocated.length starts off as 1 since 0 is a reserved handle
     if (wasmfsOPFSDirectoryHandles.allocated.length == 1) {
       // Closure compiler errors on this as it does not recognize the OPFS
@@ -178,7 +178,7 @@ addToLibrary({
   },
 
   _wasmfs_opfs_insert_file__deps: ['$wasmfsOPFSGetOrCreateFile', '$wasmfsOPFSProxyFinish'],
-  _wasmfs_opfs_insert_file: async function(ctx, parent, namePtr, childIDPtr) {
+  _wasmfs_opfs_insert_file: (ctx, parent, namePtr, childIDPtr) => {
     let name = UTF8ToString(namePtr);
     let childID = await wasmfsOPFSGetOrCreateFile(parent, name, true);
     {{{ makeSetValue('childIDPtr', 0, 'childID', 'i32') }}};
@@ -187,12 +187,12 @@ addToLibrary({
 
   _wasmfs_opfs_insert_directory__deps: ['$wasmfsOPFSGetOrCreateDir', '$wasmfsOPFSProxyFinish'],
   _wasmfs_opfs_insert_directory:
-      async function(ctx, parent, namePtr, childIDPtr) {
-    let name = UTF8ToString(namePtr);
-    let childID = await wasmfsOPFSGetOrCreateDir(parent, name, true);
-    {{{ makeSetValue('childIDPtr', 0, 'childID', 'i32') }}};
-    wasmfsOPFSProxyFinish(ctx);
-  },
+      (ctx, parent, namePtr, childIDPtr) => {
+        let name = UTF8ToString(namePtr);
+        let childID = await wasmfsOPFSGetOrCreateDir(parent, name, true);
+        {{{ makeSetValue('childIDPtr', 0, 'childID', 'i32') }}};
+        wasmfsOPFSProxyFinish(ctx);
+      },
 
   _wasmfs_opfs_move_file__deps: ['$wasmfsOPFSFileHandles',
                                  '$wasmfsOPFSDirectoryHandles',
@@ -317,11 +317,12 @@ addToLibrary({
   },
 
   _wasmfs_opfs_read_access__deps: ['$wasmfsOPFSAccessHandles'],
-  _wasmfs_opfs_read_access: {{{ asyncIf(!PTHREADS) }}}  function(accessID, bufPtr, len, pos) {
+  _wasmfs_opfs_read_access: {{{ asyncIf(!PTHREADS) }}}  (accessID, bufPtr, len, pos) => {
     let accessHandle = wasmfsOPFSAccessHandles.get(accessID);
     let data = HEAPU8.subarray(bufPtr, bufPtr + len);
     try {
-      return {{{ awaitIf(!PTHREADS) }}} accessHandle.read(data, {at: pos});
+      return {{{ awaitIf(!PTHREADS) }
+  }} accessHandle.read(data, {at: pos});
     } catch (e) {
       if (e.name == "TypeError") {
         return -{{{ cDefs.EINVAL }}};
@@ -363,11 +364,12 @@ addToLibrary({
   },
 
   _wasmfs_opfs_write_access__deps: ['$wasmfsOPFSAccessHandles'],
-  _wasmfs_opfs_write_access: {{{ asyncIf(!PTHREADS) }}} function(accessID, bufPtr, len, pos) {
+  _wasmfs_opfs_write_access: {{{ asyncIf(!PTHREADS) }}} (accessID, bufPtr, len, pos) => {
     let accessHandle = wasmfsOPFSAccessHandles.get(accessID);
     let data = HEAPU8.subarray(bufPtr, bufPtr + len);
     try {
-      return {{{ awaitIf(!PTHREADS) }}} accessHandle.write(data, {at: pos});
+      return {{{ awaitIf(!PTHREADS) }
+  }} accessHandle.write(data, {at: pos});
     } catch (e) {
       if (e.name == "TypeError") {
         return -{{{ cDefs.EINVAL }}};

@@ -1526,9 +1526,7 @@ addToLibrary({
     }
     return (b[0] | (b[1] << 8) | (b[2] << 16) | (b[3] << 24)) >>> 0;
   },
-  $inetNtop4: (addr) => {
-    return (addr & 0xff) + '.' + ((addr >> 8) & 0xff) + '.' + ((addr >> 16) & 0xff) + '.' + ((addr >> 24) & 0xff)
-  },
+  $inetNtop4: (addr) => (addr & 0xff) + '.' + ((addr >> 8) & 0xff) + '.' + ((addr >> 16) & 0xff) + '.' + ((addr >> 24) & 0xff),
   $inetPton6__deps: ['htons', '$jstoi_q'],
   $inetPton6: (str) => {
     var words;

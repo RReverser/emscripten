@@ -2442,10 +2442,10 @@ var LibrarySDL = {
       SDL.audio.nextPlayTime = 0; // Time in seconds when the next audio block is due to start.
 
       // The pushAudio function with a new audio buffer whenever there is new audio data to schedule to be played back on the device.
-      SDL.audio.pushAudio=function(ptr,sizeBytes) {
+      SDL.audio.pushAudio=(ptr,sizeBytes) => {
         try {
           if (SDL.audio.paused) return;
-
+      
           var sizeSamples = sizeBytes / SDL.audio.bytesPerSample; // How many samples fit in the callback buffer?
           var sizeSamplesPerChannel = sizeSamples / SDL.audio.channels; // How many samples per a single channel fit in the cb buffer?
           if (sizeSamplesPerChannel != SDL.audio.samples) {
@@ -2455,19 +2455,19 @@ var LibrarySDL = {
           var source = SDL.audioContext['createBufferSource']();
           var soundBuffer = SDL.audioContext['createBuffer'](SDL.audio.channels,sizeSamplesPerChannel,SDL.audio.freq);
           source['connect'](SDL.audioContext['destination']);
-
+      
           SDL.fillWebAudioBufferFromHeap(ptr, sizeSamplesPerChannel, soundBuffer);
           // Workaround https://bugzilla.mozilla.org/show_bug.cgi?id=883675 by setting the buffer only after filling. The order is important here!
           source['buffer'] = soundBuffer;
-
+      
           // Schedule the generated sample buffer to be played out at the correct time right after the previously scheduled
           // sample buffer has finished.
           var curtime = SDL.audioContext['currentTime'];
-#if ASSERTIONS
+      #if ASSERTIONS
           if (curtime > SDL.audio.nextPlayTime && SDL.audio.nextPlayTime != 0) {
             err(`warning: Audio callback had starved sending audio by ${curtime - SDL.audio.nextPlayTime} seconds`);
           }
-#endif
+      #endif
           // Don't ever start buffer playbacks earlier from current time than a given constant 'SDL.audio.bufferingDelay', since a browser
           // may not be able to mix that audio clip in immediately, and there may be subsequent jitter that might cause the stream to starve.
           var playtime = Math.max(curtime + SDL.audio.bufferingDelay, SDL.audio.nextPlayTime);
@@ -2484,7 +2484,7 @@ var LibrarySDL = {
           }
           SDL.audio.curBufferEnd = Math.round(playtime * SDL.audio.freq + sizeSamplesPerChannel);
           */
-
+      
           SDL.audio.nextPlayTime = playtime + SDL.audio.bufferDurationSecs;
         } catch(e) {
           err(`Web Audio API error playing back audio: ${e.toString()}`);

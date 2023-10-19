@@ -68,7 +68,7 @@ var Promise = (function() {
       return;
     }
     self._handled = true;
-    Promise._immediateFn(function() {
+    Promise._immediateFn(() => {
       var cb = self._state === 1 ? deferred.onFulfilled : deferred.onRejected;
       if (cb === null) {
         (self._state === 1 ? resolve : reject)(deferred.promise, self._value);
@@ -121,7 +121,7 @@ var Promise = (function() {
 
   function finale(self) {
     if (self._state === 2 && self._deferreds.length === 0) {
-      Promise._immediateFn(function() {
+      Promise._immediateFn(() => {
         if (!self._handled) {
           Promise._unhandledRejectionFn(self._value);
         }
@@ -153,12 +153,12 @@ var Promise = (function() {
     var done = false;
     try {
       fn(
-        function(value) {
+        (value) => {
           if (done) return;
           done = true;
           resolve(self, value);
         },
-        function(reason) {
+        (reason) => {
           if (done) return;
           done = true;
           reject(self, reason);
@@ -183,83 +183,77 @@ var Promise = (function() {
     return prom;
   };
 
-  Promise.all = function(arr) {
-    return new Promise(function(resolve, reject) {
-      if (!Array.isArray(arr)) {
-        return reject(new TypeError('Promise.all accepts an array'));
-      }
-
-      var args = Array.prototype.slice.call(arr);
-      if (args.length === 0) return resolve([]);
-      var remaining = args.length;
-
-      function res(i, val) {
-        try {
-          if (val && (typeof val == 'object' || typeof val == 'function')) {
-            var then = val.then;
-            if (typeof then == 'function') {
-              then.call(
-                val,
-                function(val) {
-                  res(i, val);
-                },
-                reject
-              );
-              return;
-            }
+  Promise.all = (arr) => new Promise((resolve, reject) => {
+    if (!Array.isArray(arr)) {
+      return reject(new TypeError('Promise.all accepts an array'));
+    }
+    
+    var args = Array.prototype.slice.call(arr);
+    if (args.length === 0) return resolve([]);
+    var remaining = args.length;
+    
+    function res(i, val) {
+      try {
+        if (val && (typeof val == 'object' || typeof val == 'function')) {
+          var then = val.then;
+          if (typeof then == 'function') {
+            then.call(
+              val,
+              (val) => {
+                res(i, val);
+              },
+              reject
+            );
+            return;
           }
-          args[i] = val;
-          if (--remaining === 0) {
-            resolve(args);
-          }
-        } catch (ex) {
-          reject(ex);
         }
+        args[i] = val;
+        if (--remaining === 0) {
+          resolve(args);
+        }
+      } catch (ex) {
+        reject(ex);
       }
+    }
+    
+    for (var i = 0; i < args.length; i++) {
+      res(i, args[i]);
+    }
+  });;
 
-      for (var i = 0; i < args.length; i++) {
-        res(i, args[i]);
-      }
-    });
-  };
-
-  Promise.resolve = function(value) {
+  Promise.resolve = (value) => {
     if (value && typeof value == 'object' && value.constructor == Promise) {
       return value;
     }
-
-    return new Promise(function(resolve) {
+  
+    return new Promise((resolve) => {
       resolve(value);
     });
   };
 
-  Promise.reject = function(value) {
-    return new Promise(function(resolve, reject) {
-      reject(value);
-    });
-  };
+  Promise.reject = (value) => new Promise((resolve, reject) => {
+    reject(value);
+  });;
 
-  Promise.race = function(arr) {
-    return new Promise(function(resolve, reject) {
-      if (!Array.isArray(arr)) {
-        return reject(new TypeError('Promise.race accepts an array'));
-      }
-
-      for (var i = 0, len = arr.length; i < len; i++) {
-        Promise.resolve(arr[i]).then(resolve, reject);
-      }
-    });
-  };
+  Promise.race = (arr) => new Promise((resolve, reject) => {
+    if (!Array.isArray(arr)) {
+      return reject(new TypeError('Promise.race accepts an array'));
+    }
+    
+    for (var i = 0, len = arr.length; i < len; i++) {
+      Promise.resolve(arr[i]).then(resolve, reject);
+    }
+  });;
 
   // Use polyfill for setImmediate for performance gains
   Promise._immediateFn =
     // @ts-ignore
     (typeof setImmediate == 'function' &&
-      function(fn) {
+      (fn) => {
         // @ts-ignore
         setImmediate(fn);
       }) ||
-    function(fn) {
+    (fn) => {
       setTimeout(fn, 0); // XXX EMSCRIPTEN: just use setTimeout
     };
 

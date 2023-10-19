@@ -858,8 +858,7 @@ var LibraryHTML5 = {
 
   emscripten_set_deviceorientation_callback_on_thread__proxy: 'sync',
   emscripten_set_deviceorientation_callback_on_thread__deps: ['$registerDeviceOrientationEventCallback'],
-  emscripten_set_deviceorientation_callback_on_thread: (userData, useCapture, callbackfunc, targetThread) => {
-    return registerDeviceOrientationEventCallback({{{ cDefs.EMSCRIPTEN_EVENT_TARGET_WINDOW }}}, userData, useCapture, callbackfunc, {{{ cDefs.EMSCRIPTEN_EVENT_DEVICEORIENTATION }}}, "deviceorientation", targetThread);
+  emscripten_set_deviceorientation_callback_on_thread: (userData, useCapture, callbackfunc, targetThread) => registerDeviceOrientationEventCallback({{{ cDefs.EMSCRIPTEN_EVENT_TARGET_WINDOW}}, userData, useCapture, callbackfunc, {{{ cDefs.EMSCRIPTEN_EVENT_DEVICEORIENTATION }}}, "deviceorientation", targetThread);
   },
 
   emscripten_get_deviceorientation_status__proxy: 'sync',
@@ -928,8 +927,7 @@ var LibraryHTML5 = {
 
   emscripten_set_devicemotion_callback_on_thread__proxy: 'sync',
   emscripten_set_devicemotion_callback_on_thread__deps: ['$registerDeviceMotionEventCallback'],
-  emscripten_set_devicemotion_callback_on_thread: (userData, useCapture, callbackfunc, targetThread) => {
-    return registerDeviceMotionEventCallback({{{ cDefs.EMSCRIPTEN_EVENT_TARGET_WINDOW }}}, userData, useCapture, callbackfunc, {{{ cDefs.EMSCRIPTEN_EVENT_DEVICEMOTION }}}, "devicemotion", targetThread);
+  emscripten_set_devicemotion_callback_on_thread: (userData, useCapture, callbackfunc, targetThread) => registerDeviceMotionEventCallback({{{ cDefs.EMSCRIPTEN_EVENT_TARGET_WINDOW}}, userData, useCapture, callbackfunc, {{{ cDefs.EMSCRIPTEN_EVENT_DEVICEMOTION }}}, "devicemotion", targetThread);
   },
 
   emscripten_get_devicemotion_status__proxy: 'sync',
@@ -2160,9 +2158,8 @@ var LibraryHTML5 = {
 
   emscripten_sample_gamepad_data__proxy: 'sync',
   emscripten_sample_gamepad_data__deps: ['$JSEvents'],
-  emscripten_sample_gamepad_data: () => {
-    return (JSEvents.lastGamepadState = (navigator.getGamepads ? navigator.getGamepads() : (navigator.webkitGetGamepads ? navigator.webkitGetGamepads() : null)))
-      ? {{{ cDefs.EMSCRIPTEN_RESULT_SUCCESS }}} : {{{ cDefs.EMSCRIPTEN_RESULT_NOT_SUPPORTED }}};
+  emscripten_sample_gamepad_data: () => (JSEvents.lastGamepadState = (navigator.getGamepads ? navigator.getGamepads() : (navigator.webkitGetGamepads ? navigator.webkitGetGamepads() : null)))
+    ? {{{ cDefs.EMSCRIPTEN_RESULT_SUCCESS}} : {{{ cDefs.EMSCRIPTEN_RESULT_NOT_SUPPORTED }}};
   },
 
   emscripten_get_num_gamepads__proxy: 'sync',

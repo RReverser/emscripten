@@ -24,35 +24,29 @@
 {{{
   // Helper functions for code generation
   global.gpu = {
-    makeInitManager: function(type) {
+    makeInitManager: (type) => {
       var mgr = `WebGPU.mgr${type}`;
       return `${mgr} = ${mgr} || new Manager();`;
     },
 
-    makeReferenceRelease: function(type) {
-      return `
-wgpu${type}Reference: (id) => WebGPU.mgr${type}.reference(id),
-wgpu${type}Release: (id) => WebGPU.mgr${type}.release(id),`;
-    },
+    makeReferenceRelease: (type) => `
+        wgpu${type}Reference: (id) => WebGPU.mgr${type}.reference(id),
+        wgpu${type}Release: (id) => WebGPU.mgr${type}.release(id),`;,
 
-    convertSentinelToUndefined: function(name) {
-      return `if (${name} == -1) ${name} = undefined;`;
-    },
+    convertSentinelToUndefined: (name) => `if (${name} == -1) ${name} = undefined;`;,
 
-    makeGetBool: function(struct, offset) {
+    makeGetBool: (struct, offset) => {
       // In an actual build, bool seems to be i8. But on the off-chance it's i32, on little-endian
       // this will still work as long as the value of 'true' isn't zero in the lowest byte.
       return `(${makeGetValue(struct, offset, 'i8')} !== 0)`;
     },
-    makeGetU32: function(struct, offset) {
-      return makeGetValue(struct, offset, 'u32');
-    },
-    makeGetU64: function(struct, offset) {
+    makeGetU32: (struct, offset) => makeGetValue(struct, offset, 'u32');,
+    makeGetU64: (struct, offset) => {
       var l = makeGetValue(struct, offset, 'u32');
       var h = makeGetValue(`(${struct} + 4)`, offset, 'u32')
       return `${h} * 0x100000000 + ${l}`
     },
-    makeCheck: function(str) {
+    makeCheck: (str) => {
       if (!ASSERTIONS) return '';
       return `assert(${str});`;
     },
@@ -229,8 +223,7 @@ var LibraryWebGPU = {
     },
 
     makeColor: (ptr) => {
-      return {
-        "r": {{{ makeGetValue('ptr', 0, 'double') }}},
+      "r": {{{ makeGetValue('ptr', 0, 'double') }},
         "g": {{{ makeGetValue('ptr', 8, 'double') }}},
         "b": {{{ makeGetValue('ptr', 16, 'double') }}},
         "a": {{{ makeGetValue('ptr', 24, 'double') }}},
@@ -815,20 +808,20 @@ var LibraryWebGPU = {
   wgpuDeviceSetUncapturedErrorCallback__deps: ['$callUserCallback'],
   wgpuDeviceSetUncapturedErrorCallback: (deviceId, callback, userdata) => {
     var device = WebGPU.mgrDevice.get(deviceId);
-    device["onuncapturederror"] = function(ev) {
+    device["onuncapturederror"] = (ev) => {
       // This will skip the callback if the runtime is no longer alive.
       callUserCallback(() => {
         // WGPUErrorType type, const char* message, void* userdata
         var Validation = 0x00000001;
         var OutOfMemory = 0x00000002;
         var type;
-#if ASSERTIONS
+    #if ASSERTIONS
         assert(typeof GPUValidationError != 'undefined');
         assert(typeof GPUOutOfMemoryError != 'undefined');
-#endif
+    #endif
         if (ev.error instanceof GPUValidationError) type = Validation;
         else if (ev.error instanceof GPUOutOfMemoryError) type = OutOfMemory;
-
+    
         WebGPU.errorCallback(callback, type, ev.error.message, userdata);
       });
     };
@@ -895,7 +888,7 @@ var LibraryWebGPU = {
     if (viewFormatCount) {
       var viewFormatsPtr = {{{ makeGetValue('descriptor', C_STRUCTS.WGPUTextureDescriptor.viewFormats, '*') }}};
       desc["viewFormats"] = Array.from({{{ makeHEAPView(`${POINTER_BITS}`, 'viewFormatsPtr', `viewFormatsPtr + viewFormatCount * ${POINTER_SIZE}`) }}},
-        function(format) { return WebGPU.TextureFormat[format]; });
+        (format) => WebGPU.TextureFormat[format];);
     }
 
     var device = WebGPU.mgrDevice.get(deviceId);
@@ -1475,7 +1468,7 @@ var LibraryWebGPU = {
 #endif
     var queue = WebGPU.mgrQueue.get(queueId);
     var cmds = Array.from({{{ makeHEAPView(`${POINTER_BITS}`, 'commands', `commands + commandCount * ${POINTER_SIZE}`)}}},
-      function(id) { return WebGPU.mgrCommandBuffer.get(id); });
+      (id) => WebGPU.mgrCommandBuffer.get(id););
     queue["submit"](cmds);
   },
 

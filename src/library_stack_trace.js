@@ -47,13 +47,13 @@ var LibraryStackTrace = {
     var regex =
       /\b_Z[\w\d_]+/g;
     return text.replace(regex,
-      function(x) {
+      (x) => {
         var y = demangle(x);
         return x === y ? x : (y + ' [' + x + ']');
       });
   },
 
-  $jsStackTrace: function() {
+  $jsStackTrace: () => {
     var error = new Error();
     if (!error.stack) {
       // IE10+ special cases: It does have callstack info, but it is only
@@ -71,7 +71,7 @@ var LibraryStackTrace = {
   },
 
   $stackTrace__deps: ['$jsStackTrace', '$demangleAll'],
-  $stackTrace: function() {
+  $stackTrace: () => {
     var js = jsStackTrace();
     if (Module['extraStackTrace']) js += '\n' + Module['extraStackTrace']();
     return demangleAll(js);

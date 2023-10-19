@@ -503,7 +503,7 @@ var emscriptenCpuProfiler = {
   },
 
   // Work around Microsoft Edge bug where webGLContext.function.length always returns 0.
-  webGLFunctionLength: function(f) {
+  webGLFunctionLength: (f) => {
     var l0 = ['getContextAttributes','isContextLost','getSupportedExtensions','createBuffer','createFramebuffer','createProgram','createRenderbuffer','createTexture','finish','flush','getError', 'createVertexArray', 'createQuery', 'createSampler', 'createTransformFeedback', 'endTransformFeedback', 'pauseTransformFeedback', 'resumeTransformFeedback', 'makeXRCompatible'];
     var l1 = ['getExtension','activeTexture','blendEquation','checkFramebufferStatus','clear','clearDepth','clearStencil','compileShader','createShader','cullFace','deleteBuffer','deleteFramebuffer','deleteProgram','deleteRenderbuffer','deleteShader','deleteTexture','depthFunc','depthMask','disable','disableVertexAttribArray','enable','enableVertexAttribArray','frontFace','generateMipmap','getAttachedShaders','getParameter','getProgramInfoLog','getShaderInfoLog','getShaderSource','isBuffer','isEnabled','isFramebuffer','isProgram','isRenderbuffer','isShader','isTexture','lineWidth','linkProgram','stencilMask','useProgram','validateProgram', 'deleteQuery', 'isQuery', 'deleteVertexArray', 'bindVertexArray', 'isVertexArray', 'drawBuffers', 'readBuffer', 'endQuery', 'deleteSampler', 'isSampler', 'isSync', 'deleteSync', 'deleteTransformFeedback', 'isTransformFeedback', 'beginTransformFeedback'];
     var l2 = ['attachShader','bindBuffer','bindFramebuffer','bindRenderbuffer','bindTexture','blendEquationSeparate','blendFunc','depthRange','detachShader','getActiveAttrib','getActiveUniform','getAttribLocation','getBufferParameter','getProgramParameter','getRenderbufferParameter','getShaderParameter','getShaderPrecisionFormat','getTexParameter','getUniform','getUniformLocation','getVertexAttrib','getVertexAttribOffset','hint','pixelStorei','polygonOffset','sampleCoverage','shaderSource','stencilMaskSeparate','uniform1f','uniform1fv','uniform1i','uniform1iv','uniform2fv','uniform2iv','uniform3fv','uniform3iv','uniform4fv','uniform4iv','vertexAttrib1f','vertexAttrib1fv','vertexAttrib2fv','vertexAttrib3fv','vertexAttrib4fv', 'vertexAttribDivisor', 'beginQuery', 'invalidateFramebuffer', 'getFragDataLocation', 'uniform1ui', 'uniform1uiv', 'uniform2uiv', 'uniform3uiv', 'uniform4uiv', 'vertexAttribI4iv', 'vertexAttribI4uiv', 'getQuery', 'getQueryParameter', 'bindSampler', 'getSamplerParameter', 'fenceSync', 'getSyncParameter', 'bindTransformFeedback', 'getTransformFeedbackVarying', 'getIndexedParameter', 'getUniformIndices', 'getUniformBlockIndex', 'getActiveUniformBlockName'];
@@ -531,7 +531,7 @@ var emscriptenCpuProfiler = {
     console.warn('Unexpected WebGL function ' + f);
   },
 
-  detectWebGLContext: function() {
+  detectWebGLContext: () => {
     if (Module['canvas'] && Module['canvas'].GLctxObject && Module['canvas'].GLctxObject.GLctx) return Module['canvas'].GLctxObject.GLctx;
     else if (typeof GLctx != 'undefined') return GLctx;
     else if (Module.ctx) return Module.ctx;

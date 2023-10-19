@@ -33,38 +33,34 @@ var LibraryExceptions = {
     this.excPtr = excPtr;
     this.ptr = excPtr - {{{ C_STRUCTS.__cxa_exception.__size__ }}};
 
-    this.set_type = function(type) {
+    this.set_type = (type) => {
       {{{ makeSetValue('this.ptr', C_STRUCTS.__cxa_exception.exceptionType, 'type', '*') }}};
     };
 
-    this.get_type = function() {
-      return {{{ makeGetValue('this.ptr', C_STRUCTS.__cxa_exception.exceptionType, '*') }}};
+    this.get_type = () => {{{ makeGetValue('this.ptr', C_STRUCTS.__cxa_exception.exceptionType, '*')}};
     };
 
-    this.set_destructor = function(destructor) {
+    this.set_destructor = (destructor) => {
       {{{ makeSetValue('this.ptr', C_STRUCTS.__cxa_exception.exceptionDestructor, 'destructor', '*') }}};
     };
 
-    this.get_destructor = function() {
-      return {{{ makeGetValue('this.ptr', C_STRUCTS.__cxa_exception.exceptionDestructor, '*') }}};
+    this.get_destructor = () => {{{ makeGetValue('this.ptr', C_STRUCTS.__cxa_exception.exceptionDestructor, '*')}};
     };
 
-    this.set_caught = function(caught) {
+    this.set_caught = (caught) => {
       caught = caught ? 1 : 0;
       {{{ makeSetValue('this.ptr', C_STRUCTS.__cxa_exception.caught, 'caught', 'i8') }}};
     };
 
-    this.get_caught = function() {
-      return {{{ makeGetValue('this.ptr', C_STRUCTS.__cxa_exception.caught, 'i8') }}} != 0;
+    this.get_caught = () => {{{ makeGetValue('this.ptr', C_STRUCTS.__cxa_exception.caught, 'i8')}} != 0;
     };
 
-    this.set_rethrown = function(rethrown) {
+    this.set_rethrown = (rethrown) => {
       rethrown = rethrown ? 1 : 0;
       {{{ makeSetValue('this.ptr', C_STRUCTS.__cxa_exception.rethrown, 'rethrown', 'i8') }}};
     };
 
-    this.get_rethrown = function() {
-      return {{{ makeGetValue('this.ptr', C_STRUCTS.__cxa_exception.rethrown, 'i8') }}} != 0;
+    this.get_rethrown = () => {{{ makeGetValue('this.ptr', C_STRUCTS.__cxa_exception.rethrown, 'i8')}} != 0;
     };
 
     // Initialize native structure fields. Should be called once after allocated.
@@ -77,12 +73,11 @@ var LibraryExceptions = {
       this.set_destructor(destructor);
     }
 
-    this.set_adjusted_ptr = function(adjustedPtr) {
+    this.set_adjusted_ptr = (adjustedPtr) => {
       {{{ makeSetValue('this.ptr', C_STRUCTS.__cxa_exception.adjustedPtr, 'adjustedPtr', '*') }}};
     };
 
-    this.get_adjusted_ptr = function() {
-      return {{{ makeGetValue('this.ptr', C_STRUCTS.__cxa_exception.adjustedPtr, '*') }}};
+    this.get_adjusted_ptr = () => {{{ makeGetValue('this.ptr', C_STRUCTS.__cxa_exception.adjustedPtr, '*')}};
     };
 
     // Get pointer which is expected to be received by catch clause in C++ code. It may be adjusted

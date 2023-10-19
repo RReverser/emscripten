@@ -886,7 +886,7 @@ function instantiateAsync(binary, binaryFile, imports, callback) {
 #if !USE_OFFSET_CONVERTER
         callback,
 #else
-        function(instantiationResult) {
+        (instantiationResult) => {
           // When using the offset converter, we must interpose here. First,
           // the instantiation result must arrive (if it fails, the error
           // handling later down will handle it). Once it arrives, we can
@@ -894,7 +894,7 @@ function instantiateAsync(binary, binaryFile, imports, callback) {
           // call receiveInstantiationResult, as that function will use the
           // offset converter (in the case of pthreads, it will create the
           // pthreads and send them the offsets along with the wasm instance).
-
+        
           clonedResponsePromise.then((arrayBufferResult) => {
               wasmOffsetConverter = new WasmOffsetConverter(new Uint8Array(arrayBufferResult), instantiationResult.module);
               callback(instantiationResult);
@@ -903,7 +903,7 @@ function instantiateAsync(binary, binaryFile, imports, callback) {
           );
         },
 #endif
-        function(reason) {
+        (reason) => {
           // We expect the most common failure cause to be a bad MIME type for the binary,
           // in which case falling back to ArrayBuffer instantiation should work.
           err(`wasm streaming compile failed: ${reason}`);

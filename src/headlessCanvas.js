@@ -429,7 +429,7 @@ function headlessCanvas() {
 
             items: {},
             id: 0,
-            getExtension: function() { return 1 },
+            getExtension: () => 1,
             createBuffer: function() {
               var id = this.id++;
               this.items[id] = {
@@ -437,10 +437,16 @@ function headlessCanvas() {
               };
               return id;
             },
-            deleteBuffer: function(){},
-            bindBuffer: function(){},
-            bufferData: function(){},
-            getParameter: function(pname) {
+            deleteBuffer: () => {
+              
+            },
+            bindBuffer: () => {
+              
+            },
+            bufferData: () => {
+              
+            },
+            getParameter: (pname) => {
               switch (pname) {
                 case /* GL_VENDOR                           */ 0x1F00: return 'FakeShellGLVendor';
                 case /* GL_RENDERER                         */ 0x1F01: return 'FakeShellGLRenderer';
@@ -457,9 +463,7 @@ function headlessCanvas() {
                 default: console.log('getParameter ' + pname + '?'); return 0;
               }
             },
-            getSupportedExtensions: function() {
-              return ["OES_texture_float", "OES_standard_derivatives", "EXT_texture_filter_anisotropic", "MOZ_EXT_texture_filter_anisotropic", "MOZ_WEBGL_lose_context", "MOZ_WEBGL_compressed_texture_s3tc", "MOZ_WEBGL_depth_texture"];
-            },
+            getSupportedExtensions: () => ["OES_texture_float", "OES_standard_derivatives", "EXT_texture_filter_anisotropic", "MOZ_EXT_texture_filter_anisotropic", "MOZ_WEBGL_lose_context", "MOZ_WEBGL_compressed_texture_s3tc", "MOZ_WEBGL_depth_texture"];,
             createShader: function(type) {
               var id = this.id++;
               this.items[id] = {
@@ -475,8 +479,12 @@ function headlessCanvas() {
                 default: throw 'getShaderParameter ' + pname;
               }
             },
-            shaderSource: function(){},
-            compileShader: function(){},
+            shaderSource: () => {
+              
+            },
+            compileShader: () => {
+              
+            },
             createProgram: function() {
               var id = this.id++;
               this.items[id] = {
@@ -488,26 +496,52 @@ function headlessCanvas() {
             attachShader: function(program, shader) {
               this.items[program].shaders.push(shader);
             },
-            bindAttribLocation: function(){},
-            linkProgram: function(){},
-            getProgramParameter: function(program, pname) {
+            bindAttribLocation: () => {
+              
+            },
+            linkProgram: () => {
+              
+            },
+            getProgramParameter: (program, pname) => {
               switch (pname) {
                 case /* LINK_STATUS     */ 0x8B82: return true;
                 case /* ACTIVE_UNIFORMS */ 0x8B86: return 4;
                 default: throw 'getProgramParameter ' + pname;
               }
             },
-            deleteShader: function(){},
-            deleteProgram: function(){},
-            viewport: function(){},
-            clearColor: function(){},
-            clearDepth: function(){},
-            depthFunc: function(){},
-            enable: function(){},
-            disable: function(){},
-            frontFace: function(){},
-            cullFace: function(){},
-            activeTexture: function(){},
+            deleteShader: () => {
+              
+            },
+            deleteProgram: () => {
+              
+            },
+            viewport: () => {
+              
+            },
+            clearColor: () => {
+              
+            },
+            clearDepth: () => {
+              
+            },
+            depthFunc: () => {
+              
+            },
+            enable: () => {
+              
+            },
+            disable: () => {
+              
+            },
+            frontFace: () => {
+              
+            },
+            cullFace: () => {
+              
+            },
+            activeTexture: () => {
+              
+            },
             createTexture: function() {
               var id = this.id++;
               this.items[id] = {
@@ -515,39 +549,71 @@ function headlessCanvas() {
               };
               return id;
             },
-            deleteTexture: function(){},
+            deleteTexture: () => {
+              
+            },
             boundTextures: {},
             bindTexture: function(target, texture) {
               this.boundTextures[target] = texture;
             },
-            texParameteri: function(){},
-            pixelStorei: function(){},
-            texImage2D: function(){},
-            compressedTexImage2D: function(){},
-            useProgram: function(){},
-            getUniformLocation: function() {
-              return null;
+            texParameteri: () => {
+              
             },
-            getActiveUniform: function(program, index) {
-              return {
-                size: 1,
-                type: /* INT_VEC3 */ 0x8B54,
-                name: 'activeUniform' + index,
-              };
+            pixelStorei: () => {
+              
             },
-            clear: function(){},
-            uniform4fv: function(){},
-            uniform1i: function(){},
-            getAttribLocation: function() { return 1 },
-            vertexAttribPointer: function(){},
-            enableVertexAttribArray: function(){},
-            disableVertexAttribArray: function(){},
-            drawElements: function(){},
-            drawArrays: function(){},
-            depthMask: function(){},
-            depthRange: function(){},
-            bufferSubData: function(){},
-            blendFunc: function(){},
+            texImage2D: () => {
+              
+            },
+            compressedTexImage2D: () => {
+              
+            },
+            useProgram: () => {
+              
+            },
+            getUniformLocation: () => null;,
+            getActiveUniform: (program, index) => {
+              size: 1,
+              type: /* INT_VEC3 */ 0x8B54,
+              name: 'activeUniform' + index,
+            };,
+            clear: () => {
+              
+            },
+            uniform4fv: () => {
+              
+            },
+            uniform1i: () => {
+              
+            },
+            getAttribLocation: () => 1,
+            vertexAttribPointer: () => {
+              
+            },
+            enableVertexAttribArray: () => {
+              
+            },
+            disableVertexAttribArray: () => {
+              
+            },
+            drawElements: () => {
+              
+            },
+            drawArrays: () => {
+              
+            },
+            depthMask: () => {
+              
+            },
+            depthRange: () => {
+              
+            },
+            bufferSubData: () => {
+              
+            },
+            blendFunc: () => {
+              
+            },
             createFramebuffer: function() {
               var id = this.id++;
               this.items[id] = {
@@ -556,11 +622,13 @@ function headlessCanvas() {
               };
               return id;
             },
-            bindFramebuffer: function(){},
-            framebufferTexture2D: function(){},
-            checkFramebufferStatus: function() {
-              return /* FRAMEBUFFER_COMPLETE */ 0x8CD5;
+            bindFramebuffer: () => {
+              
             },
+            framebufferTexture2D: () => {
+              
+            },
+            checkFramebufferStatus: () => /* FRAMEBUFFER_COMPLETE */ 0x8CD5;,
             createRenderbuffer: function() {
               var id = this.id++;
               this.items[id] = {
@@ -569,52 +637,84 @@ function headlessCanvas() {
               };
               return id;
             },
-            bindRenderbuffer: function(){},
-            renderbufferStorage: function(){},
-            framebufferRenderbuffer: function(){},
-            scissor: function(){},
-            colorMask: function(){},
-            lineWidth: function(){},
-            vertexAttrib4fv: function(){},
+            bindRenderbuffer: () => {
+              
+            },
+            renderbufferStorage: () => {
+              
+            },
+            framebufferRenderbuffer: () => {
+              
+            },
+            scissor: () => {
+              
+            },
+            colorMask: () => {
+              
+            },
+            lineWidth: () => {
+              
+            },
+            vertexAttrib4fv: () => {
+              
+            },
           };
         }
         case '2d': {
           return {
-            drawImage: function(){},
-            getImageData: function(x, y, w, h) {
-              return {
-                width: w,
-                height: h,
-                data: new Uint8ClampedArray(w*h),
-              };
+            drawImage: () => {
+              
             },
-            save: function(){},
-            restore: function(){},
-            fillRect: function(){},
-            measureText: function() { return 10 },
-            fillText: function(){},
+            getImageData: (x, y, w, h) => {
+              width: w,
+              height: h,
+              data: new Uint8ClampedArray(w*h),
+            };,
+            save: () => {
+              
+            },
+            restore: () => {
+              
+            },
+            fillRect: () => {
+              
+            },
+            measureText: () => 10,
+            fillText: () => {
+              
+            },
           };
         }
         default: throw 'canvas.getContext: ' + which;
       }
     },
-    requestPointerLock: function() {
+    requestPointerLock: () => {
       document.pointerLockElement = document.getElementById('canvas');
-      window.setTimeout(function() {
+      window.setTimeout(() => {
         document.callEventListeners('pointerlockchange');
       });
     },
-    exitPointerLock: function(){},
+    exitPointerLock: () => {
+      
+    },
     style: {
-      setProperty: function() {},
-      removeProperty: function() {},
+      setProperty: () => {
+        
+      },
+      removeProperty: () => {
+        
+      },
     },
     eventListeners: {},
-    addEventListener: function(){},
-    removeEventListener: function(){},
-    requestFullscreen: function() {
+    addEventListener: () => {
+      
+    },
+    removeEventListener: () => {
+      
+    },
+    requestFullscreen: () => {
       document.fullscreenElement = document.getElementById('canvas');
-      window.setTimeout(function() {
+      window.setTimeout(() => {
         document.callEventListeners('fullscreenchange');
       });
     },
@@ -622,10 +722,16 @@ function headlessCanvas() {
     offsetLeft: 0,
     // generics
     classList: {
-      add: function(){},
-      remove: function(){},
+      add: () => {
+        
+      },
+      remove: () => {
+        
+      },
     },
-    insertBefore: function(){},
+    insertBefore: () => {
+      
+    },
   };
   ret.parentNode = ret;
   return ret;

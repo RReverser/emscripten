@@ -36,31 +36,31 @@ addToLibrary({
   // Supported preprocessor directives: #if, #ifdef, #ifndef, #else, #elif, #endif, #define and #undef.
   // predefs: Specifies a dictionary of { 'key1': function(arg0, arg1) {...}, 'key2': ... } of predefined preprocessing variables
   $preprocess_c_code__deps: ['$jstoi_q', '$find_closing_parens_index'],
-  $preprocess_c_code: function(code, defs = {}) {
+  $preprocess_c_code: (code, defs = {}) => {
     var i = 0, // iterator over the input string
       len = code.length, // cache input length
       out = '', // generates the preprocessed output string
       stack = [1]; // preprocessing stack (state of active/inactive #ifdef/#else blocks we are currently inside)
     // a mapping 'symbolname' -> function(args) which evaluates the given cpp macro, e.g. #define FOO(x) x+10.
     defs['defined'] = (args) => { // built-in "#if defined(x)"" macro.
-#if ASSERTIONS
+  #if ASSERTIONS
       assert(args.length == 1);
       assert(/^[A-Za-z0-9_$]+$/.test(args[0].trim())); // Test that a C preprocessor identifier contains only valid characters (we likely parsed wrong if this fails)
-#endif
+  #endif
       return defs[args[0].trim()] ? 1 : 0;
     };
-
+  
     // Returns true if str[i] is whitespace.
     function isWhitespace(str, i) {
       return !(str.charCodeAt(i) > 32); // Compare as negation to treat end-of-string undefined as whitespace
     }
-
+  
     // Returns index to the next whitespace character starting at str[i].
     function nextWhitespace(str, i) {
       while (!isWhitespace(str, i)) ++i;
       return i;
     }
-
+  
     // Returns an integer ID classification of the character at str[idx], used for tokenization purposes.
     function classifyChar(str, idx) {
       var cc = str.charCodeAt(idx);
@@ -78,7 +78,7 @@ addToLibrary({
       }
       return cc < 33 ? 0 : 4; // 0=whitespace, 4=end-of-string
     }
-
+  
     // Returns a tokenized array of the given string expression, i.e. "FOO > BAR && BAZ" -> ["FOO", ">", "BAR", "&&", "BAZ"]
     // Optionally keeps whitespace as tokens to be able to reconstruct the original input string.
     function tokenize(exprString, keepWhitespace) {
@@ -107,7 +107,7 @@ addToLibrary({
       }
       return out;
     }
-
+  
     // Expands preprocessing macros on substring str[lineStart...lineEnd]
     function expandMacros(str, lineStart, lineEnd) {
       if (lineEnd === undefined) lineEnd = str.length;
@@ -150,13 +150,13 @@ addToLibrary({
       }
       return out;
     }
-
+  
     // Given a token list e.g. ['2', '>', '1'], returns a function that evaluates that token list.
     function buildExprTree(tokens) {
       // Consume tokens array into a function tree until the tokens array is exhausted
       // to a single root node that evaluates it.
       while (tokens.length > 1 || typeof tokens[0] != 'function') {
-        tokens = (function(tokens) {
+        tokens = ((tokens) => {
           // Find the index 'i' of the operator we should evaluate next:
           var i, j, p, operatorAndPriority = -2;
           for (j = 0; j < tokens.length; ++j) {
@@ -165,7 +165,7 @@ addToLibrary({
               operatorAndPriority = p;
             }
           }
-
+          
           if (operatorAndPriority == 13 /* parens '(' */) {
             // Find the closing parens position
             var j = find_closing_parens_index(tokens, i);
@@ -174,58 +174,58 @@ addToLibrary({
               return tokens;
             }
           }
-
+          
           if (operatorAndPriority == 4 /* unary ! */) {
             // Special case: the unary operator ! needs to evaluate right-to-left.
             i = tokens.lastIndexOf('!');
             var innerExpr = buildExprTree(tokens.slice(i+1, i+2));
-            tokens.splice(i, 2, function() { return !innerExpr(); })
+            tokens.splice(i, 2, () => !innerExpr();)
             return tokens;
           }
-
+          
           // A binary operator:
           if (operatorAndPriority >= 0) {
             var left = buildExprTree(tokens.slice(0, i));
             var right = buildExprTree(tokens.slice(i+1));
             switch(tokens[i]) {
-              case '&&': return [function() { return left() && right(); }];
-              case '||': return [function() { return left() || right(); }];
-              case '==': return [function() { return left() == right(); }];
-              case '!=': return [function() { return left() != right(); }];
-              case '<' : return [function() { return left() <  right(); }];
-              case '<=': return [function() { return left() <= right(); }];
-              case '>' : return [function() { return left() >  right(); }];
-              case '>=': return [function() { return left() >= right(); }];
-              case  '+': return [function() { return left()  + right(); }];
-              case  '-': return [function() { return left()  - right(); }];
-              case  '*': return [function() { return left()  * right(); }];
-              case  '/': return [function() { return Math.floor(left() / right()); }];
+              case '&&': return [() => left() && right();];
+              case '||': return [() => left() || right();];
+              case '==': return [() => left() == right();];
+              case '!=': return [() => left() != right();];
+              case '<' : return [() => left() <  right();];
+              case '<=': return [() => left() <= right();];
+              case '>' : return [() => left() >  right();];
+              case '>=': return [() => left() >= right();];
+              case  '+': return [() => left()  + right();];
+              case  '-': return [() => left()  - right();];
+              case  '*': return [() => left()  * right();];
+              case  '/': return [() => Math.floor(left() / right());];
             }
           }
           // else a number:
-#if ASSERTIONS
+          #if ASSERTIONS
           if (tokens[i] == ')') throw 'Parsing failure, mismatched parentheses in parsing!' + tokens.toString();
           assert(operatorAndPriority == -1);
-#endif
+          #endif
           var num = jstoi_q(tokens[i]);
-          return [function() { return num; }]
+          return [() => num;]
         })(tokens);
       }
       return tokens[0];
     }
-
+  
     // Preprocess the input one line at a time.
     for (; i < len; ++i) {
       // Find the start of the current line.
       var lineStart = i;
-
+  
       // Seek iterator to end of current line.
       i = code.indexOf('\n', i);
       if (i < 0) i = len;
-
+  
       // Find the first non-whitespace character on the line.
       for (var j = lineStart; j < i && isWhitespace(code, j); ++j);
-
+  
       // Is this a non-preprocessor directive line?
       var thisLineIsInActivePreprocessingBlock = stack[stack.length-1];
       if (code[j] != '#') { // non-preprocessor line?
@@ -235,7 +235,7 @@ addToLibrary({
         continue;
       }
       // This is a preprocessor directive line, e.g. #ifdef or #define.
-
+  
       // Parse the line as #<directive> <expression>
       var space = nextWhitespace(code, j);
       var directive = code.substring(j+1, space);
@@ -279,11 +279,11 @@ addToLibrary({
       case 'undef': if (thisLineIsInActivePreprocessingBlock) delete defs[expression]; break;
       default:
         if (directive != 'version' && directive != 'pragma' && directive != 'extension' && directive != 'line') { // GLSL shader compiler specific #directives.
-#if ASSERTIONS
+  #if ASSERTIONS
           err('Unrecognized preprocessor directive #' + directive + '!');
-#endif
+  #endif
         }
-
+  
         // Unknown preprocessor macro, just pass through the line to output.
         out += expandMacros(code, lineStart, i) + '\n';
       }

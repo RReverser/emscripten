@@ -76,9 +76,9 @@ var LibraryTracing = {
       var now = new Date();
       var session_id = now.getTime().toString() + '_' +
                           Math.floor((Math.random() * 100) + 1).toString();
-      EmscriptenTrace.loadWorkerViaXHR(collector_url + 'worker.js', function (worker) {
+      EmscriptenTrace.loadWorkerViaXHR(collector_url + 'worker.js', (worker) => {
         EmscriptenTrace.worker = worker;
-        EmscriptenTrace.worker.addEventListener('error', function (e) {
+        EmscriptenTrace.worker.addEventListener('error', (e) => {
           out('TRACE WORKER ERROR:');
           out(e);
         }, false);
@@ -97,7 +97,7 @@ var LibraryTracing = {
     configureForTest: () => {
       EmscriptenTrace.postEnabled = true;
       EmscriptenTrace.testingEnabled = true;
-      EmscriptenTrace.now = function() { return 0.0; };
+      EmscriptenTrace.now = () => 0.0;;
     },
 
     configureForGoogleWTF: () => {
@@ -275,7 +275,7 @@ var LibraryTracing = {
     }
   },
 
-  emscripten_trace_report_off_heap_data: function () {
+  emscripten_trace_report_off_heap_data: () => {
     function openal_audiodata_size() {
       if (typeof AL == 'undefined' || !AL.currentContext) {
         return 0;

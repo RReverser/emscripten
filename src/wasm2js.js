@@ -33,25 +33,23 @@ WebAssembly = {
   // That lets us use the length property automatically, which is simpler and
   // smaller (but instanceof will not report that an instance of Table is an
   // instance of this function).
-  Table: /** @constructor */ function(opts) {
+  Table: /** @constructor */ (opts) => {
     var ret = new Array(opts['initial']);
-#if ALLOW_TABLE_GROWTH
-    ret.grow = function(by) {
+  #if ALLOW_TABLE_GROWTH
+    ret.grow = (by) => {
       ret.push(null);
     };
-#else
-#if ASSERTIONS // without assertions we'll throw on calling the missing function
-    ret.grow = function(by) {
+  #else
+  #if ASSERTIONS // without assertions we'll throw on calling the missing function
+    ret.grow = (by) => {
       abort('Unable to grow wasm table. Build with ALLOW_TABLE_GROWTH.')
     };
-#endif // ASSERTIONS
-#endif // ALLOW_TABLE_GROWTH
-    ret.set = function(i, func) {
+  #endif // ASSERTIONS
+  #endif // ALLOW_TABLE_GROWTH
+    ret.set = (i, func) => {
       ret[i] = func;
     };
-    ret.get = function(i) {
-      return ret[i];
-    };
+    ret.get = (i) => ret[i];;
     return ret;
   },
 #endif

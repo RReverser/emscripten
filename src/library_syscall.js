@@ -586,20 +586,20 @@ var SyscallsLibrary = {
                   (writefds ? {{{ makeGetValue('writefds', 4, 'i32') }}} : 0) |
                   (exceptfds ? {{{ makeGetValue('exceptfds', 4, 'i32') }}} : 0);
 
-    var check = function(fd, low, high, val) {
+    var check = (fd, low, high, val) => {
       return (fd < 32 ? (low & val) : (high & val));
     };
-
+    
     for (var fd = 0; fd < nfds; fd++) {
       var mask = 1 << (fd % 32);
       if (!(check(fd, allLow, allHigh, mask))) {
         continue;  // index isn't in the set
       }
-
+    
       var stream = SYSCALLS.getStreamFromFD(fd);
-
+    
       var flags = SYSCALLS.DEFAULT_POLLMASK;
-
+    
       if (stream.stream_ops.poll) {
         var timeoutInMillis = -1;
         if (timeout) {
@@ -609,7 +609,7 @@ var SyscallsLibrary = {
         }
         flags = stream.stream_ops.poll(stream, timeoutInMillis);
       }
-
+    
       if ((flags & {{{ cDefs.POLLIN }}}) && check(fd, srcReadLow, srcReadHigh, mask)) {
         fd < 32 ? (dstReadLow = dstReadLow | mask) : (dstReadHigh = dstReadHigh | mask);
         total++;
@@ -623,7 +623,7 @@ var SyscallsLibrary = {
         total++;
       }
     }
-
+    
     if (readfds) {
       {{{ makeSetValue('readfds', '0', 'dstReadLow', 'i32') }}};
       {{{ makeSetValue('readfds', '4', 'dstReadHigh', 'i32') }}};
@@ -636,9 +636,9 @@ var SyscallsLibrary = {
       {{{ makeSetValue('exceptfds', '0', 'dstExceptLow', 'i32') }}};
       {{{ makeSetValue('exceptfds', '4', 'dstExceptHigh', 'i32') }}};
     }
-
+    
     return total;
-  },
+    },
   _msync_js__i53abi: true,
   _msync_js: (addr, len, prot, flags, fd, offset) => {
     if (isNaN(offset)) return {{{ cDefs.EOVERFLOW }}};

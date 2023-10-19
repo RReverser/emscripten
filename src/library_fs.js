@@ -34,19 +34,19 @@ addToLibrary({
     '$demangleAll',
 #endif
   ],
-  $FS__postset: function() {
+  $FS__postset: () => {
     // TODO: do we need noFSInit?
     addAtInit(`
-if (!Module["noFSInit"] && !FS.init.initialized)
+  if (!Module["noFSInit"] && !FS.init.initialized)
   FS.init();
-FS.ignorePermissions = false;
-`)
+  FS.ignorePermissions = false;
+  `)
     addAtExit('FS.quit();');
     // We must statically create FS.FSNode here so that it is created in a manner
     // that is visible to Closure compiler. That lets us use type annotations for
     // Closure to the "this" pointer in various node creation functions.
     return `
-var FSNode = /** @constructor */ function(parent, name, mode, rdev) {
+  var FSNode = /** @constructor */ function(parent, name, mode, rdev) {
   if (!parent) {
     parent = this;  // root node sets parent to itself
   }
@@ -59,42 +59,43 @@ var FSNode = /** @constructor */ function(parent, name, mode, rdev) {
   this.node_ops = {};
   this.stream_ops = {};
   this.rdev = rdev;
-};
-var readMode = 292/*{{{ cDefs.S_IRUGO }}}*/ | 73/*{{{ cDefs.S_IXUGO }}}*/;
-var writeMode = 146/*{{{ cDefs.S_IWUGO }}}*/;
-Object.defineProperties(FSNode.prototype, {
- read: {
+  };
+  var readMode = 292/*{{{ cDefs.S_IRUGO }}}*/ | 73/*{{{ cDefs.S_IXUGO }}}*/;
+  var writeMode = 146/*{{{ cDefs.S_IWUGO }}}*/;
+  Object.defineProperties(FSNode.prototype, {
+   read: {
   get: /** @this{FSNode} */function() {
    return (this.mode & readMode) === readMode;
   },
   set: /** @this{FSNode} */function(val) {
    val ? this.mode |= readMode : this.mode &= ~readMode;
   }
- },
- write: {
+   },
+   write: {
   get: /** @this{FSNode} */function() {
    return (this.mode & writeMode) === writeMode;
   },
   set: /** @this{FSNode} */function(val) {
    val ? this.mode |= writeMode : this.mode &= ~writeMode;
   }
- },
- isFolder: {
+   },
+   isFolder: {
   get: /** @this{FSNode} */function() {
    return FS.isDir(this.mode);
   }
- },
- isDevice: {
+   },
+   isDevice: {
   get: /** @this{FSNode} */function() {
    return FS.isChrdev(this.mode);
   }
- }
-});
-FS.FSNode = FSNode;
-FS.createPreloadedFile = FS_createPreloadedFile;
-FS.staticInit();` +
+   }
+  });
+  FS.FSNode = FSNode;
+  FS.createPreloadedFile = FS_createPreloadedFile;
+  FS.staticInit();` +
            // Get module methods from settings
-           '{{{ EXPORTED_RUNTIME_METHODS.filter(function(func) { return func.substr(0, 3) === 'FS_' }).map(function(func){return 'Module["' + func + '"] = FS.' + func.substr(3) + ";"}).reduce(function(str, func){return str + func;}, '') }}}';
+           '{{{ EXPORTED_RUNTIME_METHODS.filter(function(func) { return func.substr(0, 3) === 'FS_' }).map((func) => 'Module["' + func + '"] = FS.' + func.substr(3) + ";").reduce((str, func) => str + func;, '')
+  }}}';
   },
   $FS: {
     root: null,
