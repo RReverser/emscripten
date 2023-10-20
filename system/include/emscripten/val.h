@@ -34,6 +34,7 @@ val wrapped_extend(const std::string&, const val&);
 enum class EM_METHOD_CALLER_KIND {
   FUNCTION = 0,
   CONSTRUCTOR = 1,
+  METHOD = 2
 };
 
 // Implemented in JavaScript.  Don't call these directly.
@@ -486,23 +487,23 @@ public:
     using namespace internal;
 
     return internalCall<EM_METHOD_CALLER_KIND::CONSTRUCTOR, val>(
-      val::undefined(), std::forward<Args>(args)...);
+      0, std::forward<Args>(args)...);
   }
 
   template<typename... Args> val operator()(Args&&... args) const {
     using namespace internal;
 
     return internalCall<EM_METHOD_CALLER_KIND::FUNCTION, val>(
-      val::undefined(), std::forward<Args>(args)...);
+      0, std::forward<Args>(args)...);
   }
 
   template<typename ReturnValue, typename... Args>
   ReturnValue call(const char* name, Args&&... args) const {
     using namespace internal;
 
-    return (*this)[name]
-      .internalCall<EM_METHOD_CALLER_KIND::FUNCTION, ReturnValue>(
-        *this, std::forward<Args>(args)...);
+    return val(name)
+      .internalCall<EM_METHOD_CALLER_KIND::METHOD, ReturnValue>(
+        as_handle(), std::forward<Args>(args)...);
   }
 
   template<typename T, typename ...Policies>
@@ -586,14 +587,14 @@ private:
   friend val internal::wrapped_extend(const std::string& , const val& );
 
   template<internal::EM_METHOD_CALLER_KIND Kind, typename Ret, typename... Args>
-  Ret internalCall(const val& obj, Args&&... args) const {
+  Ret internalCall(EM_VAL objHandle, Args&&... args) const {
     using namespace internal;
 
     WireTypePack<Args...> argv(std::forward<Args>(args)...);
     EM_DESTRUCTORS destructors = nullptr;
     EM_GENERIC_WIRE_TYPE result = _emval_call(
       Signature<Kind, Ret, Args...>::get_method_caller(),
-      obj.as_handle(),
+      objHandle,
       as_handle(),
       &destructors,
       argv);
