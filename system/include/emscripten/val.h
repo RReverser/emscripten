@@ -93,7 +93,7 @@ EM_GENERIC_WIRE_TYPE _emval_call(
 EM_METHOD_CALLER _emval_get_method_caller(
     unsigned argCount, // including return value
     const TYPEID argTypes[],
-    EM_METHOD_CALLER_KIND asCtor);
+    EM_METHOD_CALLER_KIND kind);
 EM_VAL _emval_typeof(EM_VAL value);
 bool _emval_instanceof(EM_VAL object, EM_VAL constructor);
 bool _emval_is_number(EM_VAL object);
