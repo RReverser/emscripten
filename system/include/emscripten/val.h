@@ -34,7 +34,8 @@ val wrapped_extend(const std::string&, const val&);
 enum class EM_METHOD_CALLER_KIND {
   FUNCTION = 0,
   CONSTRUCTOR = 1,
-  METHOD = 2
+  METHOD = 2,
+  CAST = 3
 };
 
 // Implemented in JavaScript.  Don't call these directly.
@@ -65,8 +66,6 @@ EM_VAL _emval_new_object(void);
 EM_VAL _emval_new_cstring(const char*);
 EM_VAL _emval_new_u8string(const char*);
 EM_VAL _emval_new_u16string(const char16_t*);
-
-EM_VAL _emval_take_value(TYPEID type, EM_VAR_ARGS argv);
 
 EM_VAL _emval_get_global(const char* name);
 EM_VAL _emval_get_module_property(const char* name);
@@ -112,22 +111,6 @@ template<const char* address>
 struct symbol_registrar {
   symbol_registrar() {
     internal::_emval_register_symbol(address);
-  }
-};
-
-template<EM_METHOD_CALLER_KIND Kind, typename ReturnType, typename... Args>
-struct Signature {
-  /*
-  typedef typename BindingType<ReturnType>::WireType (*MethodCaller)(
-      EM_VAL object,
-      EM_VAL method,
-      EM_DESTRUCTORS* destructors,
-      typename BindingType<Args>::WireType...);
-  */
-  static EM_METHOD_CALLER get_method_caller() {
-    static constexpr WithPolicies<>::ArgTypeList<ReturnType, Args...> args;
-    thread_local EM_METHOD_CALLER mc = _emval_get_method_caller(args.getCount(), args.getTypes(), Kind);
-    return mc;
   }
 };
 
@@ -264,6 +247,32 @@ private:
   std::array<GenericWireType, PackSize<Args...>::value> elements;
 };
 
+template<EM_METHOD_CALLER_KIND Kind, typename ReturnType, typename... Args>
+struct Signature {
+  template<typename... Policies>
+  static EM_METHOD_CALLER get_method_caller() {
+    static constexpr typename WithPolicies<Policies...>::template ArgTypeList<ReturnType, Args...> args;
+    thread_local EM_METHOD_CALLER mc = _emval_get_method_caller(args.getCount(), args.getTypes(), Kind);
+    return mc;
+  }
+
+  template<typename... Policies>
+  static ReturnType invoke(EM_VAL objHandle, EM_VAL funcHandle, Args&&... args) {
+    using namespace internal;
+
+    WireTypePack<Args...> argv(std::forward<Args>(args)...);
+    EM_DESTRUCTORS destructors = nullptr;
+    EM_GENERIC_WIRE_TYPE result = _emval_call(
+      get_method_caller<Policies...>(),
+      objHandle,
+      funcHandle,
+      &destructors,
+      argv);
+    DestructorsRunner rd(destructors);
+    return fromGenericWireType<ReturnType>(result);
+  }
+};
+
 } // end namespace internal
 
 #define EMSCRIPTEN_SYMBOL(name)                                         \
@@ -353,8 +362,8 @@ public:
   explicit val(T&& value) {
     using namespace internal;
 
-    WireTypePack<T> argv(std::forward<T>(value));
-    new (this) val(_emval_take_value(internal::TypeID<T>::get(), argv));
+    new (this) val(Signature<EM_METHOD_CALLER_KIND::CAST, val, T>::template invoke<>(
+      0, 0, std::forward<T>(value)));
   }
 
   val() : val(EM_VAL(internal::_EMVAL_UNDEFINED)) {}
@@ -486,60 +495,31 @@ public:
   template<typename... Args> val new_(Args&&... args) const {
     using namespace internal;
 
-    return internalCall<EM_METHOD_CALLER_KIND::CONSTRUCTOR, val>(
-      0, std::forward<Args>(args)...);
+    return Signature<EM_METHOD_CALLER_KIND::CONSTRUCTOR, val, Args...>::template invoke<>(
+      0, as_handle(), std::forward<Args>(args)...);
   }
 
   template<typename... Args> val operator()(Args&&... args) const {
     using namespace internal;
 
-    return internalCall<EM_METHOD_CALLER_KIND::FUNCTION, val>(
-      0, std::forward<Args>(args)...);
+    return Signature<EM_METHOD_CALLER_KIND::FUNCTION, val, Args...>::template invoke<>(
+      0, as_handle(), std::forward<Args>(args)...);
   }
 
   template<typename ReturnValue, typename... Args>
   ReturnValue call(const char* name, Args&&... args) const {
     using namespace internal;
 
-    return val(name)
-      .internalCall<EM_METHOD_CALLER_KIND::METHOD, ReturnValue>(
-        as_handle(), std::forward<Args>(args)...);
+    return Signature<EM_METHOD_CALLER_KIND::METHOD, ReturnValue, Args...>::template invoke<>(
+      as_handle(), val(name).as_handle(), std::forward<Args>(args)...);
   }
 
-  template<typename T, typename ...Policies>
+  template<typename T, typename... Policies>
   T as(Policies...) const {
     using namespace internal;
 
-    typedef BindingType<T> BT;
-    typename WithPolicies<Policies...>::template ArgTypeList<T> targetType;
-
-    EM_DESTRUCTORS destructors = nullptr;
-    EM_GENERIC_WIRE_TYPE result = _emval_as(
-        as_handle(),
-        targetType.getTypes()[0],
-        &destructors);
-    DestructorsRunner dr(destructors);
-    return fromGenericWireType<T>(result);
-  }
-
-  template<>
-  int64_t as<int64_t>() const {
-    using namespace internal;
-
-    typedef BindingType<int64_t> BT;
-    typename WithPolicies<>::template ArgTypeList<int64_t> targetType;
-
-    return _emval_as_int64(as_handle(), targetType.getTypes()[0]);
-  }
-
-  template<>
-  uint64_t as<uint64_t>() const {
-    using namespace internal;
-
-    typedef BindingType<uint64_t> BT;
-    typename WithPolicies<>::template ArgTypeList<uint64_t> targetType;
-
-    return  _emval_as_uint64(as_handle(), targetType.getTypes()[0]);
+    return Signature<EM_METHOD_CALLER_KIND::CAST, T, const val&>::template invoke<Policies...>(
+      0, 0, *this);
   }
 
 // Prefer calling val::typeOf() over val::typeof(), since this form works in both C++11 and GNU++11 build modes. "typeof" is a reserved word in GNU++11 extensions.
@@ -585,22 +565,6 @@ private:
 
   template<typename WrapperType>
   friend val internal::wrapped_extend(const std::string& , const val& );
-
-  template<internal::EM_METHOD_CALLER_KIND Kind, typename Ret, typename... Args>
-  Ret internalCall(EM_VAL objHandle, Args&&... args) const {
-    using namespace internal;
-
-    WireTypePack<Args...> argv(std::forward<Args>(args)...);
-    EM_DESTRUCTORS destructors = nullptr;
-    EM_GENERIC_WIRE_TYPE result = _emval_call(
-      Signature<Kind, Ret, Args...>::get_method_caller(),
-      objHandle,
-      as_handle(),
-      &destructors,
-      argv);
-    DestructorsRunner rd(destructors);
-    return fromGenericWireType<Ret>(result);
-  }
 
   template<typename T>
   val val_ref(const T& v) const {

@@ -272,7 +272,6 @@ var LibraryEmVal = {
   _emval_call__deps: ['$emval_methodCallers', '$Emval'],
   _emval_call: (caller, objHandle, funcHandle, destructorsRef, args) => {
     caller = emval_methodCallers[caller];
-    funcHandle = Emval.toValue(funcHandle);
     return caller(objHandle, funcHandle, destructorsRef, args);
   },
 
@@ -328,13 +327,16 @@ var LibraryEmVal = {
 
 #if !DYNAMIC_EXECUTION
     var argN = new Array(argCount);
-    var invokerFunction = (objHandle, func, destructorsRef, args) => {
+    var invokerFunction = (objHandle, funcHandle, destructorsRef, args) => {
       var offset = 0;
       for (var i = 0; i < argCount; ++i) {
         argN[i] = types[i]['readValueFromPointer'](args + offset);
         offset += types[i]['argPackAdvance'];
       }
-      var obj, rv;
+      var obj, rv, func;
+      if (kind !== /* CAST */ 3) {
+        func = Emval.toValue(funcHandle);
+      }
       switch (kind) {
         case /* METHOD */ 2:
           obj = Emval.toValue(objHandle);
@@ -345,6 +347,9 @@ var LibraryEmVal = {
           break;
         case /* CONSTRUCTOR */ 1:
           rv = reflectConstruct(func, argN);
+          break;
+        case /* CAST */ 3:
+          rv = argN[0];
           break;
       }
       for (var i = 0; i < argCount; ++i) {
@@ -358,7 +363,7 @@ var LibraryEmVal = {
     var signatureName = retType.name + "_$" + types.map(t => t.name).join("_") + "$";
     var functionName = makeLegalFunctionName("methodCaller_" + signatureName);
     var functionBody =
-      `return function ${functionName}(objHandle, func, destructorsRef, args) {\n`;
+      `return function ${functionName}(objHandle, funcHandle, destructorsRef, args) {\n`;
 
     var offset = 0;
     var argsList = []; // 'obj?, arg0, arg1, arg2, ... , argN'
@@ -372,9 +377,17 @@ var LibraryEmVal = {
         `  var arg${i} = argType${i}.readValueFromPointer(args${offset ? "+" + offset : ""});\n`;
       offset += types[i]['argPackAdvance'];
     }
-    var invoker = ['func', 'new func', 'Emval_toValue(objHandle)[func]'][kind];
-    functionBody +=
-      `  var rv = ${invoker}(${argsList.join(", ")});\n`;
+    var resultVar;
+    if (kind !== /* CAST */ 3) {
+      functionBody +=
+        `  var func = Emval_toValue(funcHandle);\n`;
+      var invoker = ['func', 'new func', 'Emval_toValue(objHandle)[func]'][kind];
+      functionBody +=
+        `  var rv = ${invoker}(${argsList.join(", ")});\n`;
+      resultVar = 'rv';
+    } else {
+      resultVar = argsList[0];
+    }
     for (var i = 0; i < argCount; ++i) {
       if (types[i]['deleteObject']) {
         functionBody +=
@@ -385,7 +398,7 @@ var LibraryEmVal = {
       params.push("emval_returnValue");
       args.push(emval_returnValue);
       functionBody +=
-        "  return emval_returnValue(retType, destructorsRef, rv);\n";
+        `  return emval_returnValue(retType, destructorsRef, ${resultVar});\n`;
     }
     functionBody +=
       "};\n";
