@@ -83,6 +83,7 @@ bool _emval_not(EM_VAL object);
 
 EM_GENERIC_WIRE_TYPE _emval_call(
     EM_METHOD_CALLER caller,
+    EM_VAL obj,
     EM_VAL func,
     EM_DESTRUCTORS* destructors,
     EM_VAR_ARGS argv);
@@ -93,12 +94,6 @@ EM_METHOD_CALLER _emval_get_method_caller(
     unsigned argCount, // including return value
     const TYPEID argTypes[],
     EM_METHOD_CALLER_KIND asCtor);
-EM_GENERIC_WIRE_TYPE _emval_call_method(
-    EM_METHOD_CALLER caller,
-    EM_VAL handle,
-    const char* methodName,
-    EM_DESTRUCTORS* destructors,
-    EM_VAR_ARGS argv);
 EM_VAL _emval_typeof(EM_VAL value);
 bool _emval_instanceof(EM_VAL object, EM_VAL constructor);
 bool _emval_is_number(EM_VAL object);
@@ -487,32 +482,27 @@ public:
     return internal::_emval_delete(as_handle(), val_ref(property).as_handle());
   }
 
-  template<typename... Args>
-  val new_(Args&&... args) const {
+  template<typename... Args> val new_(Args&&... args) const {
     using namespace internal;
 
-    return internalCall<EM_METHOD_CALLER_KIND::CONSTRUCTOR, val>(_emval_call, std::forward<Args>(args)...);
+    return internalCall<EM_METHOD_CALLER_KIND::CONSTRUCTOR, val>(
+      val::undefined(), std::forward<Args>(args)...);
   }
 
-  template<typename... Args>
-  val operator()(Args&&... args) const {
+  template<typename... Args> val operator()(Args&&... args) const {
     using namespace internal;
 
-    return internalCall<EM_METHOD_CALLER_KIND::FUNCTION, val>(_emval_call, std::forward<Args>(args)...);
+    return internalCall<EM_METHOD_CALLER_KIND::FUNCTION, val>(
+      val::undefined(), std::forward<Args>(args)...);
   }
 
   template<typename ReturnValue, typename... Args>
   ReturnValue call(const char* name, Args&&... args) const {
     using namespace internal;
 
-    return internalCall<EM_METHOD_CALLER_KIND::FUNCTION, ReturnValue>(
-      [name](EM_METHOD_CALLER caller,
-             EM_VAL handle,
-             EM_DESTRUCTORS* destructorsRef,
-             EM_VAR_ARGS argv) {
-        return _emval_call_method(caller, handle, name, destructorsRef, argv);
-      },
-      std::forward<Args>(args)...);
+    return (*this)[name]
+      .internalCall<EM_METHOD_CALLER_KIND::FUNCTION, ReturnValue>(
+        *this, std::forward<Args>(args)...);
   }
 
   template<typename T, typename ...Policies>
@@ -595,14 +585,15 @@ private:
   template<typename WrapperType>
   friend val internal::wrapped_extend(const std::string& , const val& );
 
-  template<internal::EM_METHOD_CALLER_KIND Kind, typename Ret, typename Implementation, typename... Args>
-  Ret internalCall(Implementation impl, Args&&... args) const {
+  template<internal::EM_METHOD_CALLER_KIND Kind, typename Ret, typename... Args>
+  Ret internalCall(const val& obj, Args&&... args) const {
     using namespace internal;
 
     WireTypePack<Args...> argv(std::forward<Args>(args)...);
     EM_DESTRUCTORS destructors = nullptr;
-    EM_GENERIC_WIRE_TYPE result = impl(
+    EM_GENERIC_WIRE_TYPE result = _emval_call(
       Signature<Kind, Ret, Args...>::get_method_caller(),
+      obj.as_handle(),
       as_handle(),
       &destructors,
       argv);

@@ -270,10 +270,11 @@ var LibraryEmVal = {
   },
 
   _emval_call__deps: ['$emval_methodCallers', '$Emval'],
-  _emval_call: (caller, handle, destructorsRef, args) => {
+  _emval_call: (caller, objHandle, funcHandle, destructorsRef, args) => {
     caller = emval_methodCallers[caller];
-    handle = Emval.toValue(handle);
-    return caller(null, handle, destructorsRef, args);
+    objHandle = Emval.toValue(objHandle);
+    funcHandle = Emval.toValue(funcHandle);
+    return caller(objHandle, funcHandle, destructorsRef, args);
   },
 
   $emval_lookupTypes__deps: ['$requireRegisteredType'],
@@ -385,14 +386,6 @@ var LibraryEmVal = {
     var invokerFunction = newFunc(Function, params).apply(null, args);
 #endif
     return emval_addMethodCaller(invokerFunction);
-  },
-
-  _emval_call_method__deps: ['$getStringOrSymbol', '$emval_methodCallers', '$Emval'],
-  _emval_call_method: (caller, objHandle, methodName, destructorsRef, args) => {
-    caller = emval_methodCallers[caller];
-    objHandle = Emval.toValue(objHandle);
-    methodName = getStringOrSymbol(methodName);
-    return caller(objHandle, objHandle[methodName], destructorsRef, args);
   },
 
   _emval_typeof__deps: ['$Emval'],
