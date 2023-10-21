@@ -244,32 +244,6 @@ private:
   std::array<GenericWireType, PackSize<Args...>::value> elements;
 };
 
-template<EM_METHOD_CALLER_KIND Kind, typename ReturnType, typename... Args>
-struct Signature {
-  template<typename... Policies>
-  static EM_METHOD_CALLER get_method_caller() {
-    static constexpr typename WithPolicies<Policies...>::template ArgTypeList<ReturnType, Args...> args;
-    thread_local EM_METHOD_CALLER mc = _emval_get_method_caller(args.getCount(), args.getTypes(), Kind);
-    return mc;
-  }
-
-  template<typename... Policies>
-  static ReturnType invoke(EM_VAL objHandle, EM_VAL funcHandle, Args&&... args) {
-    using namespace internal;
-
-    WireTypePack<Args...> argv(std::forward<Args>(args)...);
-    EM_DESTRUCTORS destructors = nullptr;
-    EM_GENERIC_WIRE_TYPE result = _emval_call(
-      get_method_caller<Policies...>(),
-      objHandle,
-      funcHandle,
-      &destructors,
-      argv);
-    DestructorsRunner rd(destructors);
-    return fromGenericWireType<ReturnType>(result);
-  }
-};
-
 } // end namespace internal
 
 #define EMSCRIPTEN_SYMBOL(name)                                         \
@@ -359,7 +333,7 @@ public:
   explicit val(T&& value) {
     using namespace internal;
 
-    new (this) val(Signature<EM_METHOD_CALLER_KIND::CAST, val, T>::template invoke<>(
+    new (this) val(internalCall<EM_METHOD_CALLER_KIND::CAST, val>(
       0, 0, std::forward<T>(value)));
   }
 
@@ -492,14 +466,14 @@ public:
   template<typename... Args> val new_(Args&&... args) const {
     using namespace internal;
 
-    return Signature<EM_METHOD_CALLER_KIND::CONSTRUCTOR, val, Args...>::template invoke<>(
+    return internalCall<EM_METHOD_CALLER_KIND::CONSTRUCTOR, val>(
       0, as_handle(), std::forward<Args>(args)...);
   }
 
   template<typename... Args> val operator()(Args&&... args) const {
     using namespace internal;
 
-    return Signature<EM_METHOD_CALLER_KIND::FUNCTION, val, Args...>::template invoke<>(
+    return internalCall<EM_METHOD_CALLER_KIND::FUNCTION, val>(
       0, as_handle(), std::forward<Args>(args)...);
   }
 
@@ -507,7 +481,7 @@ public:
   ReturnValue call(const char* name, Args&&... args) const {
     using namespace internal;
 
-    return Signature<EM_METHOD_CALLER_KIND::METHOD, ReturnValue, Args...>::template invoke<>(
+    return internalCall<EM_METHOD_CALLER_KIND::METHOD, ReturnValue>(
       as_handle(), val(name).as_handle(), std::forward<Args>(args)...);
   }
 
@@ -515,7 +489,7 @@ public:
   T as(Policies...) const {
     using namespace internal;
 
-    return Signature<EM_METHOD_CALLER_KIND::CAST, T, const val&>::template invoke<Policies...>(
+    return internalCall<EM_METHOD_CALLER_KIND::CAST, T, WithPolicies<Policies...>>(
       0, 0, *this);
   }
 
@@ -570,6 +544,25 @@ private:
 
   const val& val_ref(const val& v) const {
     return v;
+  }
+
+  template<internal::EM_METHOD_CALLER_KIND Kind, typename ReturnType, typename Policy = internal::WithPolicies<>, typename... Args>
+  static ReturnType internalCall(EM_VAL objHandle, EM_VAL funcHandle, Args&&... args) {
+    using namespace internal;
+
+    static constexpr typename Policy::template ArgTypeList<ReturnType, Args...> argsSig;
+    thread_local EM_METHOD_CALLER method_caller = _emval_get_method_caller(argsSig.getCount(), argsSig.getTypes(), Kind);
+
+    WireTypePack<Args...> argv(std::forward<Args>(args)...);
+    EM_DESTRUCTORS destructors = nullptr;
+    EM_GENERIC_WIRE_TYPE result = _emval_call(
+      method_caller,
+      objHandle,
+      funcHandle,
+      &destructors,
+      argv);
+    DestructorsRunner rd(destructors);
+    return fromGenericWireType<ReturnType>(result);
   }
 
   pthread_t thread;
