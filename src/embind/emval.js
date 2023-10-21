@@ -333,29 +333,29 @@ var LibraryEmVal = {
         argN[i] = types[i]['readValueFromPointer'](args + offset);
         offset += types[i]['argPackAdvance'];
       }
-      var obj, rv, func;
+      let rv;
       if (kind !== /* CAST */ 3) {
+        let obj, func;
         func = Emval.toValue(funcHandle);
-      }
-      switch (kind) {
-        case /* METHOD */ 2:
-          obj = Emval.toValue(objHandle);
-          func = obj[func];
-          // fallthrough
-        case /* FUNCTION */ 0:
-          rv = func.apply(obj, argN);
-          break;
-        case /* CONSTRUCTOR */ 1:
-          rv = reflectConstruct(func, argN);
-          break;
-        case /* CAST */ 3:
-          rv = argN[0];
-          break;
-      }
-      for (var i = 0; i < argCount; ++i) {
-        if (types[i].deleteObject) {
-          types[i].deleteObject(argN[i]);
+        switch (kind) {
+          case /* METHOD */ 2:
+            obj = Emval.toValue(objHandle);
+            func = obj[func];
+            // fallthrough
+          case /* FUNCTION */ 0:
+            rv = func.apply(obj, argN);
+            break;
+          case /* CONSTRUCTOR */ 1:
+            rv = reflectConstruct(func, argN);
+            break;
         }
+        for (var i = 0; i < argCount; ++i) {
+          if (types[i].deleteObject) {
+            types[i].deleteObject(argN[i]);
+          }
+        }
+      } else {
+        rv = argN[0];
       }
       return emval_returnValue(retType, destructorsRef, rv);
     };
@@ -385,14 +385,14 @@ var LibraryEmVal = {
       functionBody +=
         `  var rv = ${invoker}(${argsList.join(", ")});\n`;
       resultVar = 'rv';
+      for (var i = 0; i < argCount; ++i) {
+        if (types[i]['deleteObject']) {
+          functionBody +=
+            `  argType${i}.deleteObject(arg${i});\n`;
+        }
+      }
     } else {
       resultVar = argsList[0];
-    }
-    for (var i = 0; i < argCount; ++i) {
-      if (types[i]['deleteObject']) {
-        functionBody +=
-          `  argType${i}.deleteObject(arg${i});\n`;
-      }
     }
     if (!retType.isVoid) {
       params.push("emval_returnValue");
