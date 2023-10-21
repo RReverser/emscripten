@@ -1993,7 +1993,9 @@ inline void register_type(const char* name) {
 #define EMSCRIPTEN_BINDINGS(name)                                              \
   static void embind_init_##name();                                            \
   static struct EmBindInit_##name : emscripten::internal::InitFunc {           \
-    EmBindInit_##name() : InitFunc(embind_init_##name) {}                      \
+    EmBindInit_##name() : InitFunc(embind_init_##name) { \
+    embind_init_##name(); \
+    }                       \
   } EmBindInit_##name##_instance;                                              \
   static void embind_init_##name()
 

@@ -64,39 +64,6 @@ void _embind_register_bindings(InitFunc* f) {
 
 }
 
-namespace {
-// matches typeMapping in embind.js
-enum TypedArrayIndex {
-  Int8Array,
-  Uint8Array,
-  Int16Array,
-  Uint16Array,
-  Int32Array,
-  Uint32Array,
-  Float32Array,
-  Float64Array,
-  // Only available if WASM_BIGINT
-  Int64Array,
-  Uint64Array,
-};
-
-template <typename T> constexpr TypedArrayIndex getTypedArrayIndex() {
-  static_assert(internal::typeSupportsMemoryView<T>(), "type does not map to a typed array");
-  return std::is_floating_point<T>::value
-           ? (sizeof(T) == 4 ? Float32Array : Float64Array)
-           : (sizeof(T) == 1
-                 ? (std::is_signed<T>::value ? Int8Array : Uint8Array)
-                 : (sizeof(T) == 2 ? (std::is_signed<T>::value ? Int16Array : Uint16Array)
-                                   : (sizeof(T) == 4 ? (std::is_signed<T>::value ? Int32Array : Uint32Array)
-                                                     : (std::is_signed<T>::value ? Int64Array : Uint64Array))));
-}
-
-template <typename T> static void register_memory_view(const char* name) {
-  using namespace internal;
-  _embind_register_memory_view(TypeID<memory_view<T>>::get(), getTypedArrayIndex<T>(), name);
-}
-} // namespace
-
 EMSCRIPTEN_BINDINGS(builtin) {
   using namespace emscripten::internal;
 
@@ -109,33 +76,4 @@ EMSCRIPTEN_BINDINGS(builtin) {
   _embind_register_std_wstring(TypeID<std::u16string>::get(), sizeof(char16_t), "std::u16string");
   _embind_register_std_wstring(TypeID<std::u32string>::get(), sizeof(char32_t), "std::u32string");
   _embind_register_emval(TypeID<val>::get(), "emscripten::val");
-
-  // Some of these types are aliases for each other. Luckily,
-  // embind.js's _embind_register_memory_view ignores duplicate
-  // registrations rather than asserting, so the first
-  // register_memory_view call for a particular type will take
-  // precedence.
-
-  register_memory_view<char>("emscripten::memory_view<char>");
-  register_memory_view<signed char>("emscripten::memory_view<signed char>");
-  register_memory_view<unsigned char>("emscripten::memory_view<unsigned char>");
-
-  register_memory_view<short>("emscripten::memory_view<short>");
-  register_memory_view<unsigned short>("emscripten::memory_view<unsigned short>");
-  register_memory_view<int>("emscripten::memory_view<int>");
-  register_memory_view<unsigned int>("emscripten::memory_view<unsigned int>");
-  register_memory_view<long>("emscripten::memory_view<long>");
-  register_memory_view<unsigned long>("emscripten::memory_view<unsigned long>");
-
-  register_memory_view<int8_t>("emscripten::memory_view<int8_t>");
-  register_memory_view<uint8_t>("emscripten::memory_view<uint8_t>");
-  register_memory_view<int16_t>("emscripten::memory_view<int16_t>");
-  register_memory_view<uint16_t>("emscripten::memory_view<uint16_t>");
-  register_memory_view<int32_t>("emscripten::memory_view<int32_t>");
-  register_memory_view<uint32_t>("emscripten::memory_view<uint32_t>");
-  register_memory_view<int64_t>("emscripten::memory_view<int64_t>");
-  register_memory_view<uint64_t>("emscripten::memory_view<uint64_t>");
-
-  register_memory_view<float>("emscripten::memory_view<float>");
-  register_memory_view<double>("emscripten::memory_view<double>");
 }

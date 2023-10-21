@@ -46,18 +46,9 @@ template<typename ElementType> struct memory_view {
   const void* const data;
 };
 
-// Note that 'data' is marked const just so it can accept both
-// const and nonconst pointers.  It is certainly possible for
-// JavaScript to modify the C heap through the typed array given,
-// as it merely aliases the C heap.
-template<typename T>
-inline memory_view<T> typed_memory_view(size_t size, const T* data) {
-  static_assert(internal::typeSupportsMemoryView<T>(),
-                "type of typed_memory_view is invalid");
-  return memory_view<T>(size, data);
-}
-
 namespace internal {
+
+typedef const void* TYPEID;
 
 extern "C" {
 
@@ -101,15 +92,14 @@ struct InitFunc {
   InitFunc(void (*init_func)()) : init_func(init_func) {
     // This the function immediately upon constructions, and also register
     // it so that it can be called again on each worker that starts.
-    init_func();
+    // init_func();
     _embind_register_bindings(this);
   }
   void (*init_func)();
   InitFunc* next = nullptr;
 };
-}
 
-typedef const void* TYPEID;
+} // extern "C"
 
 // We don't need the full std::type_info implementation.  We
 // just need a unique identifier per type and polymorphic type
@@ -316,24 +306,63 @@ template<typename T, typename = void> struct BindingType;
 template<typename T> void register_native_type(const char* name) {
   using namespace internal;
   if constexpr (std::is_floating_point<T>::value) {
-    static_assert(sizeof(T) == 4 || sizeof(T) == 8);
     _embind_register_float(TypeID<T>::get(), name, sizeof(T));
   } else {
-    static_assert(std::is_integral<T>::value);
-    if constexpr (sizeof(T) == 1 || sizeof(T) == 2 || sizeof(T) == 4) {
+    static_assert(std::is_integral<T>::value, "Not a numeric type");
+    if constexpr (sizeof(T) < 8) {
       _embind_register_integer(TypeID<T>::get(),
-                               name,
-                               sizeof(T),
-                               std::numeric_limits<T>::min(),
-                               std::numeric_limits<T>::max());
+                                name,
+                                sizeof(T),
+                                std::numeric_limits<T>::min(),
+                                std::numeric_limits<T>::max());
     } else {
-      static_assert(sizeof(T) == 8);
       _embind_register_bigint(TypeID<T>::get(),
                               name,
                               sizeof(T),
                               std::numeric_limits<T>::min(),
                               std::numeric_limits<T>::max());
     }
+  }
+}
+
+// matches typeMapping in embind.js
+enum TypedArrayIndex {
+  Int8Array,
+  Uint8Array,
+  Int16Array,
+  Uint16Array,
+  Int32Array,
+  Uint32Array,
+  Float32Array,
+  Float64Array,
+  // Only available if WASM_BIGINT
+  Int64Array,
+  Uint64Array,
+};
+
+template <typename T>
+constexpr TypedArrayIndex getTypedArrayIndex() {
+  if constexpr (std::is_floating_point<T>::value) {
+    switch (sizeof(T)) {
+      case 4:
+        return Float32Array;
+      case 8:
+        return Float64Array;
+    }
+  } else {
+    static_assert(std::is_integral<T>::value, "Not a numeric type");
+    switch (sizeof(T)) {
+      case 1:
+        return std::is_signed<T>::value ? Int8Array : Uint8Array;
+      case 2:
+        return std::is_signed<T>::value ? Int16Array : Uint16Array;
+      case 4:
+        return std::is_signed<T>::value ? Int32Array : Uint32Array;
+      case 8:
+        return std::is_signed<T>::value ? Int64Array : Uint64Array;
+    }
+    // if constexpr reaches here, compiler will complain about no return value
+    // if we accidentally pass unsupported type
   }
 }
 
@@ -351,31 +380,29 @@ inline static InitFunc bindingTypeRegistration =
 // memory_view.  (That is, fromWireType is not implemented
 // on the C++ side, nor is toWireType implemented in
 // JavaScript.)
-#define EMSCRIPTEN_DEFINE_NATIVE_BINDING_TYPE(type)                            \
-  template<> struct BindingType<type> {                                        \
-    typedef type WireType;                                                     \
-    static void register_js() { register_native_type<type>(#type); }           \
-    constexpr static WireType toWireType(const type& v) {                      \
-      (void)nativeTypeRegistrationToken<type>;                                 \
+#define EMSCRIPTEN_DEFINE_NATIVE_BINDING_TYPE(T)                            \
+  template<> struct BindingType<T> {                                        \
+    typedef T WireType;                                                     \
+    static void register_js() { register_native_type<T>(#T); }           \
+    constexpr static WireType toWireType(const T& v) {                      \
+      (void)bindingTypeRegistration<T>;                                 \
       return v;                                                                \
     }                                                                          \
-    constexpr static type fromWireType(WireType v) {                           \
-      (void)nativeTypeRegistrationToken<type>;                                 \
+    constexpr static T fromWireType(WireType v) {                           \
+      (void)bindingTypeRegistration<T>;                                 \
       return v;                                                                \
     }                                                                          \
   };                                                                           \
-  template<typename ElementType>                                               \
-  struct BindingType<memory_view<ElementType>> {                               \
-    typedef memory_view<ElementType> WireType;                                 \
+  template<> struct BindingType<memory_view<T>> {                               \
+    typedef memory_view<T> WireType;                                 \
     static void register_js() {                                                \
-      register_native_type<memory_view<ElementType>>(#type);                   \
       _embind_register_memory_view(                                            \
         TypeID<memory_view<T>>::get(),                                         \
         getTypedArrayIndex<T>(),                                               \
-        "emscripten::memory_view<" #type ">");                                 \
+        "emscripten::memory_view<" #T ">");                                 \
     }                                                                          \
-    static WireType toWireType(const memory_view<ElementType>& mv) {           \
-      (void)nativeTypeRegistrationToken<memory_view<ElementType>>;             \
+    static WireType toWireType(const memory_view<T>& mv) {           \
+      (void)bindingTypeRegistration<memory_view<T>>;             \
       return mv;                                                               \
     }                                                                          \
   };
@@ -402,7 +429,7 @@ struct BindingType<void> {
 template<>
 struct BindingType<bool> {
     typedef bool WireType;
-    static void register_bool() {
+    static void register_js() {
         static_assert(sizeof(bool) == 1);
         _embind_register_bool(TypeID<bool>::get(), "bool", true, false);
     }
@@ -525,6 +552,8 @@ auto toWireType(T&& v) -> typename BindingType<T>::WireType {
     return BindingType<T>::toWireType(std::forward<T>(v));
 }
 
+
+
 template<typename T>
 constexpr bool typeSupportsMemoryView() {
     return (std::is_floating_point<T>::value &&
@@ -535,5 +564,16 @@ constexpr bool typeSupportsMemoryView() {
 }
 
 } // namespace internal
+
+// Note that 'data' is marked const just so it can accept both
+// const and nonconst pointers.  It is certainly possible for
+// JavaScript to modify the C heap through the typed array given,
+// as it merely aliases the C heap.
+template<typename T>
+inline memory_view<T> typed_memory_view(size_t size, const T* data) {
+  static_assert(internal::typeSupportsMemoryView<T>(),
+                "type of typed_memory_view is invalid");
+  return memory_view<T>(size, data);
+}
 
 } // namespace emscripten
