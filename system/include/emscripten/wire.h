@@ -82,6 +82,15 @@ void _embind_register_memory_view(
     unsigned typedArrayIndex,
     const char* name);
 
+void _embind_register_std_string(
+    TYPEID stringType,
+    const char* name);
+
+void _embind_register_std_wstring(
+    TYPEID stringType,
+    size_t charSize,
+    const char* name);
+
 // Register an InitFunc in the global linked list of init functions.
 void _embind_register_bindings(struct InitFunc* f);
 
@@ -443,6 +452,25 @@ struct BindingType<bool> {
     }
 };
 
+template<typename String>
+constexpr const char *getStringTypeName() = delete;
+
+template<> constexpr const char *getStringTypeName<std::string>() {
+    return "std::string";
+}
+
+template<> constexpr const char *getStringTypeName<std::basic_string<unsigned char>>() {
+    return "std::basic_string<unsigned char>";
+}
+
+template<> constexpr const char *getStringTypeName<std::u16string>() {
+    return "std::u16string";
+}
+
+template<> constexpr const char *getStringTypeName<std::u32string>() {
+    return "std::u32string";
+}
+
 template<typename T>
 struct BindingType<std::basic_string<T>> {
     using String = std::basic_string<T>;
@@ -451,6 +479,13 @@ struct BindingType<std::basic_string<T>> {
         size_t length;
         T data[1]; // trailing data
     }* WireType;
+    static void register_js() {
+        if constexpr (sizeof(T) == 1) {
+            _embind_register_std_string(TypeID<String>::get(), getStringTypeName<String>());
+        } else {
+            _embind_register_std_wstring(TypeID<String>::get(), sizeof(T), getStringTypeName<String>());
+        }
+    }
     static WireType toWireType(const String& v) {
         WireType wt = (WireType)malloc(sizeof(size_t) + v.length() * sizeof(T));
         wt->length = v.length();

@@ -53,15 +53,6 @@ void _embind_register_void(
     TYPEID voidType,
     const char* name);
 
-void _embind_register_std_string(
-    TYPEID stringType,
-    const char* name);
-
-void _embind_register_std_wstring(
-    TYPEID stringType,
-    size_t charSize,
-    const char* name);
-
 void _embind_register_emval(
     TYPEID emvalType,
     const char* name);
