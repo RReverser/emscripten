@@ -67,6 +67,5 @@ void _embind_register_bindings(InitFunc* f) {
 EMSCRIPTEN_BINDINGS(builtin) {
   using namespace emscripten::internal;
 
-  _embind_register_void(TypeID<void>::get(), "void");
   _embind_register_emval(TypeID<val>::get(), "emscripten::val");
 }

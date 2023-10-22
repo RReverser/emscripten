@@ -52,6 +52,13 @@ typedef const void* TYPEID;
 
 extern "C" {
 
+bool _embind_is_registered_type(
+    TYPEID type);
+
+void _embind_register_void(
+    TYPEID voidType,
+    const char* name);
+
 void _embind_register_bool(
     TYPEID boolType,
     const char* name,
@@ -131,8 +138,20 @@ struct Canonicalized {
 };
 
 template<typename T>
+struct register_js {
+    register_js(TYPEID id) {}
+};
+
+template<typename T>
 struct LightTypeID {
-    static constexpr TYPEID get() {
+    static TYPEID get() {
+        TYPEID id = get_without_registration();
+        register_js_once_per_worker(id);
+        return id;
+    }
+
+private:
+    static constexpr TYPEID get_without_registration() {
         if (has_unbound_type_names) {
 #if __has_feature(cxx_rtti)
             return &typeid(T);
@@ -147,20 +166,33 @@ struct LightTypeID {
         typedef typename Canonicalized<T>::type C;
         return CanonicalizedID<C>::get();
     }
+
+    static void register_js_once_per_worker(TYPEID id) {
+        thread_local bool registered;
+        // slightly cheaper than inline bool init by avoiding extra guard variable
+        if (!registered) {
+            // It's possible this thread is reusing same Web Worker,
+            // in which case the type may already be registered in JS,
+            // or it might've been registered dynamically by EMSCRIPTEN_BINDINGS.
+            if (!_embind_is_registered_type(id)) {
+                typename register_js<T>::register_js reg(id);
+            }
+            registered = true;
+        }
+    }
 };
 
+// This methods deals with up/downcasting between classes via RTTI when available.
+// Since it gets dynamic TYPEID, we can't use automatic type registration here -
+// the assumption is that it's been done by EMSCRIPTEN_BINDINGS() block, otherwise
+// it will fail at runtime.
 template<typename T>
 constexpr TYPEID getLightTypeID(const T& value) {
-    if (has_unbound_type_names) {
 #if __has_feature(cxx_rtti)
+    if (has_unbound_type_names) {
         return &typeid(value);
-#else
-        static_assert(!has_unbound_type_names,
-            "Unbound type names are illegal with RTTI disabled. "
-            "Either add -DEMSCRIPTEN_HAS_UNBOUND_TYPE_NAMES=0 to or remove -fno-rtti "
-            "from the compiler arguments");
-#endif
     }
+#endif
     return LightTypeID<T>::get();
 }
 
@@ -278,7 +310,7 @@ struct ArgArrayGetter;
 template<typename... Args>
 struct ArgArrayGetter<TypeList<Args...>> {
     static const TYPEID* get() {
-        static constexpr TYPEID types[] = { TypeID<Args>::get()... };
+        thread_local TYPEID types[] = { TypeID<Args>::get()... };
         return types;
     }
 };
@@ -312,20 +344,20 @@ struct WithPolicies {
 // specialize groups of classes via SFINAE.
 template<typename T, typename = void> struct BindingType;
 
-template<typename T> void register_native_type(const char* name) {
+template<typename T> void register_native_type(TYPEID id, const char* name) {
   using namespace internal;
   if constexpr (std::is_floating_point<T>::value) {
-    _embind_register_float(TypeID<T>::get(), name, sizeof(T));
+    _embind_register_float(id, name, sizeof(T));
   } else {
     static_assert(std::is_integral<T>::value, "Not a numeric type");
     if constexpr (sizeof(T) < 8) {
-      _embind_register_integer(TypeID<T>::get(),
+      _embind_register_integer(id,
                                 name,
                                 sizeof(T),
                                 std::numeric_limits<T>::min(),
                                 std::numeric_limits<T>::max());
     } else {
-      _embind_register_bigint(TypeID<T>::get(),
+      _embind_register_bigint(id,
                               name,
                               sizeof(T),
                               std::numeric_limits<T>::min(),
@@ -375,14 +407,6 @@ constexpr TypedArrayIndex getTypedArrayIndex() {
   }
 }
 
-// Note: we don't put this into struct because then it will compile to lazy init
-// and guard checks on each access, whereas global static const is initialized
-// at startup and checks are compiled away. We still need to use this variable
-// as `(void)var;` for linker to include it though.
-template<typename T>
-inline static InitFunc bindingTypeRegistration =
-  InitFunc(BindingType<T>::register_js);
-
 // Note: the non-word-sized WireType in BindingType<memory_view<...>> only works
 // because I happen to know that clang will pass aggregates as pointers to stack
 // elements and we never support converting JavaScript typed arrays back into
@@ -390,28 +414,22 @@ inline static InitFunc bindingTypeRegistration =
 // on the C++ side, nor is toWireType implemented in
 // JavaScript.)
 #define EMSCRIPTEN_DEFINE_NATIVE_BINDING_TYPE(T)                            \
+  template<> struct register_js<T> { register_js(TYPEID id) { register_native_type<T>(id, #T); }        };   \
   template<> struct BindingType<T> {                                        \
     typedef T WireType;                                                     \
-    static void register_js() { register_native_type<T>(#T); }           \
     constexpr static WireType toWireType(const T& v) {                      \
-      (void)bindingTypeRegistration<T>;                                 \
       return v;                                                                \
     }                                                                          \
     constexpr static T fromWireType(WireType v) {                           \
-      (void)bindingTypeRegistration<T>;                                 \
       return v;                                                                \
     }                                                                          \
   };                                                                           \
+  template<> struct register_js<memory_view<T>> { register_js(TYPEID id) {           \
+    _embind_register_memory_view(id, getTypedArrayIndex<T>(), "emscripten::memory_view<" #T ">"); \
+  }      };                                                                      \
   template<> struct BindingType<memory_view<T>> {                               \
     typedef memory_view<T> WireType;                                 \
-    static void register_js() {                                                \
-      _embind_register_memory_view(                                            \
-        TypeID<memory_view<T>>::get(),                                         \
-        getTypedArrayIndex<T>(),                                               \
-        "emscripten::memory_view<" #T ">");                                 \
-    }                                                                          \
     static WireType toWireType(const memory_view<T>& mv) {           \
-      (void)bindingTypeRegistration<memory_view<T>>;             \
       return mv;                                                               \
     }                                                                          \
   };
@@ -431,23 +449,32 @@ EMSCRIPTEN_DEFINE_NATIVE_BINDING_TYPE(int64_t);
 EMSCRIPTEN_DEFINE_NATIVE_BINDING_TYPE(uint64_t);
 
 template<>
+struct register_js<void> {
+    register_js(TYPEID id) {
+        _embind_register_void(id, "void");
+    }
+};
+
+template<>
 struct BindingType<void> {
     typedef void WireType;
 };
 
 template<>
+struct register_js<bool> {
+    register_js(TYPEID id) {
+        static_assert(sizeof(bool) == 1);
+        _embind_register_bool(id, "bool", true, false);
+    }
+};
+
+template<>
 struct BindingType<bool> {
     typedef bool WireType;
-    static void register_js() {
-        static_assert(sizeof(bool) == 1);
-        _embind_register_bool(TypeID<bool>::get(), "bool", true, false);
-    }
     static WireType toWireType(bool b) {
-        (void)bindingTypeRegistration<bool>;
         return b;
     }
     static bool fromWireType(WireType wt) {
-        (void)bindingTypeRegistration<bool>;
         return wt;
     }
 };
@@ -472,6 +499,18 @@ template<> constexpr const char *getStringTypeName<std::u32string>() {
 }
 
 template<typename T>
+struct register_js<std::basic_string<T>> {
+    register_js(TYPEID id) {
+        using String = std::basic_string<T>;
+        if constexpr (sizeof(T) == 1) {
+            _embind_register_std_string(id, getStringTypeName<String>());
+        } else {
+            _embind_register_std_wstring(id, sizeof(T), getStringTypeName<String>());
+        }
+    }
+};
+
+template<typename T>
 struct BindingType<std::basic_string<T>> {
     using String = std::basic_string<T>;
     static_assert(std::is_trivially_copyable<T>::value, "basic_string elements are memcpy'd");
@@ -479,13 +518,6 @@ struct BindingType<std::basic_string<T>> {
         size_t length;
         T data[1]; // trailing data
     }* WireType;
-    static void register_js() {
-        if constexpr (sizeof(T) == 1) {
-            _embind_register_std_string(TypeID<String>::get(), getStringTypeName<String>());
-        } else {
-            _embind_register_std_wstring(TypeID<String>::get(), sizeof(T), getStringTypeName<String>());
-        }
-    }
     static WireType toWireType(const String& v) {
         WireType wt = (WireType)malloc(sizeof(size_t) + v.length() * sizeof(T));
         wt->length = v.length();

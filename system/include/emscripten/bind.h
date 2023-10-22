@@ -49,10 +49,6 @@ void _embind_fatal_error(
     const char* name,
     const char* payload) __attribute__((__noreturn__));
 
-void _embind_register_void(
-    TYPEID voidType,
-    const char* name);
-
 void _embind_register_emval(
     TYPEID emvalType,
     const char* name);

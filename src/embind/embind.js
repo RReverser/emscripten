@@ -357,7 +357,7 @@ var LibraryEmbind = {
   // [minRange, maxRange], inclusive.
   _embind_register_integer__deps: [
     '$embindRepr', '$integerReadValueFromPointer',
-    '$readLatin1String', '$registerType'],
+    '$readLatin1String', '$registerType', '$GenericWireTypeSize'],
   _embind_register_integer: (primitiveType, name, size, minRange, maxRange) => {
     name = readLatin1String(name);
     // LLVM doesn't have signed and unsigned 32-bit types, so u32 maximum comes
@@ -409,7 +409,7 @@ var LibraryEmbind = {
 #if WASM_BIGINT
   _embind_register_bigint__docs: '/** @suppress {globalThis} */',
   _embind_register_bigint__deps: [
-    '$embindRepr', '$readLatin1String', '$registerType', '$integerReadValueFromPointer'],
+    '$embindRepr', '$readLatin1String', '$registerType', '$integerReadValueFromPointer', '$GenericWireTypeSize'],
   _embind_register_bigint: (primitiveType, name, size, minRange, maxRange) => {
     name = readLatin1String(name);
 
@@ -444,7 +444,7 @@ var LibraryEmbind = {
 
   _embind_register_float__deps: [
     '$embindRepr', '$floatReadValueFromPointer',
-    '$readLatin1String', '$registerType'],
+    '$readLatin1String', '$registerType', '$GenericWireTypeSize'],
   _embind_register_float: (rawType, name, size) => {
     name = readLatin1String(name);
     registerType(rawType, {
@@ -480,7 +480,7 @@ var LibraryEmbind = {
   _embind_register_std_string__deps: [
     '$readLatin1String', '$registerType',
     '$readPointer', '$throwBindingError',
-    '$stringToUTF8', '$lengthBytesUTF8', 'malloc', 'free'],
+    '$stringToUTF8', '$lengthBytesUTF8', 'malloc', 'free', '$GenericWireTypeSize'],
   _embind_register_std_string: (rawType, name) => {
     name = readLatin1String(name);
     var stdStringIsUTF8
@@ -586,6 +586,7 @@ var LibraryEmbind = {
     '$readLatin1String', '$registerType', '$readPointer',
     '$UTF16ToString', '$stringToUTF16', '$lengthBytesUTF16',
     '$UTF32ToString', '$stringToUTF32', '$lengthBytesUTF32',
+    '$GenericWireTypeSize',
     ],
   _embind_register_std_wstring: (rawType, charSize, name) => {
     name = readLatin1String(name);
@@ -659,7 +660,7 @@ var LibraryEmbind = {
 
   _embind_register_emval__deps: [
     '_emval_decref', '$Emval',
-    '$readLatin1String', '$registerType', '$simpleReadValueFromPointer'],
+    '$readLatin1String', '$registerType', '$simpleReadValueFromPointer', '$GenericWireTypeSize'],
   _embind_register_emval: (rawType, name) => {
     name = readLatin1String(name);
     registerType(rawType, {
@@ -684,7 +685,7 @@ var LibraryEmbind = {
     __embind_register_emval(rawType, name);
   },
 
-  _embind_register_memory_view__deps: ['$readLatin1String', '$registerType'],
+  _embind_register_memory_view__deps: ['$readLatin1String', '$registerType', '$GenericWireTypeSize'],
   _embind_register_memory_view: (rawType, dataTypeIndex, name) => {
     var typeMapping = [
       HEAP8,
@@ -1062,7 +1063,7 @@ var LibraryEmbind = {
 
   _embind_finalize_value_array__deps: [
     '$tupleRegistrations', '$runDestructors',
-    '$simpleReadValueFromPointer', '$whenDependentTypesAreResolved'],
+    '$simpleReadValueFromPointer', '$whenDependentTypesAreResolved', '$GenericWireTypeSize'],
   _embind_finalize_value_array: (rawTupleType) => {
     var reg = tupleRegistrations[rawTupleType];
     delete tupleRegistrations[rawTupleType];
@@ -1165,7 +1166,7 @@ var LibraryEmbind = {
 
   _embind_finalize_value_object__deps: [
     '$structRegistrations', '$runDestructors',
-    '$simpleReadValueFromPointer', '$whenDependentTypesAreResolved'],
+    '$simpleReadValueFromPointer', '$whenDependentTypesAreResolved', '$GenericWireTypeSize'],
   _embind_finalize_value_object: (structType) => {
     var reg = structRegistrations[structType];
     delete structRegistrations[structType];
@@ -2338,6 +2339,9 @@ var LibraryEmbind = {
     return name;
   },
 
+  _embind_is_registered_type__deps: ['$registeredTypes'],
+  _embind_is_registered_type: (rawType) => rawType in registeredTypes,
+
   _embind_register_smart_ptr__deps: ['$RegisteredPointer', '$embind__requireFunction', '$whenDependentTypesAreResolved'],
   _embind_register_smart_ptr: (rawType,
                                rawPointeeType,
@@ -2378,7 +2382,7 @@ var LibraryEmbind = {
 
   _embind_register_enum__docs: '/** @suppress {globalThis} */',
   _embind_register_enum__deps: ['$exposePublicSymbol', '$enumReadValueFromPointer',
-    '$readLatin1String', '$registerType'],
+    '$readLatin1String', '$registerType', '$GenericWireTypeSize'],
   _embind_register_enum: (rawType, name, size, isSigned) => {
     name = readLatin1String(name);
 
