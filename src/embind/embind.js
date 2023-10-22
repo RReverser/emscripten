@@ -360,11 +360,9 @@ var LibraryEmbind = {
     '$readLatin1String', '$registerType'],
   _embind_register_integer: (primitiveType, name, size, minRange, maxRange) => {
     name = readLatin1String(name);
-    // LLVM doesn't have signed and unsigned 32-bit types, so u32 literals come
-    // out as 'i32 -1'. Always treat those as max u32.
-    if (maxRange === -1) {
-      maxRange = 4294967295;
-    }
+    // LLVM doesn't have signed and unsigned 32-bit types, so u32 maximum comes
+    // out as 'i32 -1'. Fix it by always converting upper bound via unsigned.
+    maxRange >>>= 0;
 
     var fromWireType = (value) => value;
 
