@@ -689,17 +689,17 @@ var LibraryEmbind = {
   _embind_register_memory_view__deps: ['$readLatin1String', '$registerType'],
   _embind_register_memory_view: (rawType, dataTypeIndex, name) => {
     var typeMapping = [
-      Int8Array,
-      Uint8Array,
-      Int16Array,
-      Uint16Array,
-      Int32Array,
-      Uint32Array,
-      Float32Array,
-      Float64Array,
+      HEAP8,
+      HEAPU8,
+      HEAP16,
+      HEAPU16,
+      HEAP32,
+      HEAPU32,
+      HEAPF32,
+      HEAPF64,
 #if WASM_BIGINT
-      BigInt64Array,
-      BigUint64Array,
+      HEAP64,
+      HEAPU64,
 #endif
     ];
 
@@ -708,7 +708,7 @@ var LibraryEmbind = {
     function decodeMemoryView(handle) {
       var size = {{{ makeGetValue('handle', 0, '*') }}};
       var data = {{{ makeGetValue('handle', POINTER_SIZE, '*') }}};
-      return new TA(HEAP8.buffer, data, size);
+      return TA.subarray(data, data + size);
     }
 
     name = readLatin1String(name);
