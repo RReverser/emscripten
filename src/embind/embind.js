@@ -501,28 +501,12 @@ var LibraryEmbind = {
 
         var str;
         if (stdStringIsUTF8) {
-          var decodeStartPtr = payload;
-          // Looping here to support possible embedded '0' bytes
-          for (var i = 0; i <= length; ++i) {
-            var currentBytePtr = payload + i;
-            if (i == length || HEAPU8[currentBytePtr] == 0) {
-              var maxRead = currentBytePtr - decodeStartPtr;
-              var stringSegment = UTF8ToString(decodeStartPtr, maxRead);
-              if (str === undefined) {
-                str = stringSegment;
-              } else {
-                str += String.fromCharCode(0);
-                str += stringSegment;
-              }
-              decodeStartPtr = currentBytePtr + 1;
-            }
-          }
+          str = UTF8ToString(payload, length, true);
         } else {
-          var a = new Array(length);
+          str = '';
           for (var i = 0; i < length; ++i) {
-            a[i] = String.fromCharCode(HEAPU8[payload + i]);
+            str += String.fromCharCode(HEAPU8[payload + i]);
           }
-          str = a.join('');
         }
 
         _free(value);
@@ -563,9 +547,7 @@ var LibraryEmbind = {
               HEAPU8[ptr + i] = charCode;
             }
           } else {
-            for (var i = 0; i < length; ++i) {
-              HEAPU8[ptr + i] = value[i];
-            }
+            HEAPU8.set(value, ptr);
           }
         }
 
@@ -590,18 +572,16 @@ var LibraryEmbind = {
     ],
   _embind_register_std_wstring: (rawType, charSize, name) => {
     name = readLatin1String(name);
-    var decodeString, encodeString, getHeap, lengthBytesUTF, shift;
+    var decodeString, encodeString, lengthBytesUTF, shift;
     if (charSize === 2) {
       decodeString = UTF16ToString;
       encodeString = stringToUTF16;
       lengthBytesUTF = lengthBytesUTF16;
-      getHeap = () => HEAPU16;
       shift = 1;
     } else if (charSize === 4) {
       decodeString = UTF32ToString;
       encodeString = stringToUTF32;
       lengthBytesUTF = lengthBytesUTF32;
-      getHeap = () => HEAPU32;
       shift = 2;
     }
     registerType(rawType, {
@@ -609,25 +589,7 @@ var LibraryEmbind = {
       'fromWireType': (value) => {
         // Code mostly taken from _embind_register_std_string fromWireType
         var length = {{{ makeGetValue('value', 0, '*') }}};
-        var HEAP = getHeap();
-        var str;
-
-        var decodeStartPtr = value + 4;
-        // Looping here to support possible embedded '0' bytes
-        for (var i = 0; i <= length; ++i) {
-          var currentBytePtr = value + 4 + i * charSize;
-          if (i == length || HEAP[currentBytePtr >> shift] == 0) {
-            var maxReadBytes = currentBytePtr - decodeStartPtr;
-            var stringSegment = decodeString(decodeStartPtr, maxReadBytes);
-            if (str === undefined) {
-              str = stringSegment;
-            } else {
-              str += String.fromCharCode(0);
-              str += stringSegment;
-            }
-            decodeStartPtr = currentBytePtr + charSize;
-          }
-        }
+        var str = decodeString(value + 4, length, true);
 
         _free(value);
 
