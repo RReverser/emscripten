@@ -122,10 +122,10 @@ var LibraryEmVal = {
   _emval_new_cstring__deps: ['$getStringOrSymbol', '$Emval'],
   _emval_new_cstring: (v) => Emval.toHandle(getStringOrSymbol(v)),
 
-  _emval_new_u8string__deps: ['$Emval'],
+  _emval_new_u8string__deps: ['$Emval', '$UTF8ToString'],
   _emval_new_u8string: (v) => Emval.toHandle(UTF8ToString(v)),
 
-  _emval_new_u16string__deps: ['$Emval'],
+  _emval_new_u16string__deps: ['$Emval', '$UTF16ToString'],
   _emval_new_u16string: (v) => Emval.toHandle(UTF16ToString(v)),
 
   _emval_take_value__deps: ['$Emval', '$requireRegisteredType'],
