@@ -476,6 +476,10 @@ template<> constexpr const char *getStringTypeName<std::basic_string<unsigned ch
     return "std::basic_string<unsigned char>";
 }
 
+template<> constexpr const char *getStringTypeName<std::wstring>() {
+    return "std::wstring";
+}
+
 template<> constexpr const char *getStringTypeName<std::u16string>() {
     return "std::u16string";
 }
