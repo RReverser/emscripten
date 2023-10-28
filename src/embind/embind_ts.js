@@ -324,9 +324,11 @@ var LibraryEmbind = {
   _embind_register_std_string: (rawType, name) => {
     registerPrimitiveType(rawType, name);
   },
+  _embind_register_std_wstring__deps: ['$registerPrimitiveType'],
   _embind_register_std_wstring: (rawType, charSize, name) => {
     registerPrimitiveType(rawType, name);
   },
+  _embind_register_emval__deps: ['$registerPrimitiveType'],
   _embind_register_emval: (rawType, name) => {
     registerPrimitiveType(rawType, name);
   },

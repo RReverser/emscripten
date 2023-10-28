@@ -170,7 +170,7 @@ private:
 // the assumption is that it's been done by EMSCRIPTEN_BINDINGS() block, otherwise
 // it will fail at runtime.
 template<typename T>
-constexpr TYPEID getLightTypeID(const T& value) {
+TYPEID getLightTypeID(const T& value) {
 #if __has_feature(cxx_rtti)
     if (has_unbound_type_names) {
         return &typeid(value);
@@ -183,14 +183,14 @@ constexpr TYPEID getLightTypeID(const T& value) {
 // specialize groups of classes via SFINAE.
 template<typename T, typename = void>
 struct TypeID {
-    static constexpr TYPEID get() {
+    static TYPEID get() {
         return LightTypeID<T>::get();
     }
 };
 
 template<typename T>
 struct TypeID<std::unique_ptr<T>> {
-    static constexpr TYPEID get() {
+    static TYPEID get() {
         return TypeID<T>::get();
     }
 };
@@ -206,7 +206,7 @@ struct AllowedRawPointer {
 
 template<typename T>
 struct TypeID<AllowedRawPointer<T>> {
-    static constexpr TYPEID get() {
+    static TYPEID get() {
         return LightTypeID<T*>::get();
     }
 };
