@@ -1782,7 +1782,7 @@ class libembind(Library):
     super().__init__(**kwargs)
 
   def get_cflags(self):
-    cflags = super().get_cflags()
+    cflags = super().get_cflags() + ['-pthread']
     if not self.with_rtti:
       cflags += ['-fno-rtti', '-DEMSCRIPTEN_HAS_UNBOUND_TYPE_NAMES=0']
     return cflags
