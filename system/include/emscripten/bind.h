@@ -49,51 +49,8 @@ void _embind_fatal_error(
     const char* name,
     const char* payload) __attribute__((__noreturn__));
 
-void _embind_register_void(
-    TYPEID voidType,
-    const char* name);
-
-void _embind_register_bool(
-    TYPEID boolType,
-    const char* name,
-    bool trueValue,
-    bool falseValue);
-
-void _embind_register_integer(
-    TYPEID integerType,
-    const char* name,
-    size_t size,
-    int32_t minRange,
-    uint32_t maxRange);
-
-void _embind_register_bigint(
-    TYPEID integerType,
-    const char* name,
-    size_t size,
-    int64_t minRange,
-    uint64_t maxRange);
-
-void _embind_register_float(
-    TYPEID floatType,
-    const char* name,
-    size_t size);
-
-void _embind_register_std_string(
-    TYPEID stringType,
-    const char* name);
-
-void _embind_register_std_wstring(
-    TYPEID stringType,
-    size_t charSize,
-    const char* name);
-
 void _embind_register_emval(
     TYPEID emvalType,
-    const char* name);
-
-void _embind_register_memory_view(
-    TYPEID memoryViewType,
-    unsigned typedArrayIndex,
     const char* name);
 
 void _embind_register_function(
