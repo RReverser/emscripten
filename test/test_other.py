@@ -2995,7 +2995,7 @@ int f() {
     args = [EMCC, test_file('other/embind_tsgen_bigint.cpp'), '-lembind', '--embind-emit-tsd', 'embind_tsgen_bigint.d.ts']
     # Check that TypeScript generation fails when code contains bigints but their support is not enabled
     stderr = self.expect_fail(args)
-    self.assertContained("Missing primitive type to TS type for 'int64_t", stderr)
+    self.assertContained("Bindings for `unsigned long long` need BigInt support, but WASM_BIGINT is not enabled.", stderr)
     # Check that TypeScript generation works when bigint support is enabled
     self.run_process(args + ['-sWASM_BIGINT'])
     self.assertFileContents(test_file('other/embind_tsgen_bigint.d.ts'), read_file('embind_tsgen_bigint.d.ts'))

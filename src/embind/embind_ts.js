@@ -282,7 +282,11 @@ var LibraryEmbind = {
   },
   _embind_register_bigint__deps: ['$registerPrimitiveType'],
   _embind_register_bigint: (primitiveType, name, size, minRange, maxRange) => {
+#if WASM_BIGINT
     registerPrimitiveType(primitiveType, name, 'bigint');
+#else
+    throw new Error(`Bindings for \`${readLatin1String(name)}\` need BigInt support, but WASM_BIGINT is not enabled.`);
+#endif
   },
   _embind_register_float__deps: ['$registerPrimitiveType'],
   _embind_register_float: (rawType, name, size) => {
@@ -290,8 +294,11 @@ var LibraryEmbind = {
   },
   _embind_register_std_string__deps: ['$registerPrimitiveType'],
   _embind_register_std_string: (rawType, name) => {
-    name = readLatin1String(name);
-    registerPrimitiveType(rawType, name, `string${name === 'std::string' ? '|ArrayBuffer|Uint8Array|Uint8ClampedArray|Int8Array' : ''}`);
+    let typeOf = 'string';
+    if (readLatin1String(name) === 'std::string') {
+      typeOf += '|ArrayBuffer|Uint8Array|Uint8ClampedArray|Int8Array';
+    }
+    registerPrimitiveType(rawType, name, typeOf);
   },
   _embind_register_std_wstring__deps: ['$registerPrimitiveType'],
   _embind_register_std_wstring: (rawType, charSize, name) => {
