@@ -256,12 +256,15 @@ rule archive
     objects_i = 0
 
     for (cmd, custom_flags), files in batches.items():
-      o = f'{libname}.{objects_i}.o'
-      objects_i += 1
-      objects.append(o)
-      out += f'build {escape_ninja_path(o)}: {cmd} {" ".join(escape_ninja_path(src) for src in files)}\n'
-      if custom_flags:
-        out += f'  CFLAGS = {custom_flags}\n'
+      while files:
+        chunk = files[:32]
+        files = files[32:]
+        o = f'{libname}.{objects_i}.o'
+        objects_i += 1
+        objects.append(o)
+        out += f'build {escape_ninja_path(o)}: {cmd} {" ".join(escape_ninja_path(src) for src in chunk)}\n'
+        if custom_flags:
+          out += f'  CFLAGS = {custom_flags}\n'
 
     objects = sorted(objects, key=objectfile_sort_key)
     objects = ' '.join(escape_ninja_path(o) for o in objects)
