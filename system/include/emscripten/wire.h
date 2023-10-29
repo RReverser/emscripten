@@ -422,13 +422,13 @@ constexpr TypedArrayIndex getTypedArrayIndex() {
 EMBIND_DEFINE_NUM_TYPE(char);
 EMBIND_DEFINE_NUM_TYPE(signed char);
 EMBIND_DEFINE_NUM_TYPE(unsigned char);
-EMBIND_DEFINE_NUM_TYPE(signed short);
+EMBIND_DEFINE_NUM_TYPE(short);
 EMBIND_DEFINE_NUM_TYPE(unsigned short);
-EMBIND_DEFINE_NUM_TYPE(signed int);
+EMBIND_DEFINE_NUM_TYPE(int);
 EMBIND_DEFINE_NUM_TYPE(unsigned int);
-EMBIND_DEFINE_NUM_TYPE(signed long);
+EMBIND_DEFINE_NUM_TYPE(long);
 EMBIND_DEFINE_NUM_TYPE(unsigned long);
-EMBIND_DEFINE_NUM_TYPE(signed long long);
+EMBIND_DEFINE_NUM_TYPE(long long);
 EMBIND_DEFINE_NUM_TYPE(unsigned long long);
 EMBIND_DEFINE_NUM_TYPE(float);
 EMBIND_DEFINE_NUM_TYPE(double);
