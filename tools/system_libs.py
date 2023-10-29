@@ -179,22 +179,30 @@ EMXX = {shared.EMXX}
 EMAR = {shared.EMAR}
 
 rule cc
+  rspfile = $out.rsp
+  rspfile_content = $in
   depfile = $out.d
-  command = $EMCC -MD -MF $out.d $CFLAGS -c $in -o $out
+  command = $EMCC -MD -MF $out.d $CFLAGS -r @$rspfile -o $out
   description = CC $out
 
 rule cxx
+  rspfile = $out.rsp
+  rspfile_content = $in
   depfile = $out.d
-  command = $EMXX -MD -MF $out.d $CFLAGS -c $in -o $out
+  command = $EMXX -MD -MF $out.d $CFLAGS -r @$rspfile -o $out
   description = CXX $out
 
 rule asm
-  command = $EMCC $ASFLAGS -c $in -o $out
+  rspfile = $out.rsp
+  rspfile_content = $in
+  command = $EMCC $ASFLAGS -r @$rspfile -o $out
   description = ASM $out
 
 rule asm_cpp
+  rspfile = $out.rsp
+  rspfile_content = $in
   depfile = $out.d
-  command = $EMCC -MD -MF $out.d $CFLAGS -c $in -o $out
+  command = $EMCC -MD -MF $out.d $CFLAGS -r @$rspfile -o $out
   description = ASM $out
 
 rule direct_cc
@@ -221,21 +229,9 @@ rule archive
     out += f'build {escape_ninja_path(libname)}: direct_cc {input_file}\n'
     out += f'  with_depfile = {depfile}\n'
   else:
-    objects = []
+    batches = dict()
+
     for src in input_files:
-      # Resolve duplicates by appending unique.
-      # This is needed on case insensitve filesystem to handle,
-      # for example, _exit.o and _Exit.o.
-      object_basename = shared.unsuffixed_basename(src)
-      if case_insensitive:
-        object_basename = object_basename.lower()
-      o = os.path.join(build_dir, object_basename + '.o')
-      object_uuid = 0
-      # Find a unique basename
-      while o in objects:
-        object_uuid += 1
-        o = os.path.join(build_dir, f'{object_basename}__{object_uuid}.o')
-      objects.append(o)
       ext = shared.suffix(src)
       if ext == '.s':
         cmd = 'asm'
@@ -249,12 +245,23 @@ rule archive
       else:
         cmd = 'cxx'
         flags = cflags
-      out += f'build {escape_ninja_path(o)}: {cmd} {escape_ninja_path(src)}\n'
+      custom_flags = ''
       if customize_build_flags:
-        custom_flags = customize_build_flags(flags, src)
-        if custom_flags != flags:
-          out += f'  CFLAGS = {join(custom_flags)}'
-      out += '\n'
+        new_flags = customize_build_flags(flags, src)
+        if new_flags != flags:
+          custom_flags = join(new_flags)
+      batches.setdefault((cmd, custom_flags), []).append(src)
+
+    objects = []
+    objects_i = 0
+
+    for (cmd, custom_flags), files in batches.items():
+      o = f'{libname}.{objects_i}.o'
+      objects_i += 1
+      objects.append(o)
+      out += f'build {escape_ninja_path(o)}: {cmd} {" ".join(escape_ninja_path(src) for src in files)}\n'
+      if custom_flags:
+        out += f'  CFLAGS = {custom_flags}\n'
 
     objects = sorted(objects, key=objectfile_sort_key)
     objects = ' '.join(escape_ninja_path(o) for o in objects)
