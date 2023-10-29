@@ -255,10 +255,13 @@ rule archive
     objects = []
     objects_i = 0
 
+    # Get roughly equal chunks by dividing number of files by number of cores.
+    chunk_size = max(1, len(input_files) // shared.get_num_cores())
+
     for (cmd, custom_flags), files in batches.items():
       while files:
-        chunk = files[:32]
-        files = files[32:]
+        chunk = files[:chunk_size]
+        files = files[chunk_size:]
         o = f'{libname}.{objects_i}.o'
         objects_i += 1
         objects.append(o)
