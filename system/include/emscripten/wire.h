@@ -158,7 +158,8 @@ private:
             // in which case the type may already be registered in JS,
             // or it might've been registered dynamically by EMSCRIPTEN_BINDINGS.
             if (!_embind_is_registered_type(id)) {
-                typename register_js<T>::register_js reg(id);
+                typedef typename Canonicalized<T>::type C;
+                typename register_js<C>::register_js reg(id);
             }
             registered = true;
         }
@@ -427,10 +428,10 @@ EMBIND_DEFINE_NUM_TYPE(signed int);
 EMBIND_DEFINE_NUM_TYPE(unsigned int);
 EMBIND_DEFINE_NUM_TYPE(signed long);
 EMBIND_DEFINE_NUM_TYPE(unsigned long);
+EMBIND_DEFINE_NUM_TYPE(signed long long);
+EMBIND_DEFINE_NUM_TYPE(unsigned long long);
 EMBIND_DEFINE_NUM_TYPE(float);
 EMBIND_DEFINE_NUM_TYPE(double);
-EMBIND_DEFINE_NUM_TYPE(int64_t);
-EMBIND_DEFINE_NUM_TYPE(uint64_t);
 
 #undef EMBIND_DEFINE_NUM_TYPE
 

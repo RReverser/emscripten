@@ -9,14 +9,10 @@ var LibraryEmbind = {
   $moduleDefinitions: [],
 
   $PrimitiveType: class PrimitiveType {
-    constructor(typeId, name) {
+    constructor(typeId, name, typeOf) {
       this.typeId = typeId;
       this.name = name;
-    }
-  },
-  $IntegerType: class IntegerType {
-    constructor(typeId) {
-      this.typeId = typeId;
+      this.typeOf = typeOf;
     }
   },
   $Argument: class Argument {
@@ -202,39 +198,14 @@ var LibraryEmbind = {
       out.push('\n};\n\n');
     }
   },
+  $TsPrinter__deps: ['$PrimitiveType'],
   $TsPrinter: class TsPrinter {
     constructor(definitions) {
       this.definitions = definitions;
-      const jsString = 'ArrayBuffer|Uint8Array|Uint8ClampedArray|Int8Array|string';
-      this.builtInToJsName = new Map([
-        ['bool', 'boolean'],
-        ['float', 'number'],
-        ['double', 'number'],
-#if WASM_BIGINT
-        ['int64_t', 'bigint'],
-        ['uint64_t', 'bigint'],
-#endif
-        ['void', 'void'],
-        ['std::string', jsString],
-        ['std::basic_string<unsigned char>', jsString],
-        ['std::wstring', jsString],
-        ['std::u16string', jsString],
-        ['std::u32string', jsString],
-        ['emscripten::val', 'any'],
-      ]);
     }
 
-    typeToJsName(type) {
-      if (type instanceof IntegerType) {
-        return 'number';
-      }
-      if (type instanceof PrimitiveType) {
-        if (!this.builtInToJsName.has(type.name)) {
-          throw new Error(`Missing primitive type to TS type for '${type.name}'`);
-        }
-        return this.builtInToJsName.get(type.name)
-      }
-      return type.name;
+    static typeToJsName(type) {
+      return type instanceof PrimitiveType ? type.typeOf : type.name;
     }
 
     print() {
@@ -243,7 +214,7 @@ var LibraryEmbind = {
         if (!def.print) {
           continue;
         }
-        def.print(this.typeToJsName.bind(this), out);
+        def.print(TsPrinter.typeToJsName, out);
       }
       // Print module definitions
       out.push('export interface MainModule {\n');
@@ -251,7 +222,7 @@ var LibraryEmbind = {
         if (!def.printModuleEntry) {
           continue;
         }
-        def.printModuleEntry(this.typeToJsName.bind(this), out);
+        def.printModuleEntry(TsPrinter.typeToJsName, out);
       }
       out.push('}');
       console.log(out.join(''));
@@ -263,13 +234,9 @@ var LibraryEmbind = {
     return sharedRegisterType(rawType, registeredInstance, options);
   },
   $registerPrimitiveType__deps: ['$registerType', '$PrimitiveType'],
-  $registerPrimitiveType: (id, name) => {
+  $registerPrimitiveType: (id, name, typeOf) => {
     name = readLatin1String(name);
-    registerType(id, new PrimitiveType(id, name));
-  },
-  $registerIntegerType__deps: ['$registerType', '$IntegerType'],
-  $registerIntegerType: (id) => {
-    registerType(id, new IntegerType(id));
+    registerType(id, new PrimitiveType(id, name, typeOf));
   },
   $createFunctionDefinition__deps: ['$FunctionDefinition', '$heap32VectorToArray', '$readLatin1String', '$Argument', '$whenDependentTypesAreResolved', '$getFunctionName', '$getFunctionArgsName'],
   $createFunctionDefinition: (name, argCount, rawArgTypesAddr, hasThis, cb) => {
@@ -303,34 +270,36 @@ var LibraryEmbind = {
   },
   _embind_register_void__deps: ['$registerPrimitiveType'],
   _embind_register_void: (rawType, name) => {
-    registerPrimitiveType(rawType, name);
+    registerPrimitiveType(rawType, name, 'undefined');
   },
   _embind_register_bool__deps: ['$registerPrimitiveType'],
   _embind_register_bool: (rawType, name, trueValue, falseValue) => {
-    registerPrimitiveType(rawType, name);
+    registerPrimitiveType(rawType, name, 'boolean');
   },
-  _embind_register_integer__deps: ['$registerIntegerType'],
+  _embind_register_integer__deps: ['$registerPrimitiveType'],
   _embind_register_integer: (primitiveType, name, size, minRange, maxRange) => {
-    registerIntegerType(primitiveType, name);
+    registerPrimitiveType(primitiveType, name, 'number');
   },
+  _embind_register_bigint__deps: ['$registerPrimitiveType'],
   _embind_register_bigint: (primitiveType, name, size, minRange, maxRange) => {
-    registerPrimitiveType(primitiveType, name);
+    registerPrimitiveType(primitiveType, name, 'bigint');
   },
   _embind_register_float__deps: ['$registerPrimitiveType'],
   _embind_register_float: (rawType, name, size) => {
-    registerPrimitiveType(rawType, name);
+    registerPrimitiveType(rawType, name, 'number');
   },
   _embind_register_std_string__deps: ['$registerPrimitiveType'],
   _embind_register_std_string: (rawType, name) => {
-    registerPrimitiveType(rawType, name);
+    name = readLatin1String(name);
+    registerPrimitiveType(rawType, name, `string${name === 'std::string' ? '|ArrayBuffer|Uint8Array|Uint8ClampedArray|Int8Array' : ''}`);
   },
   _embind_register_std_wstring__deps: ['$registerPrimitiveType'],
   _embind_register_std_wstring: (rawType, charSize, name) => {
-    registerPrimitiveType(rawType, name);
+    registerPrimitiveType(rawType, name, 'string');
   },
   _embind_register_emval__deps: ['$registerPrimitiveType'],
   _embind_register_emval: (rawType, name) => {
-    registerPrimitiveType(rawType, name);
+    registerPrimitiveType(rawType, name, 'any');
   },
   _embind_register_user_type__deps: ['$registerType', '$readLatin1String', '$UserType'],
   _embind_register_user_type: (rawType, name) => {

@@ -2341,9 +2341,6 @@ var LibraryEmbind = {
     return name;
   },
 
-  _embind_is_registered_type__deps: ['$registeredTypes'],
-  _embind_is_registered_type: (rawType) => rawType in registeredTypes,
-
   _embind_register_smart_ptr__deps: ['$RegisteredPointer', '$embind__requireFunction', '$whenDependentTypesAreResolved'],
   _embind_register_smart_ptr: (rawType,
                                rawPointeeType,

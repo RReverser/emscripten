@@ -164,7 +164,10 @@ var LibraryEmbindShared = {
         throwBindingError(humanName + " has unknown type " + getTypeName(rawType));
     }
     return impl;
-  }
+  },
+
+  _embind_is_registered_type__deps: ['$registeredTypes'],
+  _embind_is_registered_type: (rawType) => rawType in registeredTypes,
 };
 
 addToLibrary(LibraryEmbindShared);
