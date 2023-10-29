@@ -190,27 +190,27 @@ rule cc
   rspfile = $shared_name.rsp
   rspfile_content = $in
   depfile = $shared_name.d
-  command = {wrap_build_dir_cmd('$EMCC -MP -MD -MF $shared_name.d $CFLAGS -c @$rspfile')}
+  command = {wrap_build_dir_cmd('$EMCC -MD -MF $shared_name.d $CFLAGS -c @$rspfile')}
   description = CC $shared_name
 
 rule cxx
   rspfile = $shared_name.rsp
   rspfile_content = $in
   depfile = $shared_name.d
-  command = {wrap_build_dir_cmd('$EMXX -MP -MD -MF $shared_name.d $CFLAGS -c @$rspfile')}
+  command = {wrap_build_dir_cmd('$EMXX -MD -MF $shared_name.d $CFLAGS -c @$rspfile')}
   description = CXX $shared_name
 
 rule asm
   rspfile = $shared_name.rsp
   rspfile_content = $in
-  command = {wrap_build_dir_cmd('$EMCC -MP $ASFLAGS -c @$rspfile')}
+  command = {wrap_build_dir_cmd('$EMCC $ASFLAGS -c @$rspfile')}
   description = ASM $shared_name
 
 rule asm_cpp
   rspfile = $shared_name.rsp
   rspfile_content = $in
   depfile = $shared_name.d
-  command = {wrap_build_dir_cmd('$EMCC -MP -MD -MF $shared_name.d $CFLAGS -c @$rspfile')}
+  command = {wrap_build_dir_cmd('$EMCC -MD -MF $shared_name.d $CFLAGS -c @$rspfile')}
   description = ASM $shared_name
 
 rule direct_cc
@@ -260,8 +260,7 @@ rule archive
 
     objects = []
 
-    # Get roughly equal chunks by dividing number of files by number of cores.
-    chunk_size = max(1, len(input_files) // shared.get_num_cores())
+    chunk_size = 64
 
     for (cmd, custom_flags), files in batches.items():
       while files:
