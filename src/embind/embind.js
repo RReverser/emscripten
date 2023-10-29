@@ -1828,15 +1828,6 @@ var LibraryEmbind = {
       function(base) {
         base = base[0];
 
-        var baseClass;
-        var basePrototype;
-        if (baseClassRawType) {
-          baseClass = base.registeredClass;
-          basePrototype = baseClass.instancePrototype;
-        } else {
-          basePrototype = ClassHandle.prototype;
-        }
-
         var constructor = createNamedFunction(name, function() {
           if (Object.getPrototypeOf(this) !== instancePrototype) {
             throw new BindingError("Use 'new' to construct " + name);
@@ -1851,11 +1842,14 @@ var LibraryEmbind = {
           return body.apply(this, arguments);
         });
 
-        var instancePrototype = Object.create(basePrototype, {
-          constructor: { value: constructor },
-        });
-
-        constructor.prototype = instancePrototype;
+        var baseClass;
+        if (baseClassRawType) {
+          baseClass = base.registeredClass;
+          // TODO: handle overloads.
+          constructor.__proto__ = baseClass.constructor;
+        }
+        var instancePrototype = constructor.prototype;
+        instancePrototype.__proto__ = (baseClass ? baseClass.constructor : ClassHandle).prototype;
 
         var registeredClass = new RegisteredClass(name,
                                                   constructor,
@@ -1865,15 +1859,6 @@ var LibraryEmbind = {
                                                   getActualType,
                                                   upcast,
                                                   downcast);
-
-        if (registeredClass.baseClass) {
-          // Keep track of class hierarchy. Used to allow sub-classes to inherit class functions.
-          if (registeredClass.baseClass.__derivedClasses === undefined) {
-            registeredClass.baseClass.__derivedClasses = [];
-          }
-
-          registeredClass.baseClass.__derivedClasses.push(registeredClass);
-        }
 
         var referenceConverter = new RegisteredPointer(name,
                                                        registeredClass,
@@ -2180,15 +2165,6 @@ var LibraryEmbind = {
           proto[methodName] = func;
         } else {
           proto[methodName].overloadTable[argCount-1] = func;
-        }
-
-        if (classType.registeredClass.__derivedClasses) {
-          for (const derivedClass of classType.registeredClass.__derivedClasses) {
-            if (!derivedClass.constructor.hasOwnProperty(methodName)) {
-              // TODO: Add support for overloads
-              derivedClass.constructor[methodName] = func;
-            }
-          }
         }
 
         return [];
