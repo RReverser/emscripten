@@ -1230,25 +1230,6 @@ There is NO warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR P
     print(shared.EMSCRIPTEN_VERSION)
     return 0
 
-  if '--cflags' in args:
-    # fake running the command, to see the full args we pass to clang
-    args = [x for x in args if x != '--cflags']
-    with shared.get_temp_files().get_file(suffix='.o') as temp_target:
-      input_file = 'hello_world.c'
-      compiler = shared.EMCC
-      if run_via_emxx:
-        compiler = shared.EMXX
-      cmd = [compiler, utils.path_from_root('test', input_file), '-v', '-c', '-o', temp_target] + args
-      proc = run_process(cmd, stderr=PIPE, check=False)
-      if proc.returncode != 0:
-        print(proc.stderr)
-        exit_with_error('error getting cflags')
-      lines = [x for x in proc.stderr.splitlines() if clang in x and input_file in x]
-      parts = shlex.split(lines[0].replace('\\', '\\\\'))
-      parts = [x for x in parts if x not in ['-c', '-o', '-v', '-emit-llvm'] and input_file not in x and temp_target not in x]
-      print(shared.shlex_join(parts[1:]))
-    return 0
-
   ## Process argument and setup the compiler
   state = EmccState(args)
   options, newargs = phase_parse_arguments(state)
@@ -1301,7 +1282,7 @@ There is NO warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR P
       print(libname)
     return 0
 
-  if not input_files and not state.link_flags:
+  if not input_files and not state.link_flags and '--cflags' not in newargs:
     exit_with_error('no input files')
 
   if options.reproduce:
@@ -3024,7 +3005,7 @@ def phase_linker_setup(options, state, newargs):
 @ToolchainProfiler.profile_block('compile inputs')
 def phase_compile_inputs(options, state, newargs, input_files):
   def is_link_flag(flag):
-    if flag in ('-nostdlib', '-nostartfiles', '-nolibc', '-nodefaultlibs'):
+    if flag in ('-nostdlib', '-nostartfiles', '-nolibc', '-nodefaultlibs', '--cflags'):
       return True
     return flag.startswith(('-l', '-L', '-Wl,'))
 
@@ -3034,9 +3015,6 @@ def phase_compile_inputs(options, state, newargs, input_files):
     logger.debug('using compiler wrapper: %s', config.COMPILER_WRAPPER)
     CXX.insert(0, config.COMPILER_WRAPPER)
     CC.insert(0, config.COMPILER_WRAPPER)
-
-  compile_args = [a for a in newargs if a and not is_link_flag(a)]
-  system_libs.ensure_sysroot()
 
   def get_language_mode(args):
     return_next = False
@@ -3070,6 +3048,14 @@ def phase_compile_inputs(options, state, newargs, input_files):
       # clang++/g++.
       return True
     return False
+
+  compile_args = [a for a in newargs if a and not is_link_flag(a)]
+
+  if '--cflags' in newargs:
+    print(shared.shlex_join(get_cflags(state.orig_args, use_cxx('_.c')) + compile_args))
+    exit()
+
+  system_libs.ensure_sysroot()
 
   def get_compiler(src_file):
     if use_cxx(src_file):

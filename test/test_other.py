@@ -36,7 +36,7 @@ from common import compiler_for, EMBUILDER, requires_v8, requires_node, requires
 from common import requires_wasm_eh, crossplatform, with_both_sjlj, also_with_standalone_wasm
 from common import also_with_minimal_runtime, also_with_wasm_bigint, also_with_wasm64, flaky
 from common import EMTEST_BUILD_VERBOSE, PYTHON, WEBIDL_BINDER
-from tools import shared, building, utils, response_file, cache
+from tools import shared, building, system_libs, utils, response_file, cache
 from tools.utils import read_file, write_file, delete_file, read_binary
 import common
 import jsrun
@@ -703,6 +703,7 @@ f.close()
     self.assertContained('-target wasm32-unknown-emscripten', flags)
     self.assertContained('--sysroot=', flags)
     # check they work
+    system_libs.ensure_sysroot()
     cmd = [CLANG_CC, test_file('hello_world.c')] + shlex.split(flags.replace('\\', '\\\\')) + ['-c', '-o', 'out.o']
     self.run_process(cmd)
     self.run_process([EMCC, 'out.o'])
