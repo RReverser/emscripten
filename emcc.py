@@ -3077,18 +3077,18 @@ def phase_compile_inputs(options, state, newargs, input_files):
     return CC
 
   def get_clang_command(src_file):
-    return get_compiler(src_file) + get_cflags(state.orig_args, use_cxx(src_file)) + compile_args + [src_file]
+    return get_compiler(src_file) + get_cflags(state.orig_args, use_cxx(src_file)) + compile_args
 
   def get_clang_command_preprocessed(src_file):
-    return get_compiler(src_file) + get_clang_flags(state.orig_args) + compile_args + [src_file]
+    return get_compiler(src_file) + get_clang_flags(state.orig_args) + compile_args
 
   def get_clang_command_asm(src_file):
-    return get_compiler(src_file) + get_target_flags() + compile_args + [src_file]
+    return get_compiler(src_file) + get_target_flags() + compile_args
 
   # preprocessor-only (-E) support
   if state.mode == Mode.PREPROCESS_ONLY:
     for input_file in [x[1] for x in input_files]:
-      cmd = get_clang_command(input_file)
+      cmd = get_clang_command(input_file) + [input_file]
       if options.output_file:
         cmd += ['-o', options.output_file]
       # Do not compile, but just output the result from preprocessing stage or
@@ -3104,7 +3104,7 @@ def phase_compile_inputs(options, state, newargs, input_files):
     for header in headers:
       if not shared.suffix(header) in HEADER_ENDINGS:
         exit_with_error(f'cannot mix precompiled headers with non-header inputs: {headers} : {header}')
-      cmd = get_clang_command(header)
+      cmd = get_clang_command(header) + [header]
       if options.output_file:
         cmd += ['-o', options.output_file]
       logger.debug(f"running (for precompiled headers): {cmd[0]} {' '.join(cmd[1:])}")
@@ -3119,6 +3119,9 @@ def phase_compile_inputs(options, state, newargs, input_files):
       seen_names[name] = str(len(seen_names))
     return unsuffixed(name) + '_' + seen_names[name] + shared.suffix(name)
 
+  def get_default_object_filename(input_file):
+    return unsuffixed_basename(input_file) + options.default_object_extension
+
   def get_object_filename(input_file):
     if state.mode == Mode.COMPILE_ONLY:
       # In compile-only mode we don't use any temp file.  The object files
@@ -3129,9 +3132,12 @@ def phase_compile_inputs(options, state, newargs, input_files):
           diagnostics.warning('emcc', '.bc output file suffix used without -flto or -emit-llvm.  Consider using .o extension since emcc will output an object file, not a bitcode file')
         return options.output_file
       else:
-        return unsuffixed_basename(input_file) + options.default_object_extension
+        return None
     else:
       return in_temp(unsuffixed(uniquename(input_file)) + options.default_object_extension)
+
+  batches = {}
+  commands = []
 
   def compile_source_file(i, input_file):
     logger.debug(f'compiling source file: {input_file}')
@@ -3148,7 +3154,10 @@ def phase_compile_inputs(options, state, newargs, input_files):
         cmd = [c for c in cmd if not c.startswith('-fprebuilt-module-path=')]
     if not state.has_dash_c:
       cmd += ['-c']
-    cmd += ['-o', output_file]
+    if state.mode == Mode.COMPILE_ONLY and output_file is None:
+      batches.setdefault(tuple(cmd), []).append(input_file)
+      return
+    cmd += [input_file, '-o', output_file]
     if state.mode == Mode.COMPILE_AND_LINK and '-gsplit-dwarf' in newargs:
       # When running in COMPILE_AND_LINK mode we compile to temporary location
       # but we want the `.dwo` file to be generated in the current working directory,
@@ -3157,9 +3166,7 @@ def phase_compile_inputs(options, state, newargs, input_files):
       # driver to perform linking which would be big change.
       cmd += ['-Xclang', '-split-dwarf-file', '-Xclang', unsuffixed_basename(input_file) + '.dwo']
       cmd += ['-Xclang', '-split-dwarf-output', '-Xclang', unsuffixed_basename(input_file) + '.dwo']
-    shared.check_call(cmd)
-    if output_file not in ('-', os.devnull) and not shared.SKIP_SUBPROCS:
-      assert os.path.exists(output_file)
+    commands.append((cmd, [output_file]))
 
   # First, generate LLVM bitcode. For each input file, we get base.o with bitcode
   for i, input_file in input_files:
@@ -3180,6 +3187,19 @@ def phase_compile_inputs(options, state, newargs, input_files):
       # Default to assuming the inputs are object files and pass them to the linker
       logger.debug(f'using object file: {input_file}')
       linker_inputs.append((i, input_file))
+
+  # Convert the collected batches into commands.
+  for cmd, inputs in batches.items():
+    cmd = list(cmd) + inputs
+    commands.append((cmd, [get_default_object_filename(i) for i in inputs]))
+
+  # Run all the commands and verify that they generated outputs.
+  for cmd, _outputs in commands:
+    shared.check_call(cmd)
+    # if not shared.SKIP_SUBPROCS:
+    #   for output_file in outputs:
+    #     if output_file not in ('-', os.devnull):
+    #       assert os.path.exists(output_file)
 
   return linker_inputs
 
