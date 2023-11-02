@@ -8,6 +8,7 @@ from .toolchain_profiler import ToolchainProfiler
 from enum import Enum, unique, auto
 from functools import wraps
 from subprocess import PIPE
+import asyncio
 import atexit
 import json
 import logging
@@ -145,13 +146,6 @@ def returncode_to_str(code):
   return f'returned {code}'
 
 
-def cap_max_workers_in_pool(max_workers):
-  # Python has an issue that it can only use max 61 cores on Windows: https://github.com/python/cpython/issues/89240
-  if WINDOWS:
-    return min(max_workers, 61)
-  return max_workers
-
-
 def run_multiple_processes(commands,
                            env=None,
                            route_stdout_to_temp_files_suffix=None,
@@ -166,65 +160,35 @@ def run_multiple_processes(commands,
   if env is None:
     env = os.environ.copy()
 
-  std_outs = []
+  temp_files = get_temp_files() if route_stdout_to_temp_files_suffix else None
 
-  # TODO: Experiment with registering a signal handler here to see if that helps with Ctrl-C locking up the command prompt
-  # when multiple child processes have been spawned.
-  # import signal
-  # def signal_handler(sig, frame):
-  #   sys.exit(1)
-  # signal.signal(signal.SIGINT, signal_handler)
+  # Ensure no more than (number of cores) subprocesses are running at once.
+  subprocess_limiter = asyncio.Semaphore(get_num_cores())
 
-  # Map containing all currently running processes.
-  # command index -> proc/Popen object
-  processes = {}
+  async def run_command(i, command):
+    stdout = temp_files.get(route_stdout_to_temp_files_suffix) if temp_files else None
 
-  def get_finished_process():
-    while True:
-      for idx, proc in processes.items():
-        if proc.poll() is not None:
-          return idx
-      # All processes still running; wait a short while for the first
-      # (oldest) process to finish, then look again if any process has completed.
-      idx, proc = next(iter(processes.items()))
-      try:
-        proc.communicate(timeout=0.2)
-        return idx
-      except subprocess.TimeoutExpired:
-        pass
+    if DEBUG:
+      logger.debug('Running subprocess %d/%d: %s' % (i + 1, len(commands), ' '.join(command)))
+    print_compiler_stage(command)
 
-  num_parallel_processes = get_num_cores()
-  temp_files = get_temp_files()
-  i = 0
-  num_completed = 0
-  while num_completed < len(commands):
-    if i < len(commands) and len(processes) < num_parallel_processes:
-      # Not enough parallel processes running, spawn a new one.
-      if route_stdout_to_temp_files_suffix:
-        stdout = temp_files.get(route_stdout_to_temp_files_suffix)
-      else:
-        stdout = None
-      if DEBUG:
-        logger.debug('Running subprocess %d/%d: %s' % (i + 1, len(commands), ' '.join(commands[i])))
-      print_compiler_stage(commands[i])
-      proc = subprocess.Popen(commands[i], stdout=stdout, stderr=None, env=env, cwd=cwd)
-      processes[i] = proc
-      if route_stdout_to_temp_files_suffix:
-        std_outs.append((i, stdout.name))
-      i += 1
-    else:
-      # Not spawning a new process (Too many commands running in parallel, or
-      # no commands left): find if a process has finished.
-      idx = get_finished_process()
-      finished_process = processes.pop(idx)
-      if finished_process.returncode != 0:
-        exit_with_error('Subprocess %d/%d failed (%s)! (cmdline: %s)' % (idx + 1, len(commands), returncode_to_str(finished_process.returncode), shlex_join(commands[idx])))
-      num_completed += 1
+    async with subprocess_limiter:
+      proc = await asyncio.create_subprocess_exec(*command, stdout=stdout, stderr=None, env=env, cwd=cwd)
 
-  if route_stdout_to_temp_files_suffix:
-    # If processes finished out of order, sort the results to the order of the input.
-    std_outs.sort(key=lambda x: x[0])
-    return [x[1] for x in std_outs]
+    returncode = await proc.wait()
+
+    if returncode != 0:
+      raise Exception(f'Subprocess {i}/{len(commands)} failed with return code {returncode}! (cmdline: {" ".join(command)})')
+
+    if stdout:
+      stdout.close()
+
+    return stdout.name if stdout else None
+
+  async def run_all_commands():
+    return await asyncio.gather(*(run_command(i, command) for i, command in enumerate(commands)), return_exceptions=True)
+
+  return asyncio.run(run_all_commands())
 
 
 def check_call(cmd, *args, **kw):
