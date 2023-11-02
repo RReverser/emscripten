@@ -11,6 +11,7 @@ import itertools
 import logging
 import os
 import shutil
+import shlex
 import textwrap
 from enum import IntEnum, auto
 from glob import iglob
@@ -541,6 +542,12 @@ class Library:
     # Convert batches to commands.
     for cmd, srcs in batches.items():
       cmd = list(cmd)
+      cflags = shared.check_call(cmd + ['--cflags'], stdout=shared.PIPE).stdout
+      if cmd[0] == shared.EMCC:
+        cmd = shared.CLANG_CC
+      else:
+        cmd = shared.CLANG_CXX
+      cmd = [cmd, '-c'] + shlex.split(cflags, posix=False)
       for i in range(0, len(srcs), chunk_size):
         chunk_srcs = srcs[i:i + chunk_size]
         commands.append(building.get_command_with_possible_response_file(cmd + chunk_srcs))
