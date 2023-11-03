@@ -578,8 +578,7 @@ class Library:
     else:
       task = self.do_build_async(build_dir, out_filename)
       if generate_only:
-        assert out_filename not in deferred_build_tasks
-        deferred_build_tasks[out_filename] = task
+        deferred_build_tasks.append(task)
       else:
         shared.run_coro_as_blocking(task)
 
@@ -2440,11 +2439,11 @@ def ensure_sysroot():
   cache.get('sysroot_install.stamp', install_system_headers, what='system headers')
 
 
-deferred_build_tasks = {}
+deferred_build_tasks = []
 
 
 async def run_deferred_tasks():
-  await asyncio.gather(*deferred_build_tasks.values())
+  await asyncio.gather(*deferred_build_tasks)
 
 
 def build_deferred():

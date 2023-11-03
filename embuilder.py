@@ -13,6 +13,7 @@ running multiple build commands in parallel, confusion can occur).
 """
 
 import argparse
+import asyncio
 import logging
 import sys
 import time
@@ -276,7 +277,8 @@ def main():
         clear_port(what)
       if do_build:
         # TODO: port `ports` to deferred build system as well.
-        build_port(what)
+        # For now just offloading it to a thread so that ports don't block system libs.
+        system_libs.deferred_build_tasks.append(asyncio.to_thread(build_port, what))
     else:
       logger.error('unfamiliar build target: ' + what)
       return 1

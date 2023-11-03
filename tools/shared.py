@@ -96,15 +96,8 @@ diagnostics.add_warning('unsupported')
 diagnostics.add_warning('closure', enabled=False)
 
 
-# Our `main` functions aren't async, so instead we share a runner by declaring one here.
-runner = asyncio.Runner()
-
-
 def run_coro_as_blocking(coro):
-  # check that we're not already running in the event loop
-  if asyncio.get_event_loop().is_running():
-    raise Exception('Cannot run async code from inside the event loop')
-  runner.run(coro)
+  asyncio.run(coro)
 
 
 # TODO(sbc): Investigate switching to shlex.quote
