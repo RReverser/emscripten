@@ -182,7 +182,7 @@ def create_ninja_file(input_files, filename, libname, cflags, asflags=None, cust
 
 ninja_required_version = 1.5
 
-ASFLAGS = {get_clang_flags(shared.EMCC, asflags)}
+ASFLAGS = -Wno-unused-command-line-argument {get_clang_flags(shared.EMCC, asflags)}
 CFLAGS = {get_clang_flags(shared.EMCC, cflags)}
 CXXFLAGS = {get_clang_flags(shared.EMXX, cflags)}
 CC = {shared.CLANG_CC}
