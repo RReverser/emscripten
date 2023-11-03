@@ -3,6 +3,7 @@
 # University of Illinois/NCSA Open Source License.  Both these licenses can be
 # found in the LICENSE file.
 
+import asyncio
 import logging
 import hashlib
 import os
@@ -169,7 +170,7 @@ class Ports:
         commands.append(cmd)
         objects.append(obj)
 
-      system_libs.run_build_commands(commands, num_inputs=len(srcs))
+      shared.run_coro_as_blocking(system_libs.run_build_commands(commands, num_inputs=len(srcs)))
       system_libs.create_lib(output_path, objects)
 
     return output_path

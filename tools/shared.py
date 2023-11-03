@@ -96,6 +96,17 @@ diagnostics.add_warning('unsupported')
 diagnostics.add_warning('closure', enabled=False)
 
 
+# Our `main` functions aren't async, so instead we share a runner by declaring one here.
+runner = asyncio.Runner()
+
+
+def run_coro_as_blocking(coro):
+  # check that we're not already running in the event loop
+  if asyncio.get_event_loop().is_running():
+    raise Exception('Cannot run async code from inside the event loop')
+  runner.run(coro)
+
+
 # TODO(sbc): Investigate switching to shlex.quote
 def shlex_quote(arg):
   arg = os.fspath(arg)
@@ -146,10 +157,14 @@ def returncode_to_str(code):
   return f'returned {code}'
 
 
-def run_multiple_processes(commands,
-                           env=None,
-                           route_stdout_to_temp_files_suffix=None,
-                           cwd=None):
+# Ensure no more than (number of cores) subprocesses are running at once.
+subprocess_limiter = asyncio.Semaphore(get_num_cores())
+
+
+async def run_multiple_processes(commands,
+                                 env=None,
+                                 route_stdout_to_temp_files_suffix=None,
+                                 cwd=None):
   """Runs multiple subprocess commands.
 
   route_stdout_to_temp_files_suffix : string
@@ -162,9 +177,6 @@ def run_multiple_processes(commands,
 
   temp_files = get_temp_files() if route_stdout_to_temp_files_suffix else None
 
-  # Ensure no more than (number of cores) subprocesses are running at once.
-  subprocess_limiter = asyncio.Semaphore(get_num_cores())
-
   async def run_command(i, command):
     stdout = temp_files.get(route_stdout_to_temp_files_suffix) if temp_files else None
 
@@ -174,8 +186,7 @@ def run_multiple_processes(commands,
 
     async with subprocess_limiter:
       proc = await asyncio.create_subprocess_exec(*command, stdout=stdout, stderr=None, env=env, cwd=cwd)
-
-    returncode = await proc.wait()
+      returncode = await proc.wait()
 
     if returncode != 0:
       raise Exception(f'Subprocess {i}/{len(commands)} failed with return code {returncode}! (cmdline: {" ".join(command)})')
@@ -185,10 +196,7 @@ def run_multiple_processes(commands,
 
     return stdout.name if stdout else None
 
-  async def run_all_commands():
-    return await asyncio.gather(*(run_command(i, command) for i, command in enumerate(commands)), return_exceptions=True)
-
-  return asyncio.run(run_all_commands())
+  return await asyncio.gather(*(run_command(i, command) for i, command in enumerate(commands)))
 
 
 def check_call(cmd, *args, **kw):

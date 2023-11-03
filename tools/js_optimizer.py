@@ -4,6 +4,7 @@
 # University of Illinois/NCSA Open Source License.  Both these licenses can be
 # found in the LICENSE file.
 
+import asyncio
 import os
 import sys
 import subprocess
@@ -262,7 +263,7 @@ EMSCRIPTEN_FUNCS();
 
   with ToolchainProfiler.profile_block('run_optimizer'):
     commands = [config.NODE_JS + [ACORN_OPTIMIZER, f] + passes for f in filenames]
-    filenames = shared.run_multiple_processes(commands, route_stdout_to_temp_files_suffix='js_opt.jo.js')
+    filenames = shared.run_coro_as_blocking(shared.run_multiple_processes(commands, route_stdout_to_temp_files_suffix='js_opt.jo.js'))
 
   with ToolchainProfiler.profile_block('split_closure_cleanup'):
     if closure or cleanup:

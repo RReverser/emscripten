@@ -3,6 +3,7 @@
 # University of Illinois/NCSA Open Source License.  Both these licenses can be
 # found in the LICENSE file.
 
+import asyncio
 import re
 from time import time
 from .toolchain_profiler import ToolchainProfiler
@@ -83,14 +84,14 @@ def clean_env():
   return safe_env
 
 
-def run_build_commands(commands, num_inputs, build_dir=None):
+async def run_build_commands(commands, num_inputs, build_dir=None):
   # Before running a set of build commands make sure the common sysroot
   # headers are installed.  This prevents each sub-process from attempting
   # to setup the sysroot itself.
   ensure_sysroot()
   start_time = time()
-  shared.run_multiple_processes(commands, env=clean_env(), cwd=build_dir)
-  logger.info(f'compiled {num_inputs} inputs in {time() - start_time:.2f}s')
+  await shared.run_multiple_processes(commands, env=clean_env(), cwd=build_dir)
+  logger.info(f'compiled {num_inputs} inputs in {build_dir} in {time() - start_time:.2f}s')
 
 
 def objectfile_sort_key(filename):
@@ -427,8 +428,8 @@ class Library:
     self.deterministic_paths = deterministic_paths
     return cache.get(self.get_path(), self.do_build, force=USE_NINJA == 2, quiet=USE_NINJA)
 
-  def generate(self):
-    self.deterministic_paths = False
+  def generate(self, deterministic_paths=False):
+    self.deterministic_paths = deterministic_paths
     return cache.get(self.get_path(), self.do_generate, force=USE_NINJA == 2, quiet=USE_NINJA,
                      deferred=True)
 
@@ -478,7 +479,7 @@ class Library:
     ninja_file = os.path.join(build_dir, 'build.ninja')
     create_ninja_file(input_files, ninja_file, libname, cflags, asflags=asflags, customize_build_flags=self.customize_build_cmd)
 
-  def build_objects(self, build_dir):
+  async def build_objects(self, build_dir):
     """
     Returns a list of compiled object files for this library.
 
@@ -545,7 +546,7 @@ class Library:
         chunk_srcs = srcs[i:i + chunk_size]
         commands.append(building.get_command_with_possible_response_file(cmd + chunk_srcs))
 
-    run_build_commands(commands, num_inputs=len(objects), build_dir=build_dir)
+    await run_build_commands(commands, num_inputs=len(objects), build_dir=build_dir)
     return objects
 
   def customize_build_cmd(self, cmd, _filename):
@@ -553,6 +554,18 @@ class Library:
 
     For example, libc uses this to replace -Oz with -O2 for some subset of files."""
     return cmd
+
+  async def do_build_async(self, build_dir, out_filename):
+    # If we got here, then `generate` already determined that cache doesn't exist
+    # and that cache is not frozen. Just lock the cache and do the work.
+    with cache.lock(self.get_path()):
+      # Use a seperate build directory to the ninja flavor so that building without
+      # EMCC_USE_NINJA doesn't clobber the ninja build tree
+      build_dir += '-tmp'
+      utils.safe_ensure_dirs(build_dir)
+      create_lib(out_filename, await self.build_objects(build_dir))
+      if not shared.DEBUG:
+        utils.delete_dir(build_dir)
 
   def do_build(self, out_filename, generate_only=False):
     """Builds the library and returns the path to the file."""
@@ -563,13 +576,12 @@ class Library:
       if not generate_only:
         run_ninja(build_dir)
     else:
-      # Use a seperate build directory to the ninja flavor so that building without
-      # EMCC_USE_NINJA doesn't clobber the ninja build tree
-      build_dir += '-tmp'
-      utils.safe_ensure_dirs(build_dir)
-      create_lib(out_filename, self.build_objects(build_dir))
-      if not shared.DEBUG:
-        utils.delete_dir(build_dir)
+      task = self.do_build_async(build_dir, out_filename)
+      if generate_only:
+        assert out_filename not in deferred_build_tasks
+        deferred_build_tasks[out_filename] = task
+      else:
+        shared.run_coro_as_blocking(task)
 
   def do_generate(self, out_filename):
     self.do_build(out_filename, generate_only=True)
@@ -2428,8 +2440,17 @@ def ensure_sysroot():
   cache.get('sysroot_install.stamp', install_system_headers, what='system headers')
 
 
+deferred_build_tasks = {}
+
+
+async def run_deferred_tasks():
+  await asyncio.gather(*deferred_build_tasks.values())
+
+
 def build_deferred():
-  assert USE_NINJA
-  top_level_ninja = get_top_level_ninja_file()
-  if os.path.isfile(top_level_ninja):
-    run_ninja(os.path.dirname(top_level_ninja))
+  if USE_NINJA:
+    top_level_ninja = get_top_level_ninja_file()
+    if os.path.isfile(top_level_ninja):
+      run_ninja(os.path.dirname(top_level_ninja))
+  else:
+    asyncio.run(run_deferred_tasks())

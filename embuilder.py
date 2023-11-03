@@ -265,10 +265,7 @@ def main():
       if do_clear:
         library.erase()
       if do_build:
-        if USE_NINJA:
-          library.generate()
-        else:
-          library.build(deterministic_paths=True)
+        library.generate(deterministic_paths=True)
     elif what == 'sysroot':
       if do_clear:
         cache.erase_file('sysroot_install.stamp')
@@ -278,6 +275,7 @@ def main():
       if do_clear:
         clear_port(what)
       if do_build:
+        # TODO: port `ports` to deferred build system as well.
         build_port(what)
     else:
       logger.error('unfamiliar build target: ' + what)
@@ -286,12 +284,11 @@ def main():
     time_taken = time.time() - start_time
     logger.info('...success. Took %s(%.2fs)' % (('%02d:%02d mins ' % (time_taken // 60, time_taken % 60) if time_taken >= 60 else ''), time_taken))
 
-  if USE_NINJA and args.operation != 'clear':
+  if args.operation != 'clear':
     system_libs.build_deferred()
 
-  if len(tasks) > 1 or USE_NINJA:
-    all_build_time_taken = time.time() - all_build_start_time
-    logger.info('Built %d targets in %s(%.2fs)' % (len(tasks), ('%02d:%02d mins ' % (all_build_time_taken // 60, all_build_time_taken % 60) if all_build_time_taken >= 60 else ''), all_build_time_taken))
+  all_build_time_taken = time.time() - all_build_start_time
+  logger.info('Built %d targets in %s(%.2fs)' % (len(tasks), ('%02d:%02d mins ' % (all_build_time_taken // 60, all_build_time_taken % 60) if all_build_time_taken >= 60 else ''), all_build_time_taken))
 
   return 0
 
