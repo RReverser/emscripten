@@ -667,18 +667,25 @@ namespace internal {
 // This one is used for Promises represented by the `val` type.
 class val_awaiter {
   // State machine holding awaiter's current state. One of:
-  //  - initially created with promise
-  //  - waiting with a given coroutine handle
-  //  - completed with a result
-  std::variant<val, std::coroutine_handle<val::promise_type>, val> state;
 
-  constexpr static std::size_t STATE_PROMISE = 0;
-  constexpr static std::size_t STATE_CORO = 1;
-  constexpr static std::size_t STATE_RESULT = 2;
+  //  - initially created with promise
+  struct state_promise: val {
+    state_promise(val&& promise) : val(std::move(promise)) {}
+  };
+
+  //  - waiting with a given coroutine handle
+  using state_coro = std::coroutine_handle<val::promise_type> coro;
+
+  //  - completed with a result
+  struct state_result: val {
+    state_result(val&& result) : val(std::move(result)) {}
+  };
+
+  std::variant<state_promise, state_coro, state_result> state;
 
 public:
   val_awaiter(val&& promise)
-    : state(std::in_place_index<STATE_PROMISE>, std::move(promise)) {}
+    : state(state_promise(std::move(promise))) {}
 
   // just in case, ensure nobody moves / copies this type around
   val_awaiter(val_awaiter&&) = delete;
@@ -689,21 +696,21 @@ public:
   // On suspend, store the coroutine handle and invoke a helper that will do
   // a rough equivalent of `promise.then(value => this.resume_with(value))`.
   void await_suspend(std::coroutine_handle<val::promise_type> handle) {
-    internal::_emval_coro_suspend(std::get<STATE_PROMISE>(state).as_handle(), this);
-    state.emplace<STATE_CORO>(handle);
+    internal::_emval_coro_suspend(std::get<state_promise>(state).as_handle(), this);
+    state.emplace<state_waiting>(handle);
   }
 
   // When JS invokes `resume_with` with some value, store that value and resume
   // the coroutine.
   void resume_with(val&& result) {
-    auto coro = std::move(std::get<STATE_CORO>(state));
-    state.emplace<STATE_RESULT>(std::move(result));
+    auto coro = std::move(std::get<state_coro>(state));
+    state.emplace<state_result>(std::move(result));
     coro.resume();
   }
 
   // `await_resume` finalizes the awaiter and should return the result
   // of the `co_await ...` expression - in our case, the stored value.
-  val await_resume() { return std::move(std::get<STATE_RESULT>(state)); }
+  val await_resume() { return std::move(std::get<state_result>(state)); }
 };
 
 extern "C" {
