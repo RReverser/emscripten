@@ -144,7 +144,8 @@ private:
   template <typename Func>
   static void runAndFree(void* arg) {
     std::unique_ptr<Func> func((Func*)arg);
-    (*func)();
+    // return is just an easy way to statically ensure that Func returns void
+    return (*func)();
   }
 
   template <typename Func>
@@ -157,14 +158,14 @@ private:
     // will be at least attempted to be destroyed on the caller thread instead
     // of the target one.
     Func func = std::move(*(Func*)arg);
-    func();
+    return func();
   }
 
   template <typename Func>
   static void runWithCtx(em_proxying_ctx* ctx, void* arg) {
     // Same as in `run`, move into a local variable before calling.
     Func func = std::move(*(Func*)arg);
-    func(ProxyingCtx{ctx});
+    return func(ProxyingCtx{ctx});
   }
 
   template <typename Func, typename Callback, typename Cancel>
@@ -176,22 +177,22 @@ private:
     static void runFunc(void* arg) {
       auto* info = (CallbackFuncs*)arg;
       // Make sure to call into the helper that takes care of freeing the Func on the correct thread.
-      ProxyingQueue::run<Func>(&info->func);
+      return ProxyingQueue::run<Func>(&info->func);
     }
 
     static void runFuncWithCtx(em_proxying_ctx* ctx, void* arg) {
       auto* info = (CallbackFuncs*)arg;
-      ProxyingQueue::runWithCtx<Func>(ctx, &info->func);
+      return ProxyingQueue::runWithCtx<Func>(ctx, &info->func);
     }
 
     static void runCallback(void* arg) {
       std::unique_ptr<CallbackFuncs> info((CallbackFuncs*)arg);
-      info->callback();
+      return info->callback();
     }
 
     static void runCancel(void* arg) {
       std::unique_ptr<CallbackFuncs> info((CallbackFuncs*)arg);
-      info->cancel();
+      return info->cancel();
     }
   };
 
