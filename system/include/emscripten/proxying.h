@@ -122,7 +122,6 @@ emscripten_proxy_promise_with_ctx(em_proxying_queue* q,
 #warning "C++ ProxyingQueue support requires building with -std=c++11 or newer!"
 #else
 
-#include <functional>
 #include <thread>
 #include <utility>
 
@@ -142,83 +141,59 @@ public:
   };
 
 private:
+  template <typename Func>
   static void runAndFree(void* arg) {
-    auto* f = (std::function<void()>*)arg;
-    (*f)();
-    delete f;
+    std::unique_ptr<Func> func((Func*)arg);
+    (*func)();
   }
 
+  template <typename Func>
   static void run(void* arg) {
-    auto* f = (std::function<void()>*)arg;
-    (*f)();
+    // Move the function state into a local variable so that it's destructed
+    // right after the function is called and on the same thread.
+    // Move constructor will take care of preventing double-free for exclusive
+    // resources.
+    // If `run` isn't reached (if proxying failed), then the original `Func`
+    // will be at least attempted to be destroyed on the caller thread instead
+    // of the target one.
+    Func func = std::move(*(Func*)arg);
+    func();
   }
 
+  template <typename Func>
   static void runWithCtx(em_proxying_ctx* ctx, void* arg) {
-    auto* f = (std::function<void(ProxyingCtx)>*)arg;
-    (*f)(ProxyingCtx{ctx});
+    // Same as in `run`, move into a local variable before calling.
+    Func func = std::move(*(Func*)arg);
+    func(ProxyingCtx{ctx});
   }
 
+  template <typename Func, typename Callback, typename Cancel>
   struct CallbackFuncs {
-    std::function<void()> func;
-    std::function<void()> callback;
-    std::function<void()> cancel;
+    Func func;
+    Callback callback;
+    Cancel cancel;
 
-    CallbackFuncs(std::function<void()>&& func,
-                  std::function<void()>&& callback,
-                  std::function<void()>&& cancel)
-      : func(std::move(func)), callback(std::move(callback)),
-        cancel(std::move(cancel)) {}
-  };
+    static void runFunc(void* arg) {
+      auto* info = (CallbackFuncs*)arg;
+      // Make sure to call into the helper that takes care of freeing the Func on the correct thread.
+      ProxyingQueue::run<Func>(&info->func);
+    }
 
-  static void runFunc(void* arg) {
-    auto* info = (CallbackFuncs*)arg;
-    info->func();
-  }
+    static void runFuncWithCtx(em_proxying_ctx* ctx, void* arg) {
+      auto* info = (CallbackFuncs*)arg;
+      ProxyingQueue::runWithCtx<Func>(ctx, &info->func);
+    }
 
-  static void runCallback(void* arg) {
-    auto* info = (CallbackFuncs*)arg;
-    info->callback();
-    delete info;
-  }
+    static void runCallback(void* arg) {
+      std::unique_ptr<CallbackFuncs> info((CallbackFuncs*)arg);
+      info->callback();
+    }
 
-  static void runCancel(void* arg) {
-    auto* info = (CallbackFuncs*)arg;
-    if (info->cancel) {
+    static void runCancel(void* arg) {
+      std::unique_ptr<CallbackFuncs> info((CallbackFuncs*)arg);
       info->cancel();
     }
-    delete info;
-  }
-
-  struct CallbackWithCtxFuncs {
-    std::function<void(ProxyingCtx)> func;
-    std::function<void()> callback;
-    std::function<void()> cancel;
-
-    CallbackWithCtxFuncs(std::function<void(ProxyingCtx)>&& func,
-                         std::function<void()>&& callback,
-                         std::function<void()>&& cancel)
-      : func(std::move(func)), callback(std::move(callback)),
-        cancel(std::move(cancel)) {}
   };
-
-  static void runFuncWithCtx(em_proxying_ctx* ctx, void* arg) {
-    auto* info = (CallbackWithCtxFuncs*)arg;
-    info->func(ProxyingCtx{ctx});
-  }
-
-  static void runCallbackWithCtx(void* arg) {
-    auto* info = (CallbackWithCtxFuncs*)arg;
-    info->callback();
-    delete info;
-  }
-
-  static void runCancelWithCtx(void* arg) {
-    auto* info = (CallbackWithCtxFuncs*)arg;
-    if (info->cancel) {
-      info->cancel();
-    }
-    delete info;
-  }
 
 public:
   em_proxying_queue* queue = em_proxying_queue_create();
@@ -253,50 +228,65 @@ public:
 
   // Return true if the work was successfully enqueued and false otherwise.
   // Refer to the corresponding C API documentation.
-  bool proxyAsync(pthread_t target, std::function<void()>&& func) {
-    std::function<void()>* arg = new std::function<void()>(std::move(func));
-    if (!emscripten_proxy_async(queue, target, runAndFree, (void*)arg)) {
+  template <typename Func>
+  bool proxyAsync(pthread_t target, Func&& func) {
+    auto* arg = new Func(std::forward<Func>(func));
+    if (!emscripten_proxy_async(queue, target, runAndFree<Func>, arg)) {
       delete arg;
       return false;
     }
     return true;
   }
 
-  bool proxySync(const pthread_t target, const std::function<void()>& func) {
-    return emscripten_proxy_sync(queue, target, run, (void*)&func);
+  template <typename Func>
+  bool proxySync(pthread_t target, Func&& func) {
+    return emscripten_proxy_sync(queue, target, run<Func>, &func);
   }
 
-  bool proxySyncWithCtx(const pthread_t target,
-                        const std::function<void(ProxyingCtx)>& func) {
-    return emscripten_proxy_sync_with_ctx(
-      queue, target, runWithCtx, (void*)&func);
+  template <typename Func>
+  bool proxySyncWithCtx(pthread_t target, Func&& func) {
+    return emscripten_proxy_sync_with_ctx(queue, target, runWithCtx<Func>, &func);
   }
 
+  template <typename Func, typename Callback, typename Cancel>
   bool proxyCallback(pthread_t target,
-                     std::function<void()>&& func,
-                     std::function<void()>&& callback,
-                     std::function<void()>&& cancel) {
-    CallbackFuncs* info = new CallbackFuncs(
-      std::move(func), std::move(callback), std::move(cancel));
-    if (!emscripten_proxy_callback(
-          queue, target, runFunc, runCallback, runCancel, info)) {
+                     Func&& func,
+                     Callback&& callback,
+                     Cancel&& cancel) {
+    using CallbackFuncs = CallbackFuncs<Func, Callback, Cancel>;
+    auto* info = new CallbackFuncs {
+      .func = std::forward<Func>(func),
+      .callback = std::forward<Callback>(callback),
+      .cancel = std::forward<Cancel>(cancel),
+    };
+    if (!emscripten_proxy_callback(queue,
+                                   target,
+                                   CallbackFuncs::runFunc,
+                                   CallbackFuncs::runCallback,
+                                   CallbackFuncs::runCancel,
+                                   info)) {
       delete info;
       return false;
     }
     return true;
   }
 
+  template <typename Func, typename Callback, typename Cancel>
   bool proxyCallbackWithCtx(pthread_t target,
-                            std::function<void(ProxyingCtx)>&& func,
-                            std::function<void()>&& callback,
-                            std::function<void()>&& cancel) {
-    CallbackWithCtxFuncs* info = new CallbackWithCtxFuncs(
-      std::move(func), std::move(callback), std::move(cancel));
+                            Func&& func,
+                            Callback&& callback,
+                            Cancel&& cancel) {
+    using CallbackFuncs = CallbackFuncs<Func, Callback, Cancel>;
+    auto* info = new CallbackFuncs {
+      .func = std::forward<Func>(func),
+      .callback = std::forward<Callback>(callback),
+      .cancel = std::forward<Cancel>(cancel),
+    };
     if (!emscripten_proxy_callback_with_ctx(queue,
                                             target,
-                                            runFuncWithCtx,
-                                            runCallbackWithCtx,
-                                            runCancelWithCtx,
+                                            CallbackFuncs::runFuncWithCtx,
+                                            CallbackFuncs::runCallback,
+                                            CallbackFuncs::runCancel,
                                             info)) {
       delete info;
       return false;

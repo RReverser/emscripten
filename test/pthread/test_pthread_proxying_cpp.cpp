@@ -156,7 +156,7 @@ void test_proxy_callback(void) {
       executor = std::this_thread::get_id();
     },
     [&]() { j = 1; },
-    {});
+    []() {});
   assert(i == 0);
   queue.execute();
   assert(i == 1);
@@ -172,7 +172,7 @@ void test_proxy_callback(void) {
         executor = std::this_thread::get_id();
       },
       [&]() { j = 2; },
-      {});
+      []() {});
     // TODO: Add a way to wait for work before executing it.
     while (j != 2) {
       queue.execute();
@@ -190,7 +190,7 @@ void test_proxy_callback(void) {
         executor = std::this_thread::get_id();
       },
       [&]() { j = 3; },
-      {});
+      []() {});
     // TODO: Add a way to wait for work before executing it.
     while (j != 3) {
       queue.execute();
@@ -216,7 +216,7 @@ void test_proxy_callback_with_ctx(void) {
       ctx.finish();
     },
     [&]() { j = 1; },
-    {});
+    []() {});
   assert(i == 0);
   queue.execute();
   assert(i == 1);
@@ -233,7 +233,7 @@ void test_proxy_callback_with_ctx(void) {
         ctx.finish();
       },
       [&]() { j = 2; },
-      {});
+      []() {});
     // TODO: Add a way to wait for work before executing it.
     while (j != 2) {
       queue.execute();
@@ -253,7 +253,7 @@ void test_proxy_callback_with_ctx(void) {
         emscripten_async_call(finish, ctx.ctx, 0);
       },
       [&]() { j = 3; },
-      {});
+      []() {});
     // TODO: Add a way to wait for work before executing it.
     while (j != 3) {
       queue.execute();
