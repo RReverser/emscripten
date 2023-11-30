@@ -1312,6 +1312,10 @@ def phase_linker_setup(options, state, newargs):
   if '-lembind' in [x for _, x in state.link_flags]:
     settings.EMBIND = 1
 
+  if settings.EMBIND:
+    # Embind needs to add dynamically constructed method callers to the Wasm table.
+    settings.ALLOW_TABLE_GROWTH = 1
+
   if settings.PTHREADS:
     setup_pthreads(target)
     settings.JS_LIBRARIES.append((0, 'library_pthread.js'))

@@ -38,6 +38,8 @@ val wrapped_extend(const std::string&, const val&);
 enum class EM_METHOD_CALLER_KIND {
   FUNCTION = 0,
   CONSTRUCTOR = 1,
+  METHOD = 2,
+  CAST = 3,
 };
 
 // Implemented in JavaScript.  Don't call these directly.
@@ -53,9 +55,6 @@ enum {
 };
 
 typedef struct _EM_DESTRUCTORS* EM_DESTRUCTORS;
-typedef struct _EM_METHOD_CALLER* EM_METHOD_CALLER;
-typedef double EM_GENERIC_WIRE_TYPE;
-typedef const void* EM_VAR_ARGS;
 
 void _emval_incref(EM_VAL value);
 void _emval_decref(EM_VAL value);
@@ -69,15 +68,10 @@ EM_VAL _emval_new_cstring(const char*);
 EM_VAL _emval_new_u8string(const char*);
 EM_VAL _emval_new_u16string(const char16_t*);
 
-EM_VAL _emval_take_value(TYPEID type, EM_VAR_ARGS argv);
-
 EM_VAL _emval_get_global(const char* name);
 EM_VAL _emval_get_module_property(const char* name);
 EM_VAL _emval_get_property(EM_VAL object, EM_VAL key);
 void _emval_set_property(EM_VAL object, EM_VAL key, EM_VAL value);
-EM_GENERIC_WIRE_TYPE _emval_as(EM_VAL value, TYPEID returnType, EM_DESTRUCTORS* destructors);
-int64_t _emval_as_int64(EM_VAL value, TYPEID returnType);
-uint64_t _emval_as_uint64(EM_VAL value, TYPEID returnType);
 
 bool _emval_equals(EM_VAL first, EM_VAL second);
 bool _emval_strictly_equals(EM_VAL first, EM_VAL second);
@@ -85,24 +79,13 @@ bool _emval_greater_than(EM_VAL first, EM_VAL second);
 bool _emval_less_than(EM_VAL first, EM_VAL second);
 bool _emval_not(EM_VAL object);
 
-EM_GENERIC_WIRE_TYPE _emval_call(
-    EM_METHOD_CALLER caller,
-    EM_VAL func,
-    EM_DESTRUCTORS* destructors,
-    EM_VAR_ARGS argv);
-
 // DO NOT call this more than once per signature. It will
 // leak generated function objects!
-EM_METHOD_CALLER _emval_get_method_caller(
+void* _emval_get_method_caller(
+    const char *sig,
     unsigned argCount, // including return value
     const TYPEID argTypes[],
-    EM_METHOD_CALLER_KIND asCtor);
-EM_GENERIC_WIRE_TYPE _emval_call_method(
-    EM_METHOD_CALLER caller,
-    EM_VAL handle,
-    const char* methodName,
-    EM_DESTRUCTORS* destructors,
-    EM_VAR_ARGS argv);
+    EM_METHOD_CALLER_KIND kind);
 EM_VAL _emval_typeof(EM_VAL value);
 bool _emval_instanceof(EM_VAL object, EM_VAL constructor);
 bool _emval_is_number(EM_VAL object);
@@ -128,27 +111,11 @@ struct symbol_registrar {
   }
 };
 
-template<EM_METHOD_CALLER_KIND Kind, typename ReturnType, typename... Args>
-struct Signature {
-  /*
-  typedef typename BindingType<ReturnType>::WireType (*MethodCaller)(
-      EM_VAL object,
-      EM_VAL method,
-      EM_DESTRUCTORS* destructors,
-      typename BindingType<Args>::WireType...);
-  */
-  static EM_METHOD_CALLER get_method_caller() {
-    static constexpr WithPolicies<>::ArgTypeList<ReturnType, Args...> args;
-    thread_local EM_METHOD_CALLER mc = _emval_get_method_caller(args.getCount(), args.getTypes(), Kind);
-    return mc;
-  }
-};
-
 struct DestructorsRunner {
 public:
-  explicit DestructorsRunner(EM_DESTRUCTORS d)
-      : destructors(d)
-  {}
+  EM_DESTRUCTORS destructors;
+
+  DestructorsRunner() : destructors(nullptr) {}
   ~DestructorsRunner() {
     if (destructors) {
       _emval_run_destructors(destructors);
@@ -157,124 +124,26 @@ public:
 
   DestructorsRunner(const DestructorsRunner&) = delete;
   void operator=(const DestructorsRunner&) = delete;
-
-private:
-  EM_DESTRUCTORS destructors;
 };
 
-template<typename WireType>
-struct GenericWireTypeConverter {
-  static WireType from(double wt) {
-    return static_cast<WireType>(wt);
+template<EM_METHOD_CALLER_KIND Kind, typename Ret, typename... Args>
+struct Signature {
+  using MethodCallerType = typename BindingType<Ret>::WireType (*) (EM_DESTRUCTORS *destructorsRef, typename BindingType<Args>::WireType...);
+
+  template<typename... Policies>
+  static Ret invoke(Args&&... args) {
+    using namespace internal;
+
+    static constexpr typename WithPolicies<Policies...>::template ArgTypeList<Ret, Args...> argsSig;
+    thread_local auto method_caller = (MethodCallerType)_emval_get_method_caller(getSignature((MethodCallerType)nullptr), argsSig.getCount(), argsSig.getTypes(), Kind);
+
+    DestructorsRunner rd;
+    if constexpr (std::is_same_v<Ret, void>) {
+      method_caller(&rd.destructors, toWireType(std::forward<Args>(args))...);
+    } else {
+      return BindingType<Ret>::fromWireType(method_caller(&rd.destructors, toWireType(std::forward<Args>(args))...));
+    }
   }
-};
-
-template<typename Pointee>
-struct GenericWireTypeConverter<Pointee*> {
-  static Pointee* from(double wt) {
-    return reinterpret_cast<Pointee*>(static_cast<uintptr_t>(wt));
-  }
-};
-
-template<typename T>
-T fromGenericWireType(EM_GENERIC_WIRE_TYPE g) {
-  typedef typename BindingType<T>::WireType WireType;
-  WireType wt = GenericWireTypeConverter<WireType>::from(g);
-  return BindingType<T>::fromWireType(wt);
-}
-
-template<>
-inline void fromGenericWireType<void>(EM_GENERIC_WIRE_TYPE g) {
-  (void)g;
-}
-
-template<typename... Args>
-struct PackSize;
-
-template<>
-struct PackSize<> {
-  static constexpr size_t value = 0;
-};
-
-template<typename Arg, typename... Args>
-struct PackSize<Arg, Args...> {
-  static constexpr size_t value = (sizeof(typename BindingType<Arg>::WireType) + 7) / 8 + PackSize<Args...>::value;
-};
-
-union GenericWireType {
-  union {
-    unsigned u;
-    size_t s;
-    float f;
-    void* p;
-  } w[2];
-  double d;
-  uint64_t u;
-};
-static_assert(sizeof(GenericWireType) == 2*sizeof(void*), "GenericWireType must be size of 2 pointers");
-static_assert(alignof(GenericWireType) == 8, "GenericWireType must be 8-byte-aligned");
-
-inline void writeGenericWireType(GenericWireType*& cursor, float wt) {
-  cursor->w[0].f = wt;
-  ++cursor;
-}
-
-inline void writeGenericWireType(GenericWireType*& cursor, double wt) {
-  cursor->d = wt;
-  ++cursor;
-}
-
-inline void writeGenericWireType(GenericWireType*& cursor, int64_t wt) {
-  cursor->u = wt;
-  ++cursor;
-}
-
-inline void writeGenericWireType(GenericWireType*& cursor, uint64_t wt) {
-  cursor->u = wt;
-  ++cursor;
-}
-
-template<typename T>
-void writeGenericWireType(GenericWireType*& cursor, T* wt) {
-  cursor->w[0].p = wt;
-  ++cursor;
-}
-
-template<typename ElementType>
-inline void writeGenericWireType(GenericWireType*& cursor, const memory_view<ElementType>& wt) {
-  cursor->w[0].s = wt.size;
-  cursor->w[1].p = (void*)wt.data;
-  ++cursor;
-}
-
-template<typename T>
-void writeGenericWireType(GenericWireType*& cursor, T wt) {
-  cursor->w[0].u = static_cast<unsigned>(wt);
-  ++cursor;
-}
-
-inline void writeGenericWireTypes(GenericWireType*&) {
-}
-
-template<typename First, typename... Rest>
-EMSCRIPTEN_ALWAYS_INLINE void writeGenericWireTypes(GenericWireType*& cursor, First&& first, Rest&&... rest) {
-  writeGenericWireType(cursor, BindingType<First>::toWireType(std::forward<First>(first)));
-  writeGenericWireTypes(cursor, std::forward<Rest>(rest)...);
-}
-
-template<typename... Args>
-struct WireTypePack {
-  WireTypePack(Args&&... args) {
-    GenericWireType* cursor = elements.data();
-    writeGenericWireTypes(cursor, std::forward<Args>(args)...);
-  }
-
-  operator EM_VAR_ARGS() const {
-    return elements.data();
-  }
-
-private:
-  std::array<GenericWireType, PackSize<Args...>::value> elements;
 };
 
 } // end namespace internal
@@ -366,8 +235,8 @@ public:
   explicit val(T&& value) {
     using namespace internal;
 
-    WireTypePack<T> argv(std::forward<T>(value));
-    new (this) val(_emval_take_value(internal::TypeID<T>::get(), argv));
+    new (this) val(Signature<EM_METHOD_CALLER_KIND::CAST, val, T>::template
+      invoke<>(std::forward<T>(value)));
   }
 
   val() : val(EM_VAL(internal::_EMVAL_UNDEFINED)) {}
@@ -500,64 +369,32 @@ public:
   val new_(Args&&... args) const {
     using namespace internal;
 
-    return internalCall<EM_METHOD_CALLER_KIND::CONSTRUCTOR, val>(_emval_call, std::forward<Args>(args)...);
+    return Signature<EM_METHOD_CALLER_KIND::CONSTRUCTOR, val, const val&, Args&&...>::template
+      invoke<>(*this, std::forward<Args>(args)...);
   }
 
   template<typename... Args>
   val operator()(Args&&... args) const {
     using namespace internal;
 
-    return internalCall<EM_METHOD_CALLER_KIND::FUNCTION, val>(_emval_call, std::forward<Args>(args)...);
+    return Signature<EM_METHOD_CALLER_KIND::FUNCTION, val, const val&, Args&&...>::template
+      invoke<>(*this, std::forward<Args>(args)...);
   }
 
   template<typename ReturnValue, typename... Args>
   ReturnValue call(const char* name, Args&&... args) const {
     using namespace internal;
 
-    return internalCall<EM_METHOD_CALLER_KIND::FUNCTION, ReturnValue>(
-      [name](EM_METHOD_CALLER caller,
-             EM_VAL handle,
-             EM_DESTRUCTORS* destructorsRef,
-             EM_VAR_ARGS argv) {
-        return _emval_call_method(caller, handle, name, destructorsRef, argv);
-      },
-      std::forward<Args>(args)...);
+    return Signature<EM_METHOD_CALLER_KIND::METHOD, ReturnValue, const val&, const val&, Args&&...>::template
+      invoke<>(*this, val(name), std::forward<Args>(args)...);
   }
 
-  template<typename T, typename ...Policies>
+  template<typename T, typename... Policies>
   T as(Policies...) const {
     using namespace internal;
 
-    typedef BindingType<T> BT;
-    typename WithPolicies<Policies...>::template ArgTypeList<T> targetType;
-
-    EM_DESTRUCTORS destructors = nullptr;
-    EM_GENERIC_WIRE_TYPE result = _emval_as(
-        as_handle(),
-        targetType.getTypes()[0],
-        &destructors);
-    DestructorsRunner dr(destructors);
-    return fromGenericWireType<T>(result);
-  }
-
-  template<>
-  int64_t as<int64_t>() const {
-    using namespace internal;
-
-    typedef BindingType<int64_t> BT;
-    typename WithPolicies<>::template ArgTypeList<int64_t> targetType;
-
-    return _emval_as_int64(as_handle(), targetType.getTypes()[0]);
-  }
-
-  template<>
-  uint64_t as<uint64_t>() const {
-    using namespace internal;
-
-    typedef BindingType<uint64_t> BT;
-    typename WithPolicies<>::template ArgTypeList<uint64_t> targetType;
-
-    return  _emval_as_uint64(as_handle(), targetType.getTypes()[0]);
+    return Signature<EM_METHOD_CALLER_KIND::CAST, T, const val&>::template
+      invoke<Policies...>(*this);
   }
 
 // Prefer calling val::typeOf() over val::typeof(), since this form works in both C++11 and GNU++11 build modes. "typeof" is a reserved word in GNU++11 extensions.
@@ -610,21 +447,6 @@ private:
 
   template<typename WrapperType>
   friend val internal::wrapped_extend(const std::string& , const val& );
-
-  template<internal::EM_METHOD_CALLER_KIND Kind, typename Ret, typename Implementation, typename... Args>
-  Ret internalCall(Implementation impl, Args&&... args) const {
-    using namespace internal;
-
-    WireTypePack<Args...> argv(std::forward<Args>(args)...);
-    EM_DESTRUCTORS destructors = nullptr;
-    EM_GENERIC_WIRE_TYPE result = impl(
-      Signature<Kind, Ret, Args...>::get_method_caller(),
-      as_handle(),
-      &destructors,
-      argv);
-    DestructorsRunner rd(destructors);
-    return fromGenericWireType<Ret>(result);
-  }
 
   template<typename T>
   val val_ref(const T& v) const {
