@@ -54,6 +54,18 @@ struct SignatureCode<int> {
 };
 
 template<>
+struct SignatureCode<int64_t> {
+    static constexpr char get() {
+#ifdef __wasm64__
+#define LONG_CODE 'j'
+#else
+#define LONG_CODE 'i'
+#endif
+        return LONG_CODE;
+    }
+};
+
+template<>
 struct SignatureCode<void> {
     static constexpr char get() {
         return 'v';

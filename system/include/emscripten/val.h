@@ -235,8 +235,8 @@ public:
   explicit val(T&& value) {
     using namespace internal;
 
-    new (this) val(Signature<EM_METHOD_CALLER_KIND::CAST, val, T>::template
-      invoke<>(std::forward<T>(value)));
+    new (this) val(Signature<EM_METHOD_CALLER_KIND::CAST, val, const T&>::template
+      invoke<>(value));
   }
 
   val() : val(EM_VAL(internal::_EMVAL_UNDEFINED)) {}
