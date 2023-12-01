@@ -73,57 +73,36 @@ addToLibrary({
         }
       }
     }
-#if ASYNCIFY == 1
-    // Data for a previous async operation that was in flight before us.
-    var previousAsync = Asyncify.currData;
-#endif
     var ret = func.apply(null, cArgs);
     function onDone(ret) {
-#if ASYNCIFY == 1
-      runtimeKeepalivePop();
-#endif
       if (stack !== 0) stackRestore(stack);
       return convertReturnValue(ret);
     }
 #if ASYNCIFY
-  var asyncMode = opts?.async;
-#endif
+    var asyncMode = opts?.async;
 
+    // In regular Asyncify we handle mismatch between the async mode and return
+    // value being a Promise in permissive way unless assertions are enabled.
 #if ASYNCIFY == 1
-    // Keep the runtime alive through all calls. Note that this call might not be
-    // async, but for simplicity we push and pop in all calls.
-    runtimeKeepalivePush();
-    if (Asyncify.currData != previousAsync) {
-#if ASSERTIONS
-      // A change in async operation happened. If there was already an async
-      // operation in flight before us, that is an error: we should not start
-      // another async operation while one is active, and we should not stop one
-      // either. The only valid combination is to have no change in the async
-      // data (so we either had one in flight and left it alone, or we didn't have
-      // one), or to have nothing in flight and to start one.
-      assert(!(previousAsync && Asyncify.currData), 'We cannot start an async operation when one is already flight');
-      assert(!(previousAsync && !Asyncify.currData), 'We cannot stop an async operation in flight');
-#endif
-      // This is a new async operation. The wasm is paused and has unwound its stack.
-      // We need to return a Promise that resolves the return value
-      // once the stack is rewound and execution finishes.
+    if (asyncMode) {
+      ret = Promise.resolve(ret);
+    } else if (ret instanceof Promise) {
 #if ASSERTIONS
       assert(asyncMode, 'The call to ' + ident + ' is running asynchronously. If this was intended, add the async option to the ccall/cwrap call.');
 #endif
-      return Asyncify.whenDone().then(onDone);
+      asyncMode = true;
+    }
+#endif
+#endif
+
+    // In JSPI we strictly require the async mode to match the return value being a promise.
+#if ASYNCIFY == 2 && ASSERTIONS
+    if (asyncMode && !(ret instanceof Promise)) {
+      abort('The call to ' + ident + ' is running synchronously. If this was intended, remove the async option from the ccall/cwrap call.');
     }
 #endif
 
-#if ASYNCIFY == 2
-    if (asyncMode) return ret.then(onDone);
-#endif
-
-    ret = onDone(ret);
-#if ASYNCIFY == 1
-    // If this is an async ccall, ensure we return a promise
-    if (asyncMode) return Promise.resolve(ret);
-#endif
-    return ret;
+    return asyncMode ? ret.then(onDone) : onDone(ret);
   },
 
   $cwrap__docs: `

@@ -157,7 +157,9 @@ addToLibrary({
 #if ASYNCIFY_DEBUG >= 2
                 dbg(`ASYNCIFY: ${'  '.repeat(Asyncify.exportCallStack.length)} finally ${x}`);
 #endif
-                Asyncify.maybeStopUnwind();
+                if (Asyncify.maybeStopUnwind()) {
+                    return Asyncify.whenDone();
+                  }
               }
             }
 #endif
@@ -214,25 +216,25 @@ addToLibrary({
 #if ASYNCIFY_DEBUG
       dbg('ASYNCIFY: maybe stop unwind', Asyncify.exportCallStack);
 #endif
-      if (Asyncify.currData &&
-          Asyncify.state === Asyncify.State.Unwinding &&
-          Asyncify.exportCallStack.length === 0) {
-        // We just finished unwinding.
-        // Be sure to set the state before calling any other functions to avoid
-        // possible infinite recursion here (For example in debug pthread builds
-        // the dbg() function itself can call back into WebAssembly to get the
-        // current pthread_self() pointer).
-        Asyncify.state = Asyncify.State.Normal;
+      if (!Asyncify.currData ||
+          Asyncify.state !== Asyncify.State.Unwinding ||
+          Asyncify.exportCallStack.length !== 0) return false;
+      // We just finished unwinding.
+      // Be sure to set the state before calling any other functions to avoid
+      // possible infinite recursion here (For example in debug pthread builds
+      // the dbg() function itself can call back into WebAssembly to get the
+      // current pthread_self() pointer).
+      Asyncify.state = Asyncify.State.Normal;
 #if ASYNCIFY_DEBUG
-        dbg('ASYNCIFY: stop unwind');
+      dbg('ASYNCIFY: stop unwind');
 #endif
-        {{{ runtimeKeepalivePush(); }}}
-        // Keep the runtime alive so that a re-wind can be done later.
-        runAndAbortIfError(_asyncify_stop_unwind);
-        if (typeof Fibers != 'undefined') {
-          Fibers.trampoline();
-        }
+      {{{ runtimeKeepalivePush(); }}}
+      // Keep the runtime alive so that a re-wind can be done later.
+      runAndAbortIfError(_asyncify_stop_unwind);
+      if (typeof Fibers != 'undefined') {
+        Fibers.trampoline();
       }
+      return true;
     },
 
     whenDone() {

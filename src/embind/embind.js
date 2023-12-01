@@ -796,6 +796,10 @@ var LibraryEmbind = {
     assert(!isAsync, 'Async bindings are only supported with JSPI.');
 #endif
 
+#if ASYNCIFY == 1
+    isAsync = true;
+#endif
+
     var isClassMethodFunc = (argTypes[1] !== null && classType !== null);
 
     // Free functions with signature "void function()" do not need an invoker that marshalls between wire types.
@@ -860,16 +864,11 @@ var LibraryEmbind = {
       }
 
 #if ASYNCIFY == 1
-      if (Asyncify.currData) {
-        return Asyncify.whenDone().then(onDone);
-      }
-#elif ASYNCIFY == 2
-      if (isAsync) {
-        return rv.then(onDone);
-      }
+      // In JSPI mode, only explicitly marked Embind functions are async.
+      // In Asyncify mode, function any function can be async if it turns out to suspend.
+      isAsync = rv instanceof Promise;
 #endif
-
-      return onDone(rv);
+      return isAsync ? rv.then(onDone) : onDone(rv);
     };
 #else
   // Builld the arguments that will be passed into the closure around the invoker

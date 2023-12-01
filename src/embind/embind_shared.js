@@ -260,7 +260,7 @@ var LibraryEmbindShared = {
 
 #if ASYNCIFY == 1
     invokerFnBody += "}\n";
-    invokerFnBody += "return Asyncify.currData ? Asyncify.whenDone().then(onDone) : onDone(" + (returns ? "rv" : "") +");\n"
+    invokerFnBody += "return rv instanceof Promise ? rv.then(onDone) : onDone(rv) +");\n"
 #elif ASYNCIFY == 2
     invokerFnBody += "}\n";
     invokerFnBody += "return " + (isAsync ? "rv.then(onDone)" : "onDone(" + (returns ? "rv" : "") + ")") + ";";
