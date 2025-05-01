@@ -4,22 +4,9 @@ import * as acorn from 'acorn';
 import * as terser from '../third_party/terser/terser.js';
 import * as fs from 'node:fs';
 import {parseArgs} from 'node:util';
+import {assert} from 'node:assert';
 
 // Utilities
-
-function print(x) {
-  process.stdout.write(x + '\n');
-}
-
-function read(x) {
-  return fs.readFileSync(x).toString();
-}
-
-function assert(condition, text) {
-  if (!condition) {
-    throw new Error(text);
-  }
-}
 
 function assertAt(condition, node, message = '') {
   if (!condition) {
@@ -122,11 +109,6 @@ function setLiteralValue(item, value) {
 
 function isLiteralString(node) {
   return node.type === 'Literal' && (node.raw[0] === '"' || node.raw[0] === "'");
-}
-
-function dump(node, text) {
-  if (text) print(text);
-  print(JSON.stringify(node, null, ' '));
 }
 
 // Mark inner scopes temporarily as empty statements. Returns
@@ -991,7 +973,7 @@ function emitDCEGraph(ast) {
     info.reaches = sortedNamesFromMap(info.reaches);
     graph.push(info);
   });
-  print(JSON.stringify(graph, null, ' '));
+  console.log(JSON.stringify(graph, null, ' '));
 }
 
 // Apply graph removals from running wasm-metadce. This only removes imports and
@@ -2040,148 +2022,156 @@ function reattachComments(ast, commentsMap) {
 
 // Main
 
-let suffix = '';
-
 const argv = process.argv.slice(2);
 
-function getArg(arg) {
-  const index = argv.indexOf(arg);
-  if (index == -1) {
-    return false;
+let infile;
+let trace;
+let suffix;
+
+export default function runPasses(input, infile_, passes, {
+  verbose,
+  closureFriendly,
+  exportES6,
+  minifyWhitespace,
+}) {
+  // Some functions in this file depend on globals.
+  // We don't do any async ops, so we shouldn't have any race conditions and can literally assign global at the beginning of each call.
+  infile = infile_;
+  trace = verbose ? console.warn : () => {};
+  suffix = '';
+
+  const extraInfoStart = input.lastIndexOf('// EXTRA_INFO:');
+  let extraInfo = null;
+  if (extraInfoStart > 0) {
+    extraInfo = JSON.parse(input.slice(extraInfoStart + 14));
   }
-  argv.splice(index, 1);
-  return true;
-}
-
-function trace(...args) {
-  if (verbose) {
-    console.warn(...args);
-  }
-}
-
-function error(...args) {
-  console.error(...args);
-  throw new Error(...args);
-}
-
-const {
-  values: {
-    closureFriendly,
-    exportES6,
-    verbose,
-    shouldPrint,
-    minifyWhitespace,
-    outfile,
-  },
-  positionals: [infile, ...passes],
-} = parseArgs({
-  options: {
-    // If enabled, output retains parentheses and comments so that the
-    // output can further be passed out to Closure.
-    closureFriendly: {type: 'boolean', rawName: 'closure-friendly', default: false},
-    exportES6: {type: 'boolean', rawName: 'export-es6', default: false},
-    verbose: {type: 'boolean', default: false},
-    minifyWhitespace: {type: 'boolean', rawName: 'minify-whitespace', default: false},
-    outfile: {type: 'string', rawName: 'out-file', shortAlias: 'o'},
-    shouldPrint: {type: 'boolean', rawName: 'print', default: true},
-  },
-  allowPositionals: true,
-  allowNegative: true,
-});
-
-const input = read(infile);
-const extraInfoStart = input.lastIndexOf('// EXTRA_INFO:');
-let extraInfo = null;
-if (extraInfoStart > 0) {
-  extraInfo = JSON.parse(input.slice(extraInfoStart + 14));
-}
-// Collect all JS code comments to this map so that we can retain them in the
-// outputted code if --closureFriendly was requested.
-const sourceComments = {};
-const params = {
-  ecmaVersion: 'latest',
-  sourceType: exportES6 ? 'module' : 'script',
-  allowAwaitOutsideFunction: true,
-};
-if (closureFriendly) {
-  const currentComments = [];
-  Object.assign(params, {
-    preserveParens: true,
-    onToken: (token) => {
-      // Associate comments with the start position of the next token.
-      sourceComments[token.start] = currentComments.slice();
-      currentComments.length = 0;
-    },
-    onComment: currentComments,
-  });
-}
-let ast;
-try {
-  ast = acorn.parse(input, params);
-} catch (err) {
-  err.message += (() => {
-    let errorMessage = '\n' + input.split(acorn.lineBreak)[err.loc.line - 1] + '\n';
-    let column = err.loc.column;
-    while (column--) {
-      errorMessage += ' ';
-    }
-    errorMessage += '^\n';
-    return errorMessage;
-  })();
-  throw err;
-}
-
-const registry = {
-  JSDCE,
-  AJSDCE,
-  applyImportAndExportNameChanges,
-  emitDCEGraph,
-  applyDCEGraphRemovals,
-  dump,
-  littleEndianHeap,
-  growableHeap,
-  unsignPointers,
-  minifyLocals,
-  asanify,
-  safeHeap,
-  minifyGlobals,
-};
-
-passes.forEach((pass) => {
-  trace(`running AST pass: ${pass}`);
-  if (!(pass in registry)) {
-    error(`unknown optimizer pass: ${pass}`);
-  }
-  registry[pass](ast);
-});
-
-if (shouldPrint) {
-  const terserAst = terser.AST_Node.from_mozilla_ast(ast);
-
+  // Collect all JS code comments to this map so that we can retain them in the
+  // outputted code if --closureFriendly was requested.
+  const sourceComments = {};
+  const params = {
+    ecmaVersion: 'latest',
+    sourceType: exportES6 ? 'module' : 'script',
+    allowAwaitOutsideFunction: true,
+  };
   if (closureFriendly) {
-    reattachComments(terserAst, sourceComments);
+    const currentComments = [];
+    Object.assign(params, {
+      preserveParens: true,
+      onToken: (token) => {
+        // Associate comments with the start position of the next token.
+        sourceComments[token.start] = currentComments.slice();
+        currentComments.length = 0;
+      },
+      onComment: currentComments,
+    });
+  }
+  let ast;
+  try {
+    ast = acorn.parse(input, params);
+  } catch (err) {
+    err.message += (() => {
+      let errorMessage = '\n' + input.split(acorn.lineBreak)[err.loc.line - 1] + '\n';
+      let column = err.loc.column;
+      while (column--) {
+        errorMessage += ' ';
+      }
+      errorMessage += '^\n';
+      return errorMessage;
+    })();
+    throw err;
   }
 
-  let output = terserAst.print_to_string({
-    beautify: !minifyWhitespace,
-    indent_level: minifyWhitespace ? 0 : 2,
-    keep_quoted_props: closureFriendly, // for closure
-    wrap_func_args: false, // don't add extra braces
-    comments: true, // for closure as well
-    shorthand: true, // Use object literal shorthand notation
+  for (const pass of passes) {
+    trace(`running AST pass: ${pass.name}`);
+    pass(ast);
+  }
+
+  // Return a lazy object that stringifies AST only when needed.
+  // This is important for the CLI usecase where sometimes it's only invoked for the DCE graph.
+  return {
+    toString() {
+      const terserAst = terser.AST_Node.from_mozilla_ast(ast);
+
+      if (closureFriendly) {
+        reattachComments(terserAst, sourceComments);
+      }
+
+      let output = terserAst.print_to_string({
+        beautify: !minifyWhitespace,
+        indent_level: minifyWhitespace ? 0 : 2,
+        keep_quoted_props: closureFriendly, // for closure
+        wrap_func_args: false, // don't add extra braces
+        comments: true, // for closure as well
+        shorthand: true, // Use object literal shorthand notation
+      });
+
+      output += '\n';
+      if (suffix) {
+        output += suffix + '\n';
+      }
+
+      return output;
+    }
+  };
+}
+
+// Check if we're running this file directly as per https://stackoverflow.com/a/60309682/439965.
+if (import.meta.url.endsWith(process.argv[1])) {
+  const {
+    values: { outfile, print: shouldPrint, ...opts },
+    positionals: [infile, ...passes],
+  } = parseArgs({
+    options: {
+      // If enabled, output retains parentheses and comments so that the
+      // output can further be passed out to Closure.
+      closureFriendly: {type: 'boolean', rawName: 'closure-friendly', default: false},
+      exportES6: {type: 'boolean', rawName: 'export-es6', default: false},
+      verbose: {type: 'boolean', default: false},
+      minifyWhitespace: {type: 'boolean', rawName: 'minify-whitespace', default: false},
+      outfile: {type: 'string', rawName: 'out-file', shortAlias: 'o'},
+      print: {type: 'boolean', rawName: 'print', default: true},
+    },
+    allowPositionals: true,
+    allowNegative: true,
   });
 
-  output += '\n';
-  if (suffix) {
-    output += suffix + '\n';
-  }
+  const registry = {
+    JSDCE,
+    AJSDCE,
+    applyImportAndExportNameChanges,
+    emitDCEGraph,
+    applyDCEGraphRemovals,
+    dump,
+    littleEndianHeap,
+    growableHeap,
+    unsignPointers,
+    minifyLocals,
+    asanify,
+    safeHeap,
+    minifyGlobals,
+  };
 
-  if (outfile) {
-    fs.writeFileSync(outfile, output);
-  } else {
-    // Simply using `fs.writeFileSync` on `process.stdout` has issues with
-    // large amount of data. It can cause:
-    //   Error: EAGAIN: resource temporarily unavailable, write
-    process.stdout.write(output);
+  const output = runPasses(
+    fs.readFileSync(infile, 'utf-8'),
+    infile,
+    passes.map((pass) => {
+      let resolvedPass = registry[pass];
+      assert(resolvedPass, `unknown optimizer pass: ${pass}`);
+      return resolvedPass;
+    }),
+    opts,
+  );
+
+  if (shouldPrint) {
+    output = output.toString();
+
+    if (outfile) {
+      fs.writeFileSync(outfile, output);
+    } else {
+      // Simply using `fs.writeFileSync` on `process.stdout` has issues with
+      // large amount of data. It can cause:
+      //   Error: EAGAIN: resource temporarily unavailable, write
+      process.stdout.write(output);
+    }
   }
 }
