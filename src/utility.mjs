@@ -12,7 +12,7 @@ import * as path from 'node:path';
 import * as fs from 'node:fs';
 import * as vm from 'node:vm';
 import assert from 'node:assert';
-import { getCurrentFile } from './parseTools.mjs';
+// import { getCurrentFile } from './parseTools.mjs';
 
 export function safeQuote(x) {
   return x.replace(/"/g, '\\"').replace(/'/g, "\\'");
@@ -48,7 +48,7 @@ export function warningOccured() {
 }
 
 function errorPrefix(lineNo) {
-  let prefix = getCurrentFile();
+  let prefix = '';//getCurrentFile();
   if (lineNo) {
     prefix += `:${lineNo}`;
   }
