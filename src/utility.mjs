@@ -12,6 +12,7 @@ import * as path from 'node:path';
 import * as fs from 'node:fs';
 import * as vm from 'node:vm';
 import assert from 'node:assert';
+import { getCurrentFile } from './parseTools.mjs';
 
 export function safeQuote(x) {
   return x.replace(/"/g, '\\"').replace(/'/g, "\\'");
@@ -46,24 +47,12 @@ export function warningOccured() {
   return warnings;
 }
 
-let currentFile = [];
-
-export function pushCurrentFile(f) {
-  currentFile.push(f);
-}
-
-export function popCurrentFile() {
-  currentFile.pop();
-}
-
 function errorPrefix(lineNo) {
-  if (!currentFile.length) return '';
-  const filename = currentFile[currentFile.length - 1];
+  let prefix = getCurrentFile();
   if (lineNo) {
-    return `${filename}:${lineNo}: `;
-  } else {
-    return `${filename}: `;
+    prefix += `:${lineNo}`;
   }
+  return `${prefix}: `;
 }
 
 export function warn(msg, lineNo) {

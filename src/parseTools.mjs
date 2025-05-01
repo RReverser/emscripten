@@ -17,8 +17,6 @@ import {
   error,
   readFile,
   runInMacroContext,
-  pushCurrentFile,
-  popCurrentFile,
   warn,
   srcDir,
 } from './utility.mjs';
@@ -65,49 +63,57 @@ export function getIncludeFile(fileName, shortName, alwaysPreprocess) {
   return result;
 }
 
+let currentFile = [];
+
+export function getCurrentFile() {
+  let file = currentFile[currentFile.length - 1];
+  assert(file, 'getCurrentFile called outside a preprocess() call');
+  return file;
+}
+
 // Simple #if/else/endif preprocessing for a file. Checks if the
 // ident checked is true in our global.
 // Also handles #include x.js (similar to C #include <file>)
 export function preprocess(filename, { shouldProcessMacros = true, alwaysPreprocess = false } = {}) {
-  const origText = readFile(filename);
-  let text = origText;
-  if (EXPORT_ES6) {
-    // `eval`, Terser and Closure don't support module syntax; to allow it,
-    // we need to temporarily replace `import.meta` and `await import` usages
-    // with placeholders during preprocess phase, and back after all the other ops.
-    // See also: `phase_final_emitting` in emcc.py.
-    text = text
-      .replace(/\bimport\.meta\b/g, 'EMSCRIPTEN$IMPORT$META')
-      .replace(/\bawait import\b/g, 'EMSCRIPTEN$AWAIT$IMPORT');
-  }
-  // Split by either windows or unix line endings.
-  const lines = text.split(/\r?\n/);
-  if (!alwaysPreprocess && lines[0].trim() != '#preprocess') {
-    return origText;
-  }
-  // text.split yields an extra empty element at the end if text itself ends with a newline.
-  if (!lines[lines.length - 1]) {
-    lines.pop();
-  }
-
-  const IGNORE = 0;
-  const SHOW = 1;
-  // This state is entered after we have shown one of the block of an if/elif/else sequence.
-  // Once we enter this state we dont show any blocks or evaluate any
-  // conditions until the sequence ends.
-  const IGNORE_ALL = 2;
-  const showStack = [];
-  const showCurrentLine = () => showStack.every((x) => x == SHOW);
-
-  const fileExt = filename.split('.').pop().toLowerCase();
-  const isHtml = fileExt === 'html' || fileExt === 'htm' ? true : false;
-  let inStyle = false;
-
-  let ret = '';
-  let emptyLine = false;
-
-  pushCurrentFile(filename);
+  currentFile.push(filename);
   try {
+    const origText = readFile(filename);
+    let text = origText;
+    if (EXPORT_ES6) {
+      // `eval`, Terser and Closure don't support module syntax; to allow it,
+      // we need to temporarily replace `import.meta` and `await import` usages
+      // with placeholders during preprocess phase, and back after all the other ops.
+      // See also: `phase_final_emitting` in emcc.py.
+      text = text
+        .replace(/\bimport\.meta\b/g, 'EMSCRIPTEN$IMPORT$META')
+        .replace(/\bawait import\b/g, 'EMSCRIPTEN$AWAIT$IMPORT');
+    }
+    // Split by either windows or unix line endings.
+    const lines = text.split(/\r?\n/);
+    if (!alwaysPreprocess && lines[0].trim() != '#preprocess') {
+      return origText;
+    }
+    // text.split yields an extra empty element at the end if text itself ends with a newline.
+    if (!lines[lines.length - 1]) {
+      lines.pop();
+    }
+
+    const IGNORE = 0;
+    const SHOW = 1;
+    // This state is entered after we have shown one of the block of an if/elif/else sequence.
+    // Once we enter this state we dont show any blocks or evaluate any
+    // conditions until the sequence ends.
+    const IGNORE_ALL = 2;
+    const showStack = [];
+    const showCurrentLine = () => showStack.every((x) => x == SHOW);
+
+    const fileExt = filename.split('.').pop().toLowerCase();
+    const isHtml = fileExt === 'html' || fileExt === 'htm' ? true : false;
+    let inStyle = false;
+
+    let ret = '';
+    let emptyLine = false;
+
     for (let [i, line] of lines.entries()) {
       if (isHtml) {
         if (line.includes('<style') && !inStyle) {
@@ -213,7 +219,7 @@ no matching #endif found (${showStack.length$}' unmatched preprocessing directiv
     }
     return ret;
   } finally {
-    popCurrentFile();
+    currentFile.pop();
   }
 }
 

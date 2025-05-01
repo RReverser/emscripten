@@ -13,8 +13,6 @@ import {
   isJsOnlySymbol,
   error,
   readFile,
-  pushCurrentFile,
-  popCurrentFile,
   printErr,
   addToCompileTimeContext,
   runInMacroContext,
@@ -269,7 +267,6 @@ export const LibraryManager = {
         origLibrary = this.library;
         this.library = userLibraryProxy;
       }
-      pushCurrentFile(filename);
       try {
         processed = preprocess(filename);
         runInMacroContext(processed, {filename: filename.replace(/\.\w+$/, '.preprocessed$&')});
@@ -289,7 +286,6 @@ export const LibraryManager = {
         }
         throw e;
       } finally {
-        popCurrentFile();
         if (origLibrary) {
           this.library = origLibrary;
         }
