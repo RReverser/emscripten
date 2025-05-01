@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: MIT
  */
 
-#include Fetch.js
+#include "Fetch.js"
 
 var LibraryFetch = {
   $Fetch__postset: 'Fetch.init();',

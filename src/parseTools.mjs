@@ -91,7 +91,9 @@ export function preprocess(filename, { shouldProcessMacros = true, alwaysPreproc
     }
     // Split by either windows or unix line endings.
     const lines = text.split(/\r?\n/);
-    if (!alwaysPreprocess && lines[0].trim() != '#preprocess') {
+    if (lines[0]?.trim() === '#preprocess') {
+      lines.shift();
+    } else if (!alwaysPreprocess) {
       return origText;
     }
     // text.split yields an extra empty element at the end if text itself ends with a newline.
@@ -131,71 +133,8 @@ export function preprocess(filename, { shouldProcessMacros = true, alwaysPreproc
         }
       }
 
-      const trimmed = line.trim();
-      if (trimmed.startsWith('#')) {
-        const first = trimmed.split(' ', 1)[0];
-        if (first == '#if' || first == '#ifdef' || first == '#elif') {
-          if (first == '#ifdef') {
-            warn('use of #ifdef in js library.  Use #if instead.');
-          }
-          if (first == '#elif') {
-            const curr = showStack.pop();
-            if (curr == SHOW || curr == IGNORE_ALL) {
-              // If we showed to previous block we enter the IGNORE_ALL state
-              // and stay there until endif is seen
-              showStack.push(IGNORE_ALL);
-              continue;
-            }
-          }
-          const after = trimmed.substring(trimmed.indexOf(' '));
-          const truthy = !!runInMacroContext(after, {
-            filename,
-            lineOffset: i,
-            columnOffset: line.indexOf(after),
-          });
-          showStack.push(truthy ? SHOW : IGNORE);
-        } else if (first === '#include') {
-          if (showCurrentLine()) {
-            let includeFile = line.slice(line.indexOf(' ') + 1);
-            if (includeFile.startsWith('"')) {
-              includeFile = includeFile.slice(1, -1);
-            }
-            const absPath = findIncludeFile(includeFile, path.dirname(filename));
-            if (!absPath) {
-              error(`file not found: ${includeFile}`, i + 1);
-              continue;
-            }
-            ret += getIncludeFile(absPath, { shortName: includeFile });
-          }
-        } else if (first === '#else') {
-          if (showStack.length == 0) {
-            error('#else without matching #if', i + 1);
-          }
-          const curr = showStack.pop();
-          if (curr == IGNORE) {
-            showStack.push(SHOW);
-          } else {
-            showStack.push(IGNORE);
-          }
-        } else if (first === '#endif') {
-          if (showStack.length == 0) {
-            error('#endif without matching #if', i + 1);
-          }
-          showStack.pop();
-        } else if (first === '#warning') {
-          if (showCurrentLine()) {
-            warn(`#warning ${trimmed.substring(trimmed.indexOf(' ')).trim()}`, i + 1);
-          }
-        } else if (first === '#error') {
-          if (showCurrentLine()) {
-            error(`#error ${trimmed.substring(trimmed.indexOf(' ')).trim()}`, i + 1);
-          }
-        } else if (first === '#preprocess') {
-          // Do nothing
-        } else {
-          error(`Unknown preprocessor directive ${first}`, i + 1);
-        }
-      } else {
+      const directive = line.match(/^(\s*#([a-z]+))(?: (.*))?$/);
+      if (!directive) {
         if (showCurrentLine()) {
           // Never emit more than one empty line at a time.
           if (emptyLine && !line) {
@@ -208,6 +147,80 @@ export function preprocess(filename, { shouldProcessMacros = true, alwaysPreproc
             emptyLine = false;
           }
         }
+        continue;
+      }
+      const [, cmdWithPrefixTrivia, cmd, arg] = directive;
+      if (cmd == 'ifdef') {
+        warn('use of #ifdef in js library.  Use #if instead.');
+        cmd = 'if';
+      }
+      switch (cmd) {
+        case 'elif':
+          switch (showStack.pop()) {
+            case undefined:
+              error('#elif without matching #if', i + 1);
+            case SHOW:
+            case IGNORE_ALL:
+              // If we showed to previous block we enter the IGNORE_ALL state.
+              // Once we're in the IGNORE_ALL state, we stay there until the endif is seen.
+              showStack.push(IGNORE_ALL);
+              continue;
+          }
+          // fallthrough
+        case 'if': {
+          const truthy = !!runInMacroContext(arg, {
+            filename,
+            lineOffset: i,
+            columnOffset: cmdWithPrefixTrivia.length + 1,
+          });
+          showStack.push(truthy ? SHOW : IGNORE);
+          break;
+        }
+        case 'include':
+          if (showCurrentLine()) {
+            let includeFile = arg;
+            if (includeFile.startsWith('"')) {
+              includeFile = includeFile.slice(1, -1);
+            } else {
+              warn(`#include "${includeFile}" should be quoted`, i + 1);
+            }
+            const absPath = findIncludeFile(includeFile, path.dirname(filename));
+            if (!absPath) {
+              error(`file not found: ${includeFile}`, i + 1);
+              continue;
+            }
+            ret += getIncludeFile(absPath, { shortName: includeFile });
+          }
+          break;
+        case 'else':
+          switch (showStack.pop()) {
+            case undefined:
+              error('#else without matching #if', i + 1);
+            case SHOW:
+              showStack.push(IGNORE);
+              break;
+            case IGNORE:
+              showStack.push(SHOW);
+              break;
+          }
+          break;
+        case 'endif':
+          if (showStack.pop() === undefined) {
+            error('#endif without matching #if', i + 1);
+          }
+          break;
+        case 'warning':
+          if (showCurrentLine()) {
+            warn(`#warning ${arg}`, i + 1);
+          }
+          break;
+        case 'error':
+          if (showCurrentLine()) {
+            error(`#error ${arg}`, i + 1);
+          }
+          break;
+        default:
+          error(`Unknown preprocessor directive ${cmd}`, i + 1);
       }
     }
     assert(
