@@ -57,11 +57,20 @@ function findIncludeFile(filename, currentDir) {
   return null;
 }
 
+export function getIncludeFile(fileName, shortName, alwaysPreprocess) {
+  assert(shortName, 'shortName is required');
+  let result = `// include: ${shortName}\n`;
+  result += preprocess(fileName, { alwaysPreprocess });
+  result += `// end include: ${shortName}\n`;
+  return result;
+}
+
 // Simple #if/else/endif preprocessing for a file. Checks if the
 // ident checked is true in our global.
 // Also handles #include x.js (similar to C #include <file>)
-export function preprocess(filename, shouldProcessMacros) {
-  let text = readFile(filename);
+export function preprocess(filename, { shouldProcessMacros = true, alwaysPreprocess = false } = {}) {
+  const origText = readFile(filename);
+  let text = origText;
   if (EXPORT_ES6) {
     // `eval`, Terser and Closure don't support module syntax; to allow it,
     // we need to temporarily replace `import.meta` and `await import` usages
@@ -71,8 +80,15 @@ export function preprocess(filename, shouldProcessMacros) {
       .replace(/\bimport\.meta\b/g, 'EMSCRIPTEN$IMPORT$META')
       .replace(/\bawait import\b/g, 'EMSCRIPTEN$AWAIT$IMPORT');
   }
-  // Remove windows line endings, if any
-  text = text.replace(/\r\n/g, '\n');
+  // Split by either windows or unix line endings.
+  const lines = text.split(/\r?\n/);
+  if (!alwaysPreprocess && lines[0].trim() != '#preprocess') {
+    return origText;
+  }
+  // text.split yields an extra empty element at the end if text itself ends with a newline.
+  if (!lines[lines.length - 1]) {
+    lines.pop();
+  }
 
   const IGNORE = 0;
   const SHOW = 1;
@@ -86,11 +102,6 @@ export function preprocess(filename, shouldProcessMacros) {
   const fileExt = filename.split('.').pop().toLowerCase();
   const isHtml = fileExt === 'html' || fileExt === 'htm' ? true : false;
   let inStyle = false;
-  const lines = text.split('\n');
-  // text.split yields an extra empty element at the end if text itself ends with a newline.
-  if (!lines[lines.length - 1]) {
-    lines.pop();
-  }
 
   let ret = '';
   let emptyLine = false;
@@ -147,12 +158,7 @@ export function preprocess(filename, shouldProcessMacros) {
               error(`file not found: ${includeFile}`, i + 1);
               continue;
             }
-            const result = preprocess(absPath);
-            if (result) {
-              ret += `// include: ${includeFile}\n`;
-              ret += result;
-              ret += `// end include: ${includeFile}\n`;
-            }
+            ret += getIncludeFile(absPath, includeFile);
           }
         } else if (first === '#else') {
           if (showStack.length == 0) {

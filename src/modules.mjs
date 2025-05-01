@@ -271,7 +271,7 @@ export const LibraryManager = {
       }
       pushCurrentFile(filename);
       try {
-        processed = preprocess(filename, true);
+        processed = preprocess(filename);
         runInMacroContext(processed, {filename: filename.replace(/\.\w+$/, '.preprocessed$&')});
       } catch (e) {
         error(`failure to execute js library "${filename}":`);

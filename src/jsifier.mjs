@@ -21,7 +21,7 @@ import {
   indentify,
   makeReturn64,
   modifyJSFunction,
-  preprocess,
+  getIncludeFile,
   receiveI64ParamAsI53,
 } from './parseTools.mjs';
 import {
@@ -158,26 +158,8 @@ function getTransitiveDeps(symbol) {
   return Array.from(transitiveDeps);
 }
 
-function shouldPreprocess(fileName) {
-  var content = readFile(fileName).trim();
-  return content.startsWith('#preprocess\n') || content.startsWith('#preprocess\r\n');
-}
-
-function getIncludeFile(fileName, alwaysPreprocess, shortName) {
-  shortName ??= fileName;
-  let result = `// include: ${shortName}\n`;
-  const doPreprocess = alwaysPreprocess || shouldPreprocess(fileName);
-  if (doPreprocess) {
-    result += preprocess(fileName, true);
-  } else {
-    result += readFile(fileName);
-  }
-  result += `// end include: ${shortName}\n`;
-  return result;
-}
-
 function getSystemIncludeFile(fileName) {
-  return getIncludeFile(localFile(fileName), /*alwaysPreprocess=*/ true, /*shortName=*/ fileName);
+  return getIncludeFile(localFile(fileName), /*shortName=*/ fileName, /*alwaysPreprocess=*/ true);
 }
 
 function preJS() {
