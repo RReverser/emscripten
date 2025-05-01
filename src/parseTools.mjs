@@ -21,6 +21,8 @@ import {
   srcDir,
 } from './utility.mjs';
 
+import runPasses from '../tools/acorn-optimizer.mjs';
+
 const FOUR_GB = 4 * 1024 * 1024 * 1024;
 const WASM_PAGE_SIZE = 64 * 1024;
 const FLOAT_TYPES = new Set(['float', 'double']);
@@ -216,6 +218,7 @@ no matching #endif found (${showStack.length$}' unmatched preprocessing directiv
     if (shouldProcessMacros) {
       ret = processMacros(ret);
     }
+
     return ret;
   } finally {
     currentFile.pop();

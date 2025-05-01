@@ -9,7 +9,7 @@ import {assert} from 'node:assert';
 // Utilities
 
 function assertAt(condition, node, message = '') {
-  if (!condition) {
+  if (!condition && infile) {
     const loc = acorn.getLineInfo(input, node.start);
     throw new Error(
       `${infile}:${loc.line}: ${message} (use EMCC_DEBUG_SAVE=1 to preserve temporary inputs)`,
@@ -2028,7 +2028,7 @@ let infile;
 let trace;
 let suffix;
 
-export default function runPasses(input, infile_, passes, {
+export default function runPasses(input, passes, {
   verbose,
   closureFriendly,
   exportES6,
@@ -2036,7 +2036,6 @@ export default function runPasses(input, infile_, passes, {
 }) {
   // Some functions in this file depend on globals.
   // We don't do any async ops, so we shouldn't have any race conditions and can literally assign global at the beginning of each call.
-  infile = infile_;
   trace = verbose ? console.warn : () => {};
   suffix = '';
 
@@ -2119,7 +2118,7 @@ export default function runPasses(input, infile_, passes, {
 if (import.meta.url.endsWith(process.argv[1])) {
   const {
     values: { outfile, print: shouldPrint, ...opts },
-    positionals: [infile, ...passes],
+    positionals: [infile_, ...passes],
   } = parseArgs({
     options: {
       // If enabled, output retains parentheses and comments so that the
@@ -2151,9 +2150,10 @@ if (import.meta.url.endsWith(process.argv[1])) {
     minifyGlobals,
   };
 
+  infile = infile_;
+
   const output = runPasses(
     fs.readFileSync(infile, 'utf-8'),
-    infile,
     passes.map((pass) => {
       let resolvedPass = registry[pass];
       assert(resolvedPass, `unknown optimizer pass: ${pass}`);
