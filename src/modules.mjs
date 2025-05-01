@@ -281,6 +281,7 @@ export const LibraryManager = {
           // Since module has no dependencies, the linker function will never be called.
           await module.link(() => {});
           await module.evaluate();
+          addToLibrary(module.namespace);
         } else {
           runInMacroContext(processed, {filename: vmFileName});
         }
