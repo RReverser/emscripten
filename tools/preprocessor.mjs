@@ -53,8 +53,5 @@ const inputFile = positionals[1];
 const parseTools = await import('../src/parseTools.mjs');
 await import('../src/modules.mjs');
 
-let output = parseTools.preprocess(inputFile);
-if (values['expand-macros']) {
-  output = parseTools.processMacros(output, inputFile);
-}
+let output = parseTools.preprocess(inputFile, values['expand-macros']);
 process.stdout.write(output);

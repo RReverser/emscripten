@@ -21,7 +21,7 @@ import {
   mergeInto,
   localFile,
 } from './utility.mjs';
-import {preprocess, processMacros} from './parseTools.mjs';
+import {preprocess} from './parseTools.mjs';
 
 // Various namespace-like modules
 
@@ -271,7 +271,7 @@ export const LibraryManager = {
       }
       pushCurrentFile(filename);
       try {
-        processed = processMacros(preprocess(filename), filename);
+        processed = preprocess(filename, true);
         runInMacroContext(processed, {filename: filename.replace(/\.\w+$/, '.preprocessed$&')});
       } catch (e) {
         error(`failure to execute js library "${filename}":`);

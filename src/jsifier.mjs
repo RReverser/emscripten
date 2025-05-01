@@ -22,7 +22,6 @@ import {
   makeReturn64,
   modifyJSFunction,
   preprocess,
-  processMacros,
   receiveI64ParamAsI53,
 } from './parseTools.mjs';
 import {
@@ -169,7 +168,7 @@ function getIncludeFile(fileName, alwaysPreprocess, shortName) {
   let result = `// include: ${shortName}\n`;
   const doPreprocess = alwaysPreprocess || shouldPreprocess(fileName);
   if (doPreprocess) {
-    result += processMacros(preprocess(fileName), fileName);
+    result += preprocess(fileName, true);
   } else {
     result += readFile(fileName);
   }

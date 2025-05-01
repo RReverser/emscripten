@@ -32,19 +32,11 @@ const TARGET_NOT_SUPPORTED = 0x7fffffff;
 // Does simple 'macro' substitution, using Django-like syntax,
 // {{{ code }}} will be replaced with |eval(code)|.
 // NOTE: Be careful with that ret check. If ret is |0|, |ret ? ret.toString() : ''| would result in ''!
-export function processMacros(text, filename) {
-  // The `?` here in makes the regex non-greedy so it matches with the closest
-  // set of closing braces.
-  // `[\s\S]` works like `.` but include newline.
-  pushCurrentFile(filename);
-  try {
-    return text.replace(/{{{([\s\S]+?)}}}/g, (_, str) => {
-      const ret = runInMacroContext(str, {filename: filename});
-      return ret?.toString() ?? '';
-    });
-  } finally {
-    popCurrentFile();
-  }
+function processMacros(text) {
+  return text.replace(/{{{([\s\S]+?)}}}/g, (_, str) => {
+    const ret = runInMacroContext(str, {filename: filename});
+    return ret?.toString() ?? '';
+  });
 }
 
 function findIncludeFile(filename, currentDir) {
@@ -68,7 +60,7 @@ function findIncludeFile(filename, currentDir) {
 // Simple #if/else/endif preprocessing for a file. Checks if the
 // ident checked is true in our global.
 // Also handles #include x.js (similar to C #include <file>)
-export function preprocess(filename) {
+export function preprocess(filename, shouldProcessMacros) {
   let text = readFile(filename);
   if (EXPORT_ES6) {
     // `eval`, Terser and Closure don't support module syntax; to allow it,
@@ -210,6 +202,9 @@ export function preprocess(filename) {
       `preprocessing error in file ${filename}, \
 no matching #endif found (${showStack.length$}' unmatched preprocessing directives on stack)`,
     );
+    if (shouldProcessMacros) {
+      ret = processMacros(ret);
+    }
     return ret;
   } finally {
     popCurrentFile();
