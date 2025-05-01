@@ -3,6 +3,7 @@
 import * as acorn from 'acorn';
 import * as terser from '../third_party/terser/terser.js';
 import * as fs from 'node:fs';
+import {parseArgs} from 'node:util';
 
 // Utilities
 
@@ -2063,23 +2064,30 @@ function error(...args) {
   throw new Error(...args);
 }
 
-// If enabled, output retains parentheses and comments so that the
-// output can further be passed out to Closure.
-const closureFriendly = getArg('--closure-friendly');
-const exportES6 = getArg('--export-es6');
-const verbose = getArg('--verbose');
-const noPrint = getArg('--no-print');
-const minifyWhitespace = getArg('--minify-whitespace');
-
-let outfile;
-const outfileIndex = argv.indexOf('-o');
-if (outfileIndex != -1) {
-  outfile = argv[outfileIndex + 1];
-  argv.splice(outfileIndex, 2);
-}
-
-const infile = argv[0];
-const passes = argv.slice(1);
+const {
+  values: {
+    closureFriendly,
+    exportES6,
+    verbose,
+    shouldPrint,
+    minifyWhitespace,
+    outfile,
+  },
+  positionals: [infile, ...passes],
+} = parseArgs({
+  options: {
+    // If enabled, output retains parentheses and comments so that the
+    // output can further be passed out to Closure.
+    closureFriendly: {type: 'boolean', rawName: 'closure-friendly', default: false},
+    exportES6: {type: 'boolean', rawName: 'export-es6', default: false},
+    verbose: {type: 'boolean', default: false},
+    minifyWhitespace: {type: 'boolean', rawName: 'minify-whitespace', default: false},
+    outfile: {type: 'string', rawName: 'out-file', shortAlias: 'o'},
+    shouldPrint: {type: 'boolean', rawName: 'print', default: true},
+  },
+  allowPositionals: true,
+  allowNegative: true,
+});
 
 const input = read(infile);
 const extraInfoStart = input.lastIndexOf('// EXTRA_INFO:');
@@ -2147,7 +2155,7 @@ passes.forEach((pass) => {
   registry[pass](ast);
 });
 
-if (!noPrint) {
+if (shouldPrint) {
   const terserAst = terser.AST_Node.from_mozilla_ast(ast);
 
   if (closureFriendly) {
