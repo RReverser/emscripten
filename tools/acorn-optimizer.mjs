@@ -4,7 +4,7 @@ import * as acorn from 'acorn';
 import * as terser from '../third_party/terser/terser.js';
 import * as fs from 'node:fs';
 import {parseArgs} from 'node:util';
-import {assert} from 'node:assert';
+import assert from 'node:assert';
 
 // Utilities
 
