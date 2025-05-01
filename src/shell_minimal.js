@@ -11,9 +11,9 @@ var Module = moduleArg;
 var Module;
 // if (!Module)` is crucial for Closure Compiler here as it will
 // otherwise replace every `Module` occurrence with the object below
-if (!Module) /** @suppress{checkTypes}*/Module = 
+if (!Module) /** @suppress{checkTypes}*/Module =
 #if AUDIO_WORKLET
-  globalThis.{{{ EXPORT_NAME }}} || 
+  globalThis.{{{ EXPORT_NAME }}} ||
 #endif
   {"__EMSCRIPTEN_PRIVATE_MODULE_EXPORT_NAME_SUBSTITUTION__":1};
 
@@ -171,7 +171,7 @@ if (ENVIRONMENT_IS_WORKER) {
 
 // --pre-jses are emitted after the Module integration code, so that they can
 // refer to Module (if they choose; they can also define Module)
-{{{ preJS() }}}
+{{{ preJS }}}
 
 #if !SINGLE_FILE
 
@@ -213,4 +213,3 @@ if (ENVIRONMENT_IS_SHELL) {
 #endif
 
 #endif // !SINGLE_FILE
-

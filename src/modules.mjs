@@ -14,6 +14,7 @@ import {
   error,
   readFile,
   printErr,
+  compileTimeContext,
   addToCompileTimeContext,
   runInMacroContext,
   mergeInto,
@@ -233,7 +234,7 @@ export const LibraryManager = {
     return this.libraries.includes(name);
   },
 
-  load() {
+  async load() {
     assert(!this.loaded);
     this.loaded = true;
     // Save the list for has() queries later.
@@ -268,8 +269,21 @@ export const LibraryManager = {
         this.library = userLibraryProxy;
       }
       try {
-        processed = preprocess(filename);
-        runInMacroContext(processed, {filename: filename.replace(/\.\w+$/, '.preprocessed$&')});
+        processed = await preprocess(filename);
+
+        const vmFileName = filename.replace(/\.\w+$/, '.preprocessed$&');
+
+        if (vmFileName.endsWith('.mjs')) {
+          const module = new vm.SourceTextModule(code, {
+            context: compileTimeContext,
+            identifier: vmFileName,
+          });
+          // Since module has no dependencies, the linker function will never be called.
+          await module.link(() => {});
+          await module.evaluate();
+        } else {
+          runInMacroContext(processed, {filename: vmFileName});
+        }
       } catch (e) {
         error(`failure to execute js library "${filename}":`);
         if (VERBOSE) {

@@ -158,14 +158,6 @@ function getTransitiveDeps(symbol) {
   return Array.from(transitiveDeps);
 }
 
-function preJS() {
-  let result = '';
-  for (const fileName of PRE_JS_FILES) {
-    result += getIncludeFile(fileName);
-  }
-  return result;
-}
-
 // Certain library functions have specific indirect dependencies.  See the
 // comments alongside eaach of these.
 const checkDependenciesSkip = new Set([
@@ -328,7 +320,7 @@ export async function runJSify(outputFile, symbolsOnly) {
   const asyncFuncs = [];
   let postSets = [];
 
-  LibraryManager.load();
+  await LibraryManager.load();
 
   let outputHandle = process.stdout;
   if (outputFile) {
@@ -766,15 +758,15 @@ function(${args}) {
     libraryItems.push(JS);
   }
 
-  function includeFile(fileName, opts) {
-    writeOutput(getIncludeFile(fileName, opts));
+  async function includeFile(fileName, opts) {
+    await writeOutput(await getIncludeFile(fileName, opts));
   }
 
   function includeSystemFile(fileName) {
-    includeFile(localFile(fileName), { shortName: fileName, alwaysPreprocess: true });
+    return includeFile(localFile(fileName), { shortName: fileName, alwaysPreprocess: true });
   }
 
-  function finalCombiner() {
+  async function finalCombiner() {
     const splitPostSets = splitter(postSets, (x) => x.symbol && x.dependencies);
     postSets = splitPostSets.leftIn;
     const orderedPostSets = splitPostSets.splitOut;
@@ -797,10 +789,10 @@ function(${args}) {
     postSets.push(...orderedPostSets);
 
     const shellFile = MINIMAL_RUNTIME ? 'shell_minimal.js' : 'shell.js';
-    includeSystemFile(shellFile);
+    await includeSystemFile(shellFile);
 
     const preFile = MINIMAL_RUNTIME ? 'preamble_minimal.js' : 'preamble.js';
-    includeSystemFile(preFile);
+    await includeSystemFile(preFile);
 
     writeOutput('// Begin JS library code\n');
     for (const item of libraryItems.concat(postSets)) {
@@ -809,7 +801,7 @@ function(${args}) {
     writeOutput('// End JS library code\n');
 
     if (!MINIMAL_RUNTIME) {
-      includeSystemFile('postlibrary.js');
+      await includeSystemFile('postlibrary.js');
     }
 
     if (PTHREADS) {
@@ -831,14 +823,14 @@ var proxiedFunctionTable = [
     writeOutput('// EMSCRIPTEN_END_FUNCS\n');
 
     const postFile = MINIMAL_RUNTIME ? 'postamble_minimal.js' : 'postamble.js';
-    includeSystemFile(postFile);
+    await includeSystemFile(postFile);
 
     for (const fileName of POST_JS_FILES) {
-      includeFile(fileName);
+      await includeFile(fileName);
     }
 
     if (MODULARIZE && MODULARIZE != 'instance') {
-      includeSystemFile('postamble_modularize.js');
+      await includeSystemFile('postamble_modularize.js');
     }
 
     if (errorOccured()) {
@@ -876,7 +868,7 @@ var proxiedFunctionTable = [
       }),
     );
   } else {
-    finalCombiner();
+    await finalCombiner();
   }
 
   if (errorOccured()) {
@@ -885,6 +877,10 @@ var proxiedFunctionTable = [
 
   if (outputFile) await outputHandle.close();
 }
+
+const preJS = await Promise.all(PRE_JS_FILES.map(fileName => getIncludeFile(fileName))).then(
+  (results) => results.join(''),
+);
 
 addToCompileTimeContext({
   extraLibraryFuncs,

@@ -138,7 +138,7 @@ if (ENVIRONMENT_IS_NODE) {
 
 // --pre-jses are emitted after the Module integration code, so that they can
 // refer to Module (if they choose; they can also define Module)
-{{{ preJS() }}}
+{{{ preJS }}}
 
 var arguments_ = [];
 var thisProgram = './this.program';

@@ -57,9 +57,9 @@ function findIncludeFile(filename, currentDir) {
   return null;
 }
 
-export function getIncludeFile(fileName, { shortName = fileName, ...opts } = {}) {
+export async function getIncludeFile(fileName, { shortName = fileName, ...opts } = {}) {
   let result = `// include: ${shortName}\n`;
-  result += preprocess(fileName, opts);
+  result += await preprocess(fileName, opts);
   result += `// end include: ${shortName}\n`;
   return result;
 }
@@ -75,7 +75,7 @@ export function getCurrentFile() {
 // Simple #if/else/endif preprocessing for a file. Checks if the
 // ident checked is true in our global.
 // Also handles #include x.js (similar to C #include <file>)
-export function preprocess(filename, { shouldProcessMacros = true, alwaysPreprocess = false } = {}) {
+export async function preprocess(filename, { shouldProcessMacros = true, alwaysPreprocess = false } = {}) {
   currentFile.push(filename);
   try {
     const origText = readFile(filename);
@@ -189,7 +189,7 @@ export function preprocess(filename, { shouldProcessMacros = true, alwaysPreproc
               error(`file not found: ${includeFile}`, i + 1);
               continue;
             }
-            ret += getIncludeFile(absPath, { shortName: includeFile });
+            ret += await getIncludeFile(absPath, { shortName: includeFile });
           }
           break;
         case 'else':
