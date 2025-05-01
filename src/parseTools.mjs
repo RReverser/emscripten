@@ -55,10 +55,9 @@ function findIncludeFile(filename, currentDir) {
   return null;
 }
 
-export function getIncludeFile(fileName, shortName, alwaysPreprocess) {
-  assert(shortName, 'shortName is required');
+export function getIncludeFile(fileName, { shortName = fileName, ...opts } = {}) {
   let result = `// include: ${shortName}\n`;
-  result += preprocess(fileName, { alwaysPreprocess });
+  result += preprocess(fileName, opts);
   result += `// end include: ${shortName}\n`;
   return result;
 }
@@ -164,7 +163,7 @@ export function preprocess(filename, { shouldProcessMacros = true, alwaysPreproc
               error(`file not found: ${includeFile}`, i + 1);
               continue;
             }
-            ret += getIncludeFile(absPath, includeFile);
+            ret += getIncludeFile(absPath, { shortName: includeFile });
           }
         } else if (first === '#else') {
           if (showStack.length == 0) {

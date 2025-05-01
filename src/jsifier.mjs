@@ -158,10 +158,6 @@ function getTransitiveDeps(symbol) {
   return Array.from(transitiveDeps);
 }
 
-function getSystemIncludeFile(fileName) {
-  return getIncludeFile(localFile(fileName), /*shortName=*/ fileName, /*alwaysPreprocess=*/ true);
-}
-
 function preJS() {
   let result = '';
   for (const fileName of PRE_JS_FILES) {
@@ -770,12 +766,12 @@ function(${args}) {
     libraryItems.push(JS);
   }
 
-  function includeSystemFile(fileName) {
-    writeOutput(getSystemIncludeFile(fileName));
+  function includeFile(fileName, opts) {
+    writeOutput(getIncludeFile(fileName, opts));
   }
 
-  function includeFile(fileName) {
-    writeOutput(getIncludeFile(fileName));
+  function includeSystemFile(fileName) {
+    includeFile(localFile(fileName), { shortName: fileName, alwaysPreprocess: true });
   }
 
   function finalCombiner() {
