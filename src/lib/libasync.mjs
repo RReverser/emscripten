@@ -462,6 +462,7 @@ export const $Asyncify = {
   },
 #endif
 };
+{{{ extraLibraryFuncs.push('$Asyncify'); }}}
 
 export const emscripten_sleep__deps = ['$safeSetTimeout'];
 export const emscripten_sleep__async = true;
@@ -625,21 +626,20 @@ export function emscripten_fiber_swap(oldFiber, newFiber) {
     Asyncify.currData = null;
   }
 };
-{{{ extraLibraryFuncs.push('$Asyncify'); }}}
 #else // ASYNCIFY
 export function emscripten_sleep() {
   abort('Please compile your program with async support in order to use asynchronous operations like emscripten_sleep');
-};
+}
 export function emscripten_wget(url, file) {
   abort('Please compile your program with async support in order to use asynchronous operations like emscripten_wget');
-};
+}
 export function emscripten_wget_data(url, pbuffer, pnum, perror) {
   abort('Please compile your program with async support in order to use asynchronous operations like emscripten_wget_data');
-};
+}
 export function emscripten_scan_registers(func) {
   abort('Please compile your program with async support in order to use asynchronous operations like emscripten_scan_registers');
-};
+}
 export function emscripten_fiber_swap(oldFiber, newFiber) {
   abort('Please compile your program with async support in order to use asynchronous operations like emscripten_fiber_swap');
-};
+}
 #endif // ASYNCIFY
