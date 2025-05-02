@@ -2022,8 +2022,6 @@ function reattachComments(ast, commentsMap) {
 
 // Main
 
-const argv = process.argv.slice(2);
-
 let infile;
 let trace;
 let suffix;
