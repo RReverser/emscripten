@@ -138,14 +138,14 @@ function calculateLibraries() {
       'libuuid.js',
       'libglew.js',
       'libidbstore.js',
-      'libasync.js',
+      'libasync.mjs',
     );
     if (USE_SDL != 2) {
       libraries.push('libsdl.js');
     }
   } else {
     if (ASYNCIFY) {
-      libraries.push('libasync.js');
+      libraries.push('libasync.mjs');
     }
     if (USE_SDL == 1) {
       libraries.push('libsdl.js');
