@@ -241,7 +241,7 @@ def run_js_tool(filename, jsargs=[], node_args=[], **kw):  # noqa: B006
   This is used by emcc to run parts of the build process that are written
   implemented in javascript.
   """
-  command = config.NODE_JS + node_args + ['--experimental-vm-modules', filename] + jsargs
+  command = config.NODE_JS + node_args + ['--experimental-vm-modules', '--no-warnings=ExperimentalWarning', filename] + jsargs
   return check_call(command, **kw).stdout
 
 
