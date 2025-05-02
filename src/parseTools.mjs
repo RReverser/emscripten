@@ -32,9 +32,9 @@ const TARGET_NOT_SUPPORTED = 0x7fffffff;
 // Does simple 'macro' substitution, using Django-like syntax,
 // {{{ code }}} will be replaced with |eval(code)|.
 // NOTE: Be careful with that ret check. If ret is |0|, |ret ? ret.toString() : ''| would result in ''!
-function processMacros(text) {
+function processMacros(text, filename) {
   return text.replace(/{{{([\s\S]+?)}}}/g, (_, str) => {
-    const ret = runInMacroContext(str, {filename: filename});
+    const ret = runInMacroContext(str, {filename});
     return ret?.toString() ?? '';
   });
 }
@@ -141,11 +141,7 @@ export async function preprocess(filename, { shouldProcessMacros = true, alwaysP
             continue;
           }
           ret += line + '\n';
-          if (!line) {
-            emptyLine = true;
-          } else {
-            emptyLine = false;
-          }
+          emptyLine = !line;
         }
         continue;
       }
@@ -189,18 +185,18 @@ export async function preprocess(filename, { shouldProcessMacros = true, alwaysP
               error(`file not found: ${includeFile}`, i + 1);
               continue;
             }
-            ret += await getIncludeFile(absPath, { shortName: includeFile });
+            ret += await getIncludeFile(absPath, { alwaysPreprocess, shortName: includeFile });
           }
           break;
         case 'else':
           switch (showStack.pop()) {
             case undefined:
               error('#else without matching #if', i + 1);
-            case SHOW:
-              showStack.push(IGNORE);
-              break;
             case IGNORE:
               showStack.push(SHOW);
+              break;
+            default:
+              showStack.push(IGNORE);
               break;
           }
           break;
@@ -229,7 +225,7 @@ export async function preprocess(filename, { shouldProcessMacros = true, alwaysP
 no matching #endif found (${showStack.length$}' unmatched preprocessing directives on stack)`,
     );
     if (shouldProcessMacros) {
-      ret = processMacros(ret);
+      ret = processMacros(ret, filename);
     }
 
     return ret;

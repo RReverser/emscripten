@@ -7,6 +7,7 @@
 import * as path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import assert from 'node:assert';
+import {SourceTextModule} from 'node:vm';
 
 import {
   isDecorator,
@@ -269,12 +270,14 @@ export const LibraryManager = {
         this.library = userLibraryProxy;
       }
       try {
-        processed = await preprocess(filename);
+        processed = await preprocess(filename, {
+          alwaysPreprocess: true,
+        });
 
         const vmFileName = filename.replace(/\.\w+$/, '.preprocessed$&');
 
         if (vmFileName.endsWith('.mjs')) {
-          const module = new vm.SourceTextModule(code, {
+          const module = new SourceTextModule(processed, {
             context: compileTimeContext,
             identifier: vmFileName,
           });
