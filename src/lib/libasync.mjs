@@ -625,6 +625,7 @@ export function emscripten_fiber_swap(oldFiber, newFiber) {
     Asyncify.currData = null;
   }
 };
+{{{ extraLibraryFuncs.push('$Asyncify'); }}}
 #else // ASYNCIFY
 export function emscripten_sleep() {
   abort('Please compile your program with async support in order to use asynchronous operations like emscripten_sleep');
@@ -642,7 +643,3 @@ export function emscripten_fiber_swap(oldFiber, newFiber) {
   abort('Please compile your program with async support in order to use asynchronous operations like emscripten_fiber_swap');
 };
 #endif // ASYNCIFY
-
-if (ASYNCIFY) {
-  extraLibraryFuncs.push('$Asyncify');
-}
