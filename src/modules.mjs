@@ -42,7 +42,7 @@ function calculateLibraries() {
     'libint53.js',
     'libcore.js',
     'libsigs.js',
-    'libccall.js',
+    'libccall.mjs',
     'libaddfunction.js',
     'libformatString.js',
     'libgetvalue.js',
