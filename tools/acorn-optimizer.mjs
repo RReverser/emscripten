@@ -5,6 +5,7 @@ import * as terser from '../third_party/terser/terser.js';
 import * as fs from 'node:fs';
 import {parseArgs} from 'node:util';
 import assert from 'node:assert';
+import {pathToFileURL} from 'node:url';
 
 // Utilities
 
@@ -109,6 +110,11 @@ function setLiteralValue(item, value) {
 
 function isLiteralString(node) {
   return node.type === 'Literal' && (node.raw[0] === '"' || node.raw[0] === "'");
+}
+
+function dump(node, text) {
+  if (text) console.log(text);
+  console.log(JSON.stringify(node, null, ' '));
 }
 
 // Mark inner scopes temporarily as empty statements. Returns
@@ -2025,6 +2031,7 @@ function reattachComments(ast, commentsMap) {
 let infile;
 let trace;
 let suffix;
+let extraInfo;
 
 export default function runPasses(input, passes, {
   verbose,
@@ -2036,9 +2043,9 @@ export default function runPasses(input, passes, {
   // We don't do any async ops, so we shouldn't have any race conditions and can literally assign global at the beginning of each call.
   trace = verbose ? console.warn : () => {};
   suffix = '';
+  extraInfo = null;
 
   const extraInfoStart = input.lastIndexOf('// EXTRA_INFO:');
-  let extraInfo = null;
   if (extraInfoStart > 0) {
     extraInfo = JSON.parse(input.slice(extraInfoStart + 14));
   }
@@ -2113,20 +2120,27 @@ export default function runPasses(input, passes, {
 }
 
 // Check if we're running this file directly as per https://stackoverflow.com/a/60309682/439965.
-if (import.meta.url.endsWith(process.argv[1])) {
+if (import.meta.url === pathToFileURL(process.argv[1]).href) {
   const {
-    values: { outfile, print: shouldPrint, ...opts },
+    values: {
+      'closure-friendly': closureFriendly,
+      'export-es6': exportES6,
+      verbose,
+      'minify-whitespace': minifyWhitespace,
+      'out-file': outfile,
+      print: shouldPrint = true,
+    },
     positionals: [infile_, ...passes],
   } = parseArgs({
     options: {
       // If enabled, output retains parentheses and comments so that the
       // output can further be passed out to Closure.
-      closureFriendly: {type: 'boolean', rawName: 'closure-friendly', default: false},
-      exportES6: {type: 'boolean', rawName: 'export-es6', default: false},
-      verbose: {type: 'boolean', default: false},
-      minifyWhitespace: {type: 'boolean', rawName: 'minify-whitespace', default: false},
-      outfile: {type: 'string', rawName: 'out-file', shortAlias: 'o'},
-      print: {type: 'boolean', rawName: 'print', default: true},
+      'closure-friendly': {type: 'boolean'},
+      'export-es6': {type: 'boolean'},
+      verbose: {type: 'boolean'},
+      'minify-whitespace': {type: 'boolean'},
+      'out-file': {type: 'string', short: 'o'},
+      print: {type: 'boolean'},
     },
     allowPositionals: true,
     allowNegative: true,
@@ -2150,14 +2164,19 @@ if (import.meta.url.endsWith(process.argv[1])) {
 
   infile = infile_;
 
-  const output = runPasses(
+  let output = runPasses(
     fs.readFileSync(infile, 'utf-8'),
     passes.map((pass) => {
       let resolvedPass = registry[pass];
       assert(resolvedPass, `unknown optimizer pass: ${pass}`);
       return resolvedPass;
     }),
-    opts,
+    {
+      verbose,
+      closureFriendly,
+      exportES6,
+      minifyWhitespace,
+    },
   );
 
   if (shouldPrint) {
@@ -2169,7 +2188,7 @@ if (import.meta.url.endsWith(process.argv[1])) {
       // Simply using `fs.writeFileSync` on `process.stdout` has issues with
       // large amount of data. It can cause:
       //   Error: EAGAIN: resource temporarily unavailable, write
-      process.stdout.write(output);
+      console.log(output);
     }
   }
 }
