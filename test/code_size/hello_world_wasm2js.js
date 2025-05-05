@@ -37,7 +37,7 @@ function e(a) {
 
 (function(a, p) {
     return {
-        then: function(t) {
+        then(t) {
             t({
                 instance: new e(p)
             });
@@ -45,7 +45,7 @@ function e(a) {
     };
 })(d.wasm, {
     a: {
-        a: a => {
+        a(a) {
             var p = console, t = p.log;
             if (a) {
                 for (var w = a + void 0, c = a; !(c >= w) && g[c]; ) ++c;

@@ -1983,6 +1983,43 @@ function minifyGlobals(ast) {
   suffix = '// EXTRA_INFO:' + JSON.stringify(json);
 }
 
+function optimizeMethods(ast) {
+  simpleWalk(ast, {
+    ArrowFunctionExpression(node) {
+      // Nothing to do.
+      if (node.expression) return;
+      let stmts = node.body.body.slice();
+      let last = stmts.pop();
+      // We only want to optimise blocks like `=> { a; b; return c; }`
+      if (
+        last?.type !== 'ReturnStatement' ||
+        !stmts.every((stmt) => stmt.type === 'ExpressionStatement')
+      ) {
+        return;
+      }
+      // Convert them to `=> (a, b, c)`.
+      let retValue = last.argument;
+      if (stmts.length) {
+        retValue = {
+          type: 'SequenceExpression',
+          expressions: [...stmts.map((stmt) => stmt.expression), retValue],
+        };
+      }
+      node.expression = true;
+      node.body = retValue;
+    },
+    Property(node) {
+      if (node.value.type === 'ArrowFunctionExpression' && !node.value.expression) {
+        node.value.type = 'FunctionExpression';
+      }
+      if (node.value.type === 'FunctionExpression' && !node.value.id) {
+        // Convert { a: function() {} } to { a() {} }
+        node.method = true;
+      }
+    },
+  });
+}
+
 // Utilities
 
 function reattachComments(ast, commentsMap) {
@@ -2136,6 +2173,7 @@ const registry = {
   asanify,
   safeHeap,
   minifyGlobals,
+  optimizeMethods,
 };
 
 passes.forEach((pass) => {

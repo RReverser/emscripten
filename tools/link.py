@@ -2326,9 +2326,13 @@ def phase_binaryen(target, options, wasm_target):
       with ToolchainProfiler.profile_block('transpile'):
         final_js = building.transpile(final_js)
       save_intermediate('transpile')
-      # Run acorn one more time to minify whitespace after babel runs
-      if settings.MINIFY_WHITESPACE:
-        final_js = building.acorn_optimizer(final_js, ['--minify-whitespace'])
+
+    if settings.OPT_LEVEL >= 2:
+      # Convert functions in properties to method shorthands.
+      # We don't run this earlier, because Closure will often create new
+      # properties like that via its inlining pass.
+      with ToolchainProfiler.profile_block('method_shorthands'):
+        final_js = building.acorn_optimizer(final_js, ['optimizeMethods'] + (['--minify-whitespace'] if settings.MINIFY_WHITESPACE else []))
 
   if settings.ASYNCIFY_LAZY_LOAD_CODE:
     with ToolchainProfiler.profile_block('asyncify_lazy_load_code'):

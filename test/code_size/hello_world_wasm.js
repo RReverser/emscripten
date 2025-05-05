@@ -2,7 +2,7 @@ var d = Module, e, f, g = new TextDecoder, h;
 
 WebAssembly.instantiate(d.wasm, {
     a: {
-        a: a => {
+        a(a) {
             var c = console, k = c.log;
             if (a) {
                 for (var l = a + void 0, b = a; !(b >= l) && e[b]; ) ++b;
