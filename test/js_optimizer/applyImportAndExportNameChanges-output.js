@@ -1,5 +1,4 @@
 var name;
-
 var wasmImports = {
   a: 1,
   A: 33,
@@ -14,8 +13,10 @@ var wasmImports = {
   q: ___syscall146
 };
 
-var expD1 = Module["expD1"] = wasmExports["c"];
+// exports
+var expD1 = Module['expD1'] = wasmExports["c"];
 
-var expI1 = Module["expI1"] = function() {
+// exports gotten indirectly (async compilation
+var expI1 = Module['expI1'] = function () {
   return wasmExports["d"].apply(null, arguments);
 };

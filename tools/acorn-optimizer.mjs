@@ -1,24 +1,28 @@
 #!/usr/bin/env node
 
-import * as acorn from 'acorn';
-import * as terser from '../third_party/terser/terser.js';
+import {parse} from '@babel/parser';
+import traverse from '@babel/traverse';
+import {generate} from '@babel/generator';
+import * as t from '@babel/types';
+import {codeFrameColumns} from '@babel/code-frame';
 import * as fs from 'node:fs';
 import assert from 'node:assert';
 import {parseArgs} from 'node:util';
 
-// Utilities
+const EXTRA_INFO_PREFIX = '// EXTRA_INFO:';
 
-function read(x) {
-  return fs.readFileSync(x, 'utf-8');
-}
-
-function assertAt(condition, node, message = '') {
+/**
+ * @param {boolean} condition
+ * @param {t.Node} node
+ * @param {string} message
+ */
+function assertAt(condition, node, message) {
   if (!condition) {
     if (!process.env.EMCC_DEBUG_SAVE) {
       message += ' (use EMCC_DEBUG_SAVE=1 to preserve temporary inputs)';
     }
     let err = new Error(message);
-    err['loc'] = acorn.getLineInfo(input, node.start);
+    err['loc'] = node.loc;
     throw err;
   }
 }
@@ -26,14 +30,21 @@ function assertAt(condition, node, message = '') {
 // Visits and walks
 // (We don't use acorn-walk because it ignores x in 'x = y'.)
 
+/**
+ * @param {t.Node} node
+ * @param {(node: t.Node) => void} c
+ */
 function visitChildren(node, c) {
   // emptyOut() and temporary ignoring may mark nodes as empty,
   // while they have properties with children we should ignore.
-  if (node.type === 'EmptyStatement') {
+  if (t.isEmptyStatement(node)) {
     return;
   }
+  /**
+   * @param {t.Node} child
+   */
   function maybeChild(child) {
-    if (typeof child?.type === 'string') {
+    if (t.isNode(child)) {
       c(child);
       return true;
     }
@@ -52,16 +63,23 @@ function visitChildren(node, c) {
 
 // Simple post-order walk, calling properties on an object by node type,
 // if the type exists.
+/**
+ * @param {t.Node} node
+ * @param {{ [K in t.Node['type']]?: (node: t.Node & { type: K }) => void }} cs
+ */
 function simpleWalk(node, cs) {
   visitChildren(node, (child) => simpleWalk(child, cs));
-  if (node.type in cs) {
-    cs[node.type](node);
-  }
+  cs[node.type]?.(node);
 }
 
 // Full post-order walk, calling a single function for all types. If |pre| is
 // provided, it is called in pre-order (before children). If |pre| returns
 // `false`, the node and its children will be skipped.
+/**
+ * @param {t.Node} node
+ * @param {(node: t.Node) => void} c
+ * @param {(node: t.Node) => void} [pre]
+ */
 function fullWalk(node, c, pre) {
   if (pre?.(node) !== false) {
     visitChildren(node, (child) => fullWalk(child, c, pre));
@@ -71,31 +89,43 @@ function fullWalk(node, c, pre) {
 
 // Recursive post-order walk, calling properties on an object by node type,
 // if the type exists, and if so leaving recursion to that function.
+/**
+ * @param {t.Node} node
+ * @param {{ [K in t.Node['type']]?: (node: t.Node & { type: K }, c: (child: t.Node) => void) => void }} cs
+ */
 function recursiveWalk(node, cs) {
   (function c(node) {
-    if (!(node.type in cs)) {
+    const handler = cs[node.type];
+    if (!handler) {
       visitChildren(node, (child) => recursiveWalk(child, cs));
     } else {
-      cs[node.type](node, c);
+      handler(node, c);
     }
   })(node);
 }
 
 // AST Utilities
 
+/**
+ * @param {t.Node} node
+ * @returns {t.EmptyStatement}
+ */
 function emptyOut(node) {
-  node.type = 'EmptyStatement';
+  return Object.assign(node, t.emptyStatement());
 }
 
+/**
+ * @param {t.StringLiteral} item
+ * @param {string} value
+ */
 function setLiteralValue(item, value) {
   item.value = value;
-  item.raw = null;
+  item.extra = null;
 }
 
-function isLiteralString(node) {
-  return node.type === 'Literal' && typeof node.value === 'string';
-}
-
+/**
+ * @param {object} node
+ */
 function dump(node) {
   console.log(JSON.stringify(node, null, ' '));
 }
@@ -107,7 +137,7 @@ function walkPattern(node, onExpr, onBoundIdent) {
       c(node.left);
       onExpr(node.right);
     },
-    Property(node, c) {
+    ObjectProperty(node, c) {
       if (node.computed) {
         onExpr(node.key);
       }
@@ -119,6 +149,9 @@ function walkPattern(node, onExpr, onBoundIdent) {
   });
 }
 
+/**
+ * @param {t.Node} node
+ */
 function hasSideEffects(node) {
   // Conservative analysis.
   let has = false;
@@ -207,25 +240,48 @@ function hasSideEffects(node) {
 // as they appear (like ArrowFunctionExpression). Instead, we do a conservative
 // analysis here.
 
-function JSDCE(ast, aggressive) {
+/**
+ * @param {t.File} ast
+ * @param {boolean} aggressive
+ */
+function JSDCE(ast, aggressive = false) {
   function iteration() {
     let removed = 0;
+
+    /**
+     * Stack of scope objects used for variable/function tracking during parsing or optimization.
+     * The first element represents the toplevel (global) scope.
+     * @typedef {{ def: 0 | 1, use: 0 | 1, param: 0 | 1 }} ScopeItem
+     * @typedef {Record<string, ScopeItem>} Scope
+     * @type {Scope[]}
+     */
     const scopes = [{}]; // begin with empty toplevel scope
+
+    /**
+     * @param {Scope} scope
+     * @param {string} name
+     */
     function ensureData(scope, name) {
-      if (Object.prototype.hasOwnProperty.call(scope, name)) return scope[name];
-      scope[name] = {
-        def: 0,
-        use: 0,
-        param: 0, // true for function params, which cannot be eliminated
-      };
-      return scope[name];
+      let data = scope[name];
+      if (!data) {
+        scope[name] = data = {
+          def: 0,
+          use: 0,
+          param: 0, // true for function params, which cannot be eliminated
+        };
+      }
+      return data;
     }
+    /**
+     * @param {t.Node} ast
+     * @param {Set<string>} names
+     */
     function cleanUp(ast, names) {
       recursiveWalk(ast, {
         ForStatement(node, c) {
           visitChildren(node, c);
           // If we had `for (var x = ...; ...)` and we removed `x`, we need to change to `for (; ...)`.
-          if (node.init?.type === 'EmptyStatement') {
+          if (t.isEmptyStatement(node.init)) {
             node.init = null;
           }
         },
@@ -242,15 +298,15 @@ function JSDCE(ast, aggressive) {
         VariableDeclaration(node, _c) {
           let removedHere = 0;
           node.declarations = node.declarations.filter((node) => {
-            assert(node.type === 'VariableDeclarator');
+            t.assertVariableDeclarator(node);
             const id = node.id;
-            if (id.type === 'ObjectPattern' || id.type === 'ArrayPattern') {
+            if (t.isObjectPattern(id) || t.isArrayPattern(id)) {
               // TODO: DCE into object patterns, that is, things like
               //         let { a, b } = ..
               //         let [ a, b ] = ..
               return true;
             }
-            assert(id.type === 'Identifier');
+            t.assertIdentifier(id);
             const curr = id.name;
             const value = node.init;
             const keep = !names.has(curr) || (value && hasSideEffects(value));
@@ -282,11 +338,16 @@ function JSDCE(ast, aggressive) {
       });
     }
 
-    function handleFunction(node, c, defun) {
+    /**
+     * @param {t.Function} node
+     * @param {(node: t.Node) => void} c
+     */
+    function handleFunction(node, c) {
       // defun names matter - function names (the y in var x = function y() {..}) are just for stack traces.
-      if (defun) {
+      if (t.isFunctionDeclaration(node)) {
         ensureData(scopes[scopes.length - 1], node.id.name).def = 1;
       }
+      /** @type {Scope} */
       const scope = {};
       scopes.push(scope);
       for (const param of node.params) {
@@ -298,7 +359,7 @@ function JSDCE(ast, aggressive) {
       c(node.body);
       // we can ignore self-references, i.e., references to ourselves inside
       // ourselves, for named defined (defun) functions
-      const ownName = defun ? node.id.name : '';
+      const ownName = node['id']?.name;
       const names = new Set();
       for (const name in scopes.pop()) {
         if (name === ownName) continue;
@@ -323,15 +384,17 @@ function JSDCE(ast, aggressive) {
         });
         if (node.init) c(node.init);
       },
-      ObjectExpression(node, c) {
-        // ignore the property identifiers
-        node.properties.forEach((node) => {
-          if (node.value) {
-            c(node.value);
-          } else if (node.argument) {
-            c(node.argument);
-          }
-        });
+      ObjectMethod(node, c) {
+        if (node.computed) {
+          c(node.key);
+        }
+        handleFunction(node, c);
+      },
+      ObjectProperty(node, c) {
+        if (node.computed) {
+          c(node.key);
+        }
+        c(node.value);
       },
       MemberExpression(node, c) {
         c(node.object);
@@ -341,7 +404,7 @@ function JSDCE(ast, aggressive) {
         }
       },
       FunctionDeclaration(node, c) {
-        handleFunction(node, c, true /* defun */);
+        handleFunction(node, c);
       },
       FunctionExpression(node, c) {
         handleFunction(node, c);
@@ -350,22 +413,23 @@ function JSDCE(ast, aggressive) {
         handleFunction(node, c);
       },
       Identifier(node, _c) {
-        const name = node.name;
-        ensureData(scopes[scopes.length - 1], name).use = 1;
+        ensureData(scopes[scopes.length - 1], node.name).use = 1;
       },
       ExportDefaultDeclaration(node, c) {
+        t.assertFunctionDeclaration(node.declaration);
         const name = node.declaration.id.name;
         ensureData(scopes[scopes.length - 1], name).use = 1;
         c(node.declaration);
       },
       ExportNamedDeclaration(node, c) {
         if (node.declaration) {
-          if (node.declaration.type == 'FunctionDeclaration') {
+          if (t.isFunctionDeclaration(node.declaration)) {
             const name = node.declaration.id.name;
             ensureData(scopes[scopes.length - 1], name).use = 1;
           } else {
-            assert(node.declaration.type == 'VariableDeclaration');
+            t.assertVariableDeclaration(node.declaration);
             for (const decl of node.declaration.declarations) {
+              t.assertIdentifier(decl.id);
               const name = decl.id.name;
               ensureData(scopes[scopes.length - 1], name).use = 1;
             }
@@ -373,6 +437,7 @@ function JSDCE(ast, aggressive) {
           c(node.declaration);
         } else {
           for (const specifier of node.specifiers) {
+            t.assertExportSpecifier(specifier);
             const name = specifier.local.name;
             ensureData(scopes[scopes.length - 1], name).use = 1;
           }
@@ -382,7 +447,7 @@ function JSDCE(ast, aggressive) {
 
     // toplevel
     const scope = scopes.pop();
-    assert(scopes.length === 0);
+    assert.equal(scopes.length, 0);
 
     const names = new Set();
     for (const [name, data] of Object.entries(scope)) {
@@ -396,77 +461,108 @@ function JSDCE(ast, aggressive) {
     return removed;
   }
   while (iteration() && aggressive) {} // eslint-disable-line no-empty
+  traverse(ast, {
+    EmptyStatement(path) {
+      // @ts-expect-error: leadingComments is not among types
+      path.get('leadingComments').forEach?.((comment) => comment.remove());
+      path.remove();
+    },
+  });
 }
 
 // Aggressive JSDCE - multiple iterations
+/**
+ * @param {t.File} ast
+ */
 function AJSDCE(ast) {
   JSDCE(ast, /* aggressive= */ true);
 }
 
+/**
+ * @param {t.Node} node
+ * @returns {node is t.AssignmentExpression & { left: t.Identifier, right: t.ObjectExpression } | t.VariableDeclaration & { declarations: [t.VariableDeclarator & { id: t.Identifier, init: t.ObjectExpression }] }}
+ */
 function isWasmImportsAssign(node) {
   // var wasmImports = ..
   //   or
   // wasmImports = ..
   if (
-    node.type === 'AssignmentExpression' &&
-    node.left.name == 'wasmImports' &&
-    node.right.type == 'ObjectExpression'
+    t.isAssignmentExpression(node) &&
+    t.isIdentifier(node.left, {name: 'wasmImports'}) &&
+    t.isObjectExpression(node.right)
   ) {
     return true;
   }
   return (
-    node.type === 'VariableDeclaration' &&
+    t.isVariableDeclaration(node) &&
     node.declarations.length === 1 &&
-    node.declarations[0].id.name === 'wasmImports' &&
-    node.declarations[0].init &&
-    node.declarations[0].init.type === 'ObjectExpression'
+    t.isIdentifier(node.declarations[0].id, {name: 'wasmImports'}) &&
+    t.isObjectExpression(node.declarations[0].init)
   );
 }
 
+/**
+ * @param {t.AssignmentExpression & { left: t.Identifier, right: t.ObjectExpression } | t.VariableDeclaration & { declarations: [t.VariableDeclarator & { id: t.Identifier, init: t.ObjectExpression }] }} node
+ */
 function getWasmImportsValue(node) {
-  if (node.declarations) {
+  if (t.isVariableDeclaration(node)) {
     return node.declarations[0].init;
   } else {
     return node.right;
   }
 }
 
+/**
+ * @param {t.Node} node
+ * @returns {node is t.MemberExpression & { object: t.Identifier, property: t.StringLiteral }}
+ */
 function isExportUse(node) {
   // Match usages of symbols on the `wasmExports` object. e.g:
   //   wasmExports['X']
   return (
-    node.type === 'MemberExpression' &&
-    node.object.type === 'Identifier' &&
-    isLiteralString(node.property) &&
+    t.isMemberExpression(node) &&
+    t.isIdentifier(node.object) &&
+    t.isStringLiteral(node.property) &&
     node.object.name === 'wasmExports'
   );
 }
 
+/**
+ * @param {t.MemberExpression & { property: t.StringLiteral }} node
+ */
 function getExportOrModuleUseName(node) {
   return node.property.value;
 }
 
+/**
+ * @param {t.Node} node
+ * @returns {node is t.MemberExpression & { object: t.Identifier, property: t.StringLiteral }}
+ */
 function isModuleUse(node) {
   return (
-    node.type === 'MemberExpression' && // Module['X']
-    node.object.type === 'Identifier' &&
-    node.object.name === 'Module' &&
-    isLiteralString(node.property)
+    t.isMemberExpression(node) && // Module['X']
+    t.isIdentifier(node.object, {name: 'Module'}) &&
+    t.isStringLiteral(node.property)
   );
 }
 
 // Apply import/export name changes (after minifying them)
+/**
+ * @param {t.Node} ast
+ */
 function applyImportAndExportNameChanges(ast) {
   const mapping = extraInfo.mapping;
   fullWalk(ast, (node) => {
     if (isWasmImportsAssign(node)) {
       const assignedObject = getWasmImportsValue(node);
       assignedObject.properties.forEach((item) => {
+        t.assertObjectProperty(item, {computed: false});
+        t.assertIdentifier(item.key);
         if (mapping[item.key.name]) {
           item.key.name = mapping[item.key.name];
         }
       });
-    } else if (node.type === 'AssignmentExpression') {
+    } else if (t.isAssignmentExpression(node)) {
       const value = node.right;
       if (isExportUse(value)) {
         const name = value.property.value;
@@ -474,7 +570,7 @@ function applyImportAndExportNameChanges(ast) {
           setLiteralValue(value.property, mapping[name]);
         }
       }
-    } else if (node.type === 'CallExpression' && isExportUse(node.callee)) {
+    } else if (t.isCallExpression(node) && isExportUse(node.callee)) {
       // wasmExports["___wasm_call_ctors"](); -> wasmExports["M"]();
       const callee = node.callee;
       const name = callee.property.value;
@@ -493,15 +589,21 @@ function applyImportAndExportNameChanges(ast) {
 
 // A static dyncall is dynCall('vii', ..), which is actually static even
 // though we call dynCall() - we see the string signature statically.
+/**
+ * @param {t.Node} node
+ * @returns {node is t.CallExpression & { arguments: [t.StringLiteral] }}
+ */
 function isStaticDynCall(node) {
   return (
-    node.type === 'CallExpression' &&
-    node.callee.type === 'Identifier' &&
-    node.callee.name === 'dynCall' &&
-    isLiteralString(node.arguments[0])
+    t.isCallExpression(node) &&
+    t.isIdentifier(node.callee, {name: 'dynCall'}) &&
+    t.isStringLiteral(node.arguments[0])
   );
 }
 
+/**
+ * @param {t.CallExpression & { arguments: [t.StringLiteral] }} node
+ */
 function getStaticDynCallName(node) {
   return 'dynCall_' + node.arguments[0].value;
 }
@@ -513,13 +615,16 @@ function getStaticDynCallName(node) {
 //   "dynCall_"
 // as that prefix means we may be constructing a dynamic dyncall name
 // (dynCall and embind's requireFunction do this internally).
+/**
+ * @param {t.Node} node
+ * @returns {node is (t.CallExpression & { callee: t.Identifier }) | t.StringLiteral}
+ */
 function isDynamicDynCall(node) {
   return (
-    (node.type === 'CallExpression' &&
-      node.callee.type === 'Identifier' &&
-      node.callee.name === 'dynCall' &&
-      !isLiteralString(node.arguments[0])) ||
-    (isLiteralString(node) && node.value === 'dynCall_')
+    (t.isCallExpression(node) &&
+      t.isIdentifier(node.callee, {name: 'dynCall'}) &&
+      !t.isStringLiteral(node.arguments[0])) ||
+    t.isStringLiteral(node, {value: 'dynCall_'})
   );
 }
 
@@ -563,6 +668,9 @@ function isDynamicDynCall(node) {
 //     that should be fixed. Currently the main use case here does
 //     not require that. TODO FIXME
 //
+/**
+ * @param {t.Node} ast
+ */
 function emitDCEGraph(ast) {
   // First pass: find the wasm imports and exports, and the toplevel
   // defuns, and save them on the side, removing them from the AST,
@@ -592,15 +700,25 @@ function emitDCEGraph(ast) {
   //   _malloc = wasmExports["malloc"];
   //   ..
   //  });
+  /** @type {[string, string][]} */
   const imports = [];
+  /** @type {t.FunctionDeclaration[]} */
   const defuns = [];
+  /** @type {string[]} */
   const dynCallNames = [];
+  /** @type {Record<string, string>} */
   const nameToGraphName = {};
+  /** @type {Record<string, string>} */
   const modulePropertyToGraphName = {};
-  const exportNameToGraphName = {}; // identical to wasmExports['..'] nameToGraphName
+  /** @type {Record<string, string>} */ // identical to wasmExports['..'] nameToGraphName
+  const exportNameToGraphName = {};
   let foundWasmImportsAssign = false;
   let foundMinimalRuntimeExports = false;
 
+  /**
+   * @param {string} name
+   * @param {string} asmName
+   */
   function saveAsmExport(name, asmName) {
     // the asmName is what the wasm provides directly; the outside JS
     // name may be slightly different (extra "_" in wasm backend)
@@ -626,70 +744,75 @@ function emitDCEGraph(ast) {
       if (isWasmImportsAssign(node)) {
         const assignedObject = getWasmImportsValue(node);
         assignedObject.properties.forEach((item) => {
+          t.assertObjectProperty(item);
           let value = item.value;
-          if (value.type === 'Literal' || value.type === 'FunctionExpression') {
+          if (t.isLiteral(value) || t.isFunctionExpression(value)) {
             return; // if it's a numeric or function literal, nothing to do here
           }
-          if (value.type === 'LogicalExpression') {
+          if (t.isLogicalExpression(value)) {
             // We may have something like  wasmMemory || Module.wasmMemory  in pthreads code;
             // use the left hand identifier.
             value = value.left;
           }
-          assertAt(value.type === 'Identifier', value);
-          const nativeName = item.key.type == 'Literal' ? item.key.value : item.key.name;
+          t.assertIdentifier(value);
+          assertAt(!item.computed, item, 'computed property in wasmImports');
+          const nativeName = t.isStringLiteral(item.key)
+            ? item.key.value
+            : (t.assertIdentifier(item.key), item.key.name);
           assert(nativeName);
           imports.push([value.name, nativeName]);
         });
         foundWasmImportsAssign = true;
         emptyOut(node); // ignore this in the second pass; this does not root
-      } else if (node.type === 'AssignmentExpression') {
+      } else if (t.isAssignmentExpression(node)) {
         const target = node.left;
         // Ignore assignment to the wasmExports object (as happens in
         // applySignatureConversions).
         if (isExportUse(target)) {
           emptyOut(node);
         }
-      } else if (node.type === 'VariableDeclaration') {
+      } else if (t.isVariableDeclaration(node)) {
         if (node.declarations.length === 1) {
           const item = node.declarations[0];
-          const name = item.id.name;
-          const value = item.init;
-          if (value && isExportUse(value)) {
-            const asmName = getExportOrModuleUseName(value);
-            // this is:
-            //  var _x = wasmExports['x'];
-            saveAsmExport(name, asmName);
-            emptyOut(node);
-          } else if (value && value.type === 'AssignmentExpression') {
-            const assigned = value.left;
-            if (isModuleUse(assigned) && getExportOrModuleUseName(assigned) === name) {
-              // this is
-              //  var x = Module['x'] = ?
-              // which looks like a wasm export being received. confirm with the asm use
-              let found = 0;
-              let asmName;
-              fullWalk(value.right, (node) => {
-                if (isExportUse(node)) {
-                  found++;
-                  asmName = getExportOrModuleUseName(node);
-                }
-              });
-              // in the wasm backend, the asm name may have one fewer "_" prefixed
-              if (found === 1) {
-                // this is indeed an export
-                // the asmName is what the wasm provides directly; the outside JS
-                // name may be slightly different (extra "_" in wasm backend)
-                saveAsmExport(name, asmName);
-                emptyOut(node); // ignore this in the second pass; this does not root
-                return;
-              }
-              if (value.right.type === 'Literal') {
+          if (t.isIdentifier(item.id)) {
+            const name = item.id.name;
+            const value = item.init;
+            if (value && isExportUse(value)) {
+              const asmName = getExportOrModuleUseName(value);
+              // this is:
+              //  var _x = wasmExports['x'];
+              saveAsmExport(name, asmName);
+              emptyOut(node);
+            } else if (value && t.isAssignmentExpression(value)) {
+              const assigned = value.left;
+              if (isModuleUse(assigned) && getExportOrModuleUseName(assigned) === name) {
                 // this is
-                //  var x = Module['x'] = 1234;
-                // this form occurs when global addresses are exported from the
-                // module.  It doesn't constitute a usage.
-                assertAt(typeof value.right.value === 'number', value.right);
-                emptyOut(node);
+                //  var x = Module['x'] = ?
+                // which looks like a wasm export being received. confirm with the asm use
+                let found = 0;
+                let asmName;
+                fullWalk(value.right, (node) => {
+                  if (isExportUse(node)) {
+                    found++;
+                    asmName = getExportOrModuleUseName(node);
+                  }
+                });
+                // in the wasm backend, the asm name may have one fewer "_" prefixed
+                if (found === 1) {
+                  // this is indeed an export
+                  // the asmName is what the wasm provides directly; the outside JS
+                  // name may be slightly different (extra "_" in wasm backend)
+                  saveAsmExport(name, asmName);
+                  emptyOut(node); // ignore this in the second pass; this does not root
+                  return;
+                }
+                if (t.isNumericLiteral(value.right)) {
+                  // this is
+                  //  var x = Module['x'] = 1234;
+                  // this form occurs when global addresses are exported from the
+                  // module.  It doesn't constitute a usage.
+                  emptyOut(node);
+                }
               }
             }
           }
@@ -700,31 +823,27 @@ function emitDCEGraph(ast) {
         if (!node.declarations.reduce((hasInit, decl) => hasInit || !!decl.init, false)) {
           emptyOut(node);
         }
-      } else if (node.type === 'FunctionDeclaration') {
+      } else if (t.isFunctionDeclaration(node)) {
         const name = node.id.name;
         // Check if this is the minimal runtime exports function, which looks like
         //   function assignWasmExports(wasmExports)
         if (
-          name == 'assignWasmExports' &&
+          name === 'assignWasmExports' &&
           node.params.length === 1 &&
-          node.params[0].type === 'Identifier' &&
-          node.params[0].name === 'wasmExports'
+          t.isIdentifier(node.params[0], {name: 'wasmExports'})
         ) {
           // This looks very much like what we are looking for.
           const body = node.body.body;
           assert(!foundMinimalRuntimeExports);
           foundMinimalRuntimeExports = true;
-          for (let i = 0; i < body.length; i++) {
-            const item = body[i];
+          for (const item of body) {
             if (
-              item.type === 'ExpressionStatement' &&
-              item.expression.type === 'AssignmentExpression' &&
-              item.expression.operator === '=' &&
-              item.expression.left.type === 'Identifier' &&
-              item.expression.right.type === 'MemberExpression' &&
-              item.expression.right.object.type === 'Identifier' &&
-              item.expression.right.object.name === 'wasmExports' &&
-              item.expression.right.property.type === 'Literal'
+              t.isExpressionStatement(item) &&
+              t.isAssignmentExpression(item.expression, {operator: '='}) &&
+              t.isIdentifier(item.expression.left) &&
+              t.isMemberExpression(item.expression.right) &&
+              t.isIdentifier(item.expression.right.object, {name: 'wasmExports'}) &&
+              t.isStringLiteral(item.expression.right.property)
             ) {
               const name = item.expression.left.name;
               const asmName = item.expression.right.property.value;
@@ -737,17 +856,14 @@ function emitDCEGraph(ast) {
           nameToGraphName[name] = getGraphName(name, 'defun');
           emptyOut(node); // ignore this in the second pass; we scan defuns separately
         }
-      } else if (node.type === 'ArrowFunctionExpression') {
-        assert(specialScopes > 0);
-        specialScopes--;
-      } else if (node.type === 'Property' && node.method) {
+      } else if (t.isArrowFunctionExpression(node) || t.isObjectMethod(node)) {
         assert(specialScopes > 0);
         specialScopes--;
       }
     },
     (node) => {
       // Pre-walking logic. We note special scopes (see above).
-      if (node.type === 'ArrowFunctionExpression' || (node.type === 'Property' && node.method)) {
+      if (t.isArrowFunctionExpression(node) || t.isObjectMethod(node)) {
         specialScopes++;
       }
     },
@@ -768,9 +884,14 @@ function emitDCEGraph(ast) {
 
   // Second pass: everything used in the toplevel scope is rooted;
   // things used in defun scopes create links
+  /**
+   * @param {string} name
+   * @param {string} what
+   */
   function getGraphName(name, what) {
     return 'emcc$' + what + '$' + name;
   }
+  /** @type {Record<string, { name: string, reaches: Set<string>, root?: boolean, import?: [string, string], export?: string }>} */
   const infos = {}; // the graph name of the item => info for it
   for (const [jsName, nativeName] of imports) {
     const name = getGraphName(jsName, 'import');
@@ -793,11 +914,15 @@ function emitDCEGraph(ast) {
   }
   // a function that handles a node we visit, in either a defun or
   // the toplevel scope (in which case the second param is not provided)
+  /**
+   * @param {t.Node} node
+   * @param {{ name: string, reaches: Set<string>, root?: boolean }} defunInfo
+   */
   function visitNode(node, defunInfo) {
     // TODO: scope awareness here. for now we just assume all uses are
     //       from the top scope, which might create more uses than needed
     let reached;
-    if (node.type === 'Identifier') {
+    if (t.isIdentifier(node)) {
       const name = node.name;
       if (nameToGraphName.hasOwnProperty(name)) {
         reached = nameToGraphName[name];
@@ -821,6 +946,9 @@ function emitDCEGraph(ast) {
       return;
     }
     if (reached) {
+      /**
+       * @param {string} reached
+       */
       function addReach(reached) {
         if (defunInfo) {
           defunInfo.reaches.add(reached); // defun reaches it
@@ -867,6 +995,9 @@ function emitDCEGraph(ast) {
 // exports from JS side, effectively disentangling the wasm and JS sides that
 // way (and we leave further DCE on the JS and wasm sides to their respective
 // optimizers, closure compiler and binaryen).
+/**
+ * @param {t.Node} ast
+ */
 function applyDCEGraphRemovals(ast) {
   const unusedExports = new Set(extraInfo.unusedExports);
   const unusedImports = new Set(extraInfo.unusedImports);
@@ -879,6 +1010,8 @@ function applyDCEGraphRemovals(ast) {
     if (isWasmImportsAssign(node)) {
       const assignedObject = getWasmImportsValue(node);
       assignedObject.properties = assignedObject.properties.filter((item) => {
+        t.assertObjectProperty(item, {computed: false});
+        t.assertIdentifier(item.key);
         const name = item.key.name;
         const value = item.value;
         if (unusedImports.has(name)) {
@@ -887,7 +1020,7 @@ function applyDCEGraphRemovals(ast) {
         }
         return true;
       });
-    } else if (node.type === 'ExpressionStatement') {
+    } else if (t.isExpressionStatement(node)) {
       let expr = node.expression;
       // Inside the assignWasmExports function we have
       //
@@ -897,10 +1030,14 @@ function applyDCEGraphRemovals(ast) {
       //
       //   Module['_x'] = _x = wasmExports['x']
       //
-      if (expr.type == 'AssignmentExpression' && expr.right.type == 'AssignmentExpression') {
+      if (t.isAssignmentExpression(expr) && t.isAssignmentExpression(expr.right)) {
         expr = expr.right;
       }
-      if (expr.operator === '=' && expr.left.type === 'Identifier' && isExportUse(expr.right)) {
+      if (
+        t.isAssignmentExpression(expr, {operator: '='}) &&
+        t.isIdentifier(expr.left) &&
+        isExportUse(expr.right)
+      ) {
         const export_name = getExportOrModuleUseName(expr.right);
         if (unusedExports.has(export_name)) {
           emptyOut(node);
@@ -918,23 +1055,13 @@ function applyDCEGraphRemovals(ast) {
   }
 }
 
-function createLiteral(value) {
-  return {
-    type: 'Literal',
-    value: value,
-    raw: '' + value,
-  };
-}
-
+/**
+ * @param {t.Node} node
+ * @param {string} name
+ * @param {(t.Expression | t.SpreadElement | t.ArgumentPlaceholder)[]} args
+ */
 function makeCallExpression(node, name, args) {
-  Object.assign(node, {
-    type: 'CallExpression',
-    callee: {
-      type: 'Identifier',
-      name: name,
-    },
-    arguments: args,
-  });
+  Object.assign(node, t.callExpression(t.identifier(name), args));
 }
 
 function isEmscriptenHEAP(name) {
@@ -959,13 +1086,16 @@ function isEmscriptenHEAP(name) {
 
 // Replaces each HEAP access with function call that uses DataView to enforce
 // LE byte order for HEAP buffer
+/**
+ * @param {t.Node} ast
+ */
 function littleEndianHeap(ast) {
   recursiveWalk(ast, {
     FunctionDeclaration(node, c) {
       // do not recurse into LE_HEAP_STORE, LE_HEAP_LOAD functions
       if (
         !(
-          node.id.type === 'Identifier' &&
+          t.isIdentifier(node.id) &&
           (node.id.name.startsWith('LE_HEAP') || node.id.name.startsWith('LE_ATOMICS_'))
         )
       ) {
@@ -973,7 +1103,7 @@ function littleEndianHeap(ast) {
       }
     },
     VariableDeclarator(node, c) {
-      if (!(node.id.type === 'Identifier' && node.id.name.startsWith('LE_ATOMICS_'))) {
+      if (!(t.isIdentifier(node.id) && node.id.name.startsWith('LE_ATOMICS_'))) {
         c(node.id);
         if (node.init) c(node.init);
       }
@@ -1044,11 +1174,10 @@ function littleEndianHeap(ast) {
       }
       if (
         // Atomics.X(args) -> LE_ATOMICS_X(args)
-        node.callee.type === 'MemberExpression' &&
-        node.callee.object.type === 'Identifier' &&
-        node.callee.object.name === 'Atomics' &&
-        !node.callee.computed
+        t.isMemberExpression(node.callee, {computed: false}) &&
+        t.isIdentifier(node.callee.object, {name: 'Atomics'})
       ) {
+        t.assertIdentifier(node.callee.property);
         makeCallExpression(
           node,
           'LE_ATOMICS_' + node.callee.property.name.toUpperCase(),
@@ -1121,6 +1250,9 @@ function littleEndianHeap(ast) {
 // Instrument heap accesses to call growMemViews helper function, which allows
 // pthreads + memory growth to work (we check if the memory was grown on another thread
 // in each access), see #8365.
+/**
+ * @param {t.Node} ast
+ */
 function growableHeap(ast) {
   recursiveWalk(ast, {
     ExportNamedDeclaration() {
@@ -1130,7 +1262,7 @@ function growableHeap(ast) {
       // Do not recurse into the helper function itself.
       if (
         !(
-          node.id.type === 'Identifier' &&
+          t.isIdentifier(node.id) &&
           (node.id.name === 'growMemViews' || node.id.name === 'LE_HEAP_UPDATE')
         )
       ) {
@@ -1138,7 +1270,7 @@ function growableHeap(ast) {
       }
     },
     AssignmentExpression(node) {
-      if (node.left.type !== 'Identifier') {
+      if (!t.isIdentifier(node.left)) {
         // Don't transform `HEAPxx =` assignments.
         growableHeap(node.left);
       }
@@ -1157,20 +1289,10 @@ function growableHeap(ast) {
         // Transform `HEAPxx` into `(growMemViews(), HEAPxx)`.
         // Important: don't just do `growMemViews(HEAPxx)` because `growMemViews` reassigns `HEAPxx`
         // and we want to get an updated value after that reassignment.
-        Object.assign(node, {
-          type: 'SequenceExpression',
-          expressions: [
-            {
-              type: 'CallExpression',
-              callee: {
-                type: 'Identifier',
-                name: 'growMemViews',
-              },
-              arguments: [],
-            },
-            {...node},
-          ],
-        });
+        Object.assign(
+          node,
+          t.sequenceExpression([t.callExpression(t.identifier('growMemViews'), []), {...node}]),
+        );
       }
     },
   });
@@ -1179,47 +1301,47 @@ function growableHeap(ast) {
 // Make all JS pointers unsigned. We do this by modifying things like
 // HEAP32[X >> 2] to HEAP32[X >>> 2]. We also need to handle the case of
 // HEAP32[X] and make that HEAP32[X >>> 0], things like subarray(), etc.
+/**
+ * @param {t.Node} ast
+ */
 function unsignPointers(ast) {
   // Aside from the standard emscripten HEAP*s, also identify just "HEAP"/"heap"
   // as representing a heap. This can be used in JS library code in order
   // to get this pass to fix it up.
-  function isHeap(name) {
+  /**
+   * @param {t.Node} node
+   */
+  function isHeap(node) {
+    if (!t.isIdentifier(node)) return false;
+    const {name} = node;
     return isEmscriptenHEAP(name) || name === 'heap' || name === 'HEAP';
   }
 
+  /**
+   * @param {t.Expression | t.PrivateName | t.ArgumentPlaceholder | t.SpreadElement} node
+   */
   function unsign(node) {
+    t.assertExpression(node);
     // The pointer is often a >> shift, which we can just turn into >>>
-    if (node.type === 'BinaryExpression') {
+    if (t.isBinaryExpression(node)) {
       if (node.operator === '>>') {
         node.operator = '>>>';
         return node;
       }
     }
     // If nothing else worked out, add a new shift.
-    return {
-      type: 'BinaryExpression',
-      left: node,
-      operator: '>>>',
-      right: {
-        type: 'Literal',
-        value: 0,
-      },
-    };
+    return t.binaryExpression('>>>', node, t.numericLiteral(0));
   }
 
   fullWalk(ast, (node) => {
-    if (node.type === 'MemberExpression') {
+    if (t.isMemberExpression(node, {computed: true})) {
       // Check if this is HEAP*[?]
-      if (node.object.type === 'Identifier' && isHeap(node.object.name) && node.computed) {
+      if (isHeap(node.object)) {
         node.property = unsign(node.property);
       }
-    } else if (node.type === 'CallExpression') {
-      if (
-        node.callee.type === 'MemberExpression' &&
-        node.callee.object.type === 'Identifier' &&
-        isHeap(node.callee.object.name) &&
-        !node.callee.computed
-      ) {
+    } else if (t.isCallExpression(node)) {
+      if (t.isMemberExpression(node.callee, {computed: false}) && isHeap(node.callee.object)) {
+        t.assertIdentifier(node.callee.property);
         // This is a call on HEAP*.?. Specific things we need to fix up are
         // subarray, set, and copyWithin. TODO more?
         if (node.callee.property.name === 'set') {
@@ -1245,10 +1367,14 @@ function unsignPointers(ast) {
   });
 }
 
+/**
+ * @param {t.Node} node
+ * @returns {node is t.MemberExpression & {object: t.Identifier, computed: true, property: t.Expression}}
+ */
 function isHEAPAccess(node) {
   return (
-    node.type === 'MemberExpression' &&
-    node.object.type === 'Identifier' &&
+    t.isMemberExpression(node) &&
+    t.isIdentifier(node.object) &&
     node.computed && // notice a[X] but not a.X
     isEmscriptenHEAP(node.object.name)
   );
@@ -1256,11 +1382,14 @@ function isHEAPAccess(node) {
 
 // Replace direct HEAP* loads/stores with calls into C, in which ASan checks
 // are applied. That lets ASan cover JS too.
+/**
+ * @param {t.Node} ast
+ */
 function asanify(ast) {
   recursiveWalk(ast, {
     FunctionDeclaration(node, c) {
       if (
-        node.id.type === 'Identifier' &&
+        t.isIdentifier(node.id) &&
         (node.id.name.startsWith('_asan_js_') || node.id.name === 'establishStackSpace')
       ) {
         // do not recurse into this js impl function, which we use during
@@ -1292,20 +1421,22 @@ function asanify(ast) {
   });
 }
 
+/**
+ * @param {t.Expression} value
+ * @param {number} by
+ */
 function multiply(value, by) {
-  return {
-    type: 'BinaryExpression',
-    left: value,
-    operator: '*',
-    right: createLiteral(by),
-  };
+  return t.binaryExpression('*', value, t.numericLiteral(by));
 }
 
 // Replace direct heap access with SAFE_HEAP* calls.
+/**
+ * @param {t.Node} ast
+ */
 function safeHeap(ast) {
   recursiveWalk(ast, {
     FunctionDeclaration(node, c) {
-      if (node.id.type === 'Identifier' && node.id.name.startsWith('SAFE_HEAP')) {
+      if (t.isIdentifier(node.id) && node.id.name.startsWith('SAFE_HEAP')) {
         // do not recurse into this js impl function, which we use during
         // startup before the wasm is ready
       } else {
@@ -1358,10 +1489,15 @@ const RESERVED = new Set([
 const VALID_MIN_INITS = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_$';
 const VALID_MIN_LATERS = VALID_MIN_INITS + '0123456789';
 
+/** @type {string[]} */
 const minifiedNames = [];
+/** @type {number[]} */
 const minifiedState = [0];
 
 // Make sure the nth index in minifiedNames exists. Done 100% deterministically.
+/**
+ * @param {number} n
+ */
 function ensureMinifiedNames(n) {
   while (minifiedNames.length < n + 1) {
     // generate the current name
@@ -1384,27 +1520,35 @@ function ensureMinifiedNames(n) {
   }
 }
 
+/**
+ * @param {t.File} ast
+ */
 function minifyLocals(ast) {
   // We are given a mapping of global names to their minified forms.
   assert(extraInfo?.globals);
 
-  for (const fun of ast.body) {
-    if (fun.type !== 'FunctionDeclaration') {
+  for (const fun of ast.program.body) {
+    if (!t.isFunctionDeclaration(fun)) {
       continue;
     }
     // Find the list of local names, including params.
     const localNames = new Set();
     for (const param of fun.params) {
+      t.assertIdentifier(param);
       localNames.add(param.name);
     }
     simpleWalk(fun, {
-      VariableDeclaration(node, _c) {
+      VariableDeclaration(node) {
         for (const dec of node.declarations) {
+          t.assertIdentifier(dec.id);
           localNames.add(dec.id.name);
         }
       },
     });
 
+    /**
+     * @param {string} name
+     */
     function isLocalName(name) {
       return localNames.has(name);
     }
@@ -1424,7 +1568,7 @@ function minifyLocals(ast) {
     // Don't actually minify them yet as that might interfere with local
     // variable names; just mark them as used, and what their new name will be.
     simpleWalk(fun, {
-      Identifier(node, _c) {
+      Identifier(node) {
         const name = node.name;
         if (!isLocalName(name)) {
           const minified = extraInfo.globals[name];
@@ -1434,11 +1578,11 @@ function minifyLocals(ast) {
           }
         }
       },
-      CallExpression(node, _c) {
+      CallExpression(node) {
         // We should never call a local name, as in asm.js-style code our
         // locals are just numbers, not functions; functions are all declared
         // in the outer scope. If a local is called, that is a bug.
-        if (node.callee.type === 'Identifier') {
+        if (t.isIdentifier(node.callee)) {
           assertAt(!isLocalName(node.callee.name), node.callee, 'cannot call a local');
         }
       },
@@ -1463,6 +1607,7 @@ function minifyLocals(ast) {
 
     // Traverse and minify all names. First the function parameters.
     for (const param of fun.params) {
+      t.assertIdentifier(param);
       const minified = getNextMinifiedName();
       newNames.set(param.name, minified);
       param.name = minified;
@@ -1514,7 +1659,10 @@ function minifyLocals(ast) {
   }
 }
 
-function minifyGlobals(ast) {
+/**
+ * @param {t.File} fileAst
+ */
+function minifyGlobals({program: ast}) {
   // The input is in form
   //
   //   function instantiate(wasmImports, wasmMemory, wasmTable) {
@@ -1544,13 +1692,11 @@ function minifyGlobals(ast) {
   // analysis here. FIXME
 
   // We must run on a singleton instantiate() function as described above.
-  assert(
-    ast.type === 'Program' &&
-      ast.body.length === 1 &&
-      ast.body[0].type === 'FunctionDeclaration' &&
-      ast.body[0].id.name === 'instantiate',
-  );
+  t.assertProgram(ast);
+  assert.equal(ast.body.length, 1, 'expected a single function body');
   const fun = ast.body[0];
+  t.assertFunctionDeclaration(fun);
+  assertAt(fun.id.name === 'instantiate', fun.id, 'expected instantiate() function');
 
   // Swap the function's name away so that we can then minify everything else.
   const funId = fun.id;
@@ -1568,16 +1714,19 @@ function minifyGlobals(ast) {
         declared.add(node.id.name);
       }
       for (const param of node.params) {
+        t.assertIdentifier(param);
         declared.add(param.name);
       }
     },
     FunctionExpression(node) {
       for (const param of node.params) {
+        t.assertIdentifier(param);
         declared.add(param.name);
       }
     },
     VariableDeclaration(node) {
       for (const decl of node.declarations) {
+        t.assertIdentifier(decl.id);
         declared.add(decl.id.name);
       }
     },
@@ -1602,12 +1751,16 @@ function minifyGlobals(ast) {
 
   const minified = new Map();
 
+  /**
+   * @param {string} name
+   */
   function minify(name) {
-    if (!minified.has(name)) {
-      minified.set(name, getNewMinifiedName());
+    let minifiedName = minified.get(name);
+    if (!minifiedName) {
+      minifiedName = getNewMinifiedName();
+      minified.set(name, minifiedName);
     }
-    assert(minified.get(name));
-    return minified.get(name);
+    return minifiedName;
   }
 
   // Start with the declared things in the lowest indices. Things like HEAP8
@@ -1636,63 +1789,9 @@ function minifyGlobals(ast) {
   fun.id = funId;
 
   // Emit the metadata
-  const json = {};
-  for (const x of minified.entries()) json[x[0]] = x[1];
+  const json = Object.fromEntries(minified);
 
-  suffix = '// EXTRA_INFO:' + JSON.stringify(json);
-}
-
-// Utilities
-
-function reattachComments(ast, commentsMap) {
-  const symbols = [];
-
-  // Collect all code symbols
-  ast.walk(
-    new terser.TreeWalker((node) => {
-      if (node.start?.pos) {
-        symbols.push(node);
-      }
-    }),
-  );
-
-  // Sort them by ascending line number
-  symbols.sort((a, b) => a.start.pos - b.start.pos);
-
-  // Walk through all comments in ascending line number, and match each
-  // comment to the appropriate code block.
-  let j = 0;
-  for (const [pos, comments] of Object.entries(commentsMap)) {
-    while (j < symbols.length && symbols[j].start.pos < pos) {
-      ++j;
-    }
-    if (j >= symbols.length) {
-      trace('dropping comments: no symbol comes after them');
-      break;
-    }
-    if (symbols[j].start.pos != pos) {
-      // This comment must have been associated with a node that still
-      // exists in the AST, otherwise to drop it.
-      trace('dropping comments: not linked to any remaining AST node');
-      continue;
-    }
-    symbols[j].start.comments_before ??= [];
-    for (const comment of comments) {
-      trace('reattaching comment');
-      symbols[j].start.comments_before.push(
-        new terser.AST_Token(
-          comment.type == 'Line' ? 'comment1' : 'comment2',
-          comment.value,
-          undefined,
-          undefined,
-          false,
-          undefined,
-          undefined,
-          '0',
-        ),
-      );
-    }
-  }
+  suffix = EXTRA_INFO_PREFIX + JSON.stringify(json);
 }
 
 // Main
@@ -1727,36 +1826,15 @@ function trace(...args) {
   }
 }
 
-// If enabled, output retains parentheses and comments so that the
-// output can further be passed out to Closure.
-
-const input = read(infile);
-const extraInfoStart = input.lastIndexOf('// EXTRA_INFO:');
+let input = fs.readFileSync(infile, 'utf-8');
+const extraInfoStart = input.lastIndexOf(EXTRA_INFO_PREFIX);
 let extraInfo = null;
 if (extraInfoStart > 0) {
-  extraInfo = JSON.parse(input.slice(extraInfoStart + 14));
-}
-// Collect all JS code comments to this map so that we can retain them in the
-// outputted code if --closureFriendly was requested.
-const sourceComments = {};
-const params = {
-  ecmaVersion: 'latest',
-  sourceType: exportES6 ? 'module' : 'script',
-  allowAwaitOutsideFunction: true,
-};
-if (closureFriendly) {
-  const currentComments = [];
-  Object.assign(params, {
-    preserveParens: true,
-    onToken(token) {
-      // Associate comments with the start position of the next token.
-      sourceComments[token.start] = currentComments.slice();
-      currentComments.length = 0;
-    },
-    onComment: currentComments,
-  });
+  extraInfo = JSON.parse(input.slice(extraInfoStart + EXTRA_INFO_PREFIX.length));
+  input = input.slice(0, extraInfoStart);
 }
 
+/** @type {Record<string, (file: t.File) => void>} */
 const registry = {
   JSDCE,
   AJSDCE,
@@ -1773,51 +1851,58 @@ const registry = {
   minifyGlobals,
 };
 
-let ast;
 try {
-  ast = acorn.parse(input, params);
+  const ast = parse(input, {
+    sourceFilename: infile,
+    sourceType: exportES6 ? 'module' : 'script',
+    allowAwaitOutsideFunction: true,
+    createParenthesizedExpressions: closureFriendly,
+    attachComment: closureFriendly,
+  });
+
   for (let pass of passes) {
     const resolvedPass = registry[pass];
     assert(resolvedPass, `unknown optimizer pass: ${pass}`);
     resolvedPass(ast);
   }
+
+  if (!noPrint) {
+    let output = generate(ast, {
+      filename: outfile,
+      comments: closureFriendly,
+    }).code;
+
+    output += '\n';
+    if (suffix) {
+      output += suffix + '\n';
+    }
+
+    if (outfile) {
+      fs.writeFileSync(outfile, output);
+    } else {
+      // Simply using `fs.writeFileSync` on `process.stdout` has issues with
+      // large amount of data. It can cause:
+      //   Error: EAGAIN: resource temporarily unavailable, write
+      process.stdout.write(output);
+    }
+  }
 } catch (err) {
-  if (err.loc) {
-    err.message +=
-      '\n' +
-      `${input.split(acorn.lineBreak)[err.loc.line - 1]}\n` +
-      `${' '.repeat(err.loc.column)}^ ${infile}:${err.loc.line}:${err.loc.column + 1}`;
-  }
-  throw err;
-}
-
-if (!noPrint) {
-  const terserAst = terser.AST_Node.from_mozilla_ast(ast);
-
-  if (closureFriendly) {
-    reattachComments(terserAst, sourceComments);
-  }
-
-  let output = terserAst.print_to_string({
-    beautify: !minifyWhitespace,
-    indent_level: minifyWhitespace ? 0 : 2,
-    keep_quoted_props: closureFriendly, // for closure
-    wrap_func_args: false, // don't add extra braces
-    comments: true, // for closure as well
-    shorthand: true, // Use object literal shorthand notation
-  });
-
-  output += '\n';
-  if (suffix) {
-    output += suffix + '\n';
-  }
-
-  if (outfile) {
-    fs.writeFileSync(outfile, output);
+  let loc = err['loc'];
+  if (loc) {
+    if ('line' in loc) {
+      loc = {start: loc};
+    }
+    // code-frame columns are off-by-one, reported upstream: https://github.com/babel/babel/issues/17316
+    loc.start.column++;
+    if (loc.end) loc.end.column++;
+    console.error(
+      codeFrameColumns(input, loc, {
+        highlightCode: process.stderr.isTTY,
+        message: err.message,
+      }),
+    );
+    process.exit(1);
   } else {
-    // Simply using `fs.writeFileSync` on `process.stdout` has issues with
-    // large amount of data. It can cause:
-    //   Error: EAGAIN: resource temporarily unavailable, write
-    process.stdout.write(output);
+    throw err;
   }
 }

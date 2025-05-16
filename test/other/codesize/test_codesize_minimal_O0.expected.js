@@ -470,7 +470,7 @@ assert(typeof Int32Array != 'undefined' && typeof Float64Array !== 'undefined' &
        'JS engine does not provide full typed array support');
 
 function preRun() {
-  // No ATPRERUNS hooks
+  /* No ATPRERUNS hooks */
 }
 
 function initRuntime() {
@@ -479,18 +479,18 @@ function initRuntime() {
 
   checkStackCookie();
 
-  // No ATINITS hooks
+  /* No ATINITS hooks */
 
   wasmExports['__wasm_call_ctors']();
 
-  // No ATPOSTCTORS hooks
+  /* No ATPOSTCTORS hooks */
 }
 
 function postRun() {
   checkStackCookie();
    // PThreads reuse the runtime from the main thread.
 
-  // No ATPOSTRUNS hooks
+  /* No ATPOSTRUNS hooks */
 }
 
 // A counter of dependencies for calling run(). If we need to

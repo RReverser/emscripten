@@ -31,10 +31,13 @@ function instantiate(H, I, J) {
     var z = F.emscripten_memcpy_js;
     var A = 5245632;
     var B = 0;
+    // EMSCRIPTEN_START_FUNCS
+
     
 // EMSCRIPTEN_START_FUNCS
 function N(a, b, c) {
-  var d = 0, f = 0;
+  var d = 0,
+    f = 0;
   if (c >>> 0 >= 512) {
     z(a | 0, b | 0, c | 0) | 0;
     return;
@@ -64,6 +67,7 @@ function N(a, b, c) {
           }
           break;
         }
+        ;
       }
       a = d & -4;
       c: {
@@ -98,6 +102,7 @@ function N(a, b, c) {
           }
           break;
         }
+        ;
       }
       if (c >>> 0 >= a >>> 0) {
         break a;
@@ -111,6 +116,7 @@ function N(a, b, c) {
         }
         break;
       }
+      ;
       break a;
     }
     if (d >>> 0 < 4) {
@@ -135,6 +141,7 @@ function N(a, b, c) {
       }
       break;
     }
+    ;
   }
   if (c >>> 0 < d >>> 0) {
     while (1) {
@@ -148,12 +155,16 @@ function N(a, b, c) {
     }
   }
 }
-
 function Q(a, b, c) {
   a = a | 0;
   b = b | 0;
   c = c | 0;
-  var d = 0, e = 0, f = 0, h = 0, i = 0, j = 0;
+  var d = 0,
+    e = 0,
+    f = 0,
+    h = 0,
+    i = 0,
+    j = 0;
   d = A - 32 | 0;
   A = d;
   e = g[a + 28 >> 2];
@@ -217,9 +228,12 @@ function Q(a, b, c) {
   A = d + 32 | 0;
   return a | 0;
 }
-
 function K(a, c) {
-  var f = 0, i = 0, j = 0, k = 0, l = 0;
+  var f = 0,
+    i = 0,
+    j = 0,
+    k = 0,
+    l = 0;
   b();
   k = 1024;
   f = g[c + 16 >> 2];
@@ -250,6 +264,7 @@ function K(a, c) {
         }
         break;
       }
+      ;
       i = d[g[c + 36 >> 2]](c, 1024, f) | 0;
       if (i >>> 0 < f >>> 0) {
         break a;
@@ -265,9 +280,10 @@ function K(a, c) {
   }
   return i;
 }
-
 function U(a) {
-  var b = 0, c = 0, f = 0;
+  var b = 0,
+    c = 0,
+    f = 0;
   b = A - 16 | 0;
   A = b;
   e[b + 15 | 0] = 10;
@@ -291,9 +307,10 @@ function U(a) {
   }
   A = b + 16 | 0;
 }
-
 function S() {
-  var a = 0, b = 0, c = 0;
+  var a = 0,
+    b = 0,
+    c = 0;
   b = 1024;
   while (1) {
     a = b;
@@ -304,6 +321,7 @@ function S() {
     }
     break;
   }
+  ;
   if (!(c & 255)) {
     return a - 1024 | 0;
   }
@@ -316,11 +334,12 @@ function S() {
     }
     break;
   }
+  ;
   return b - 1024 | 0;
 }
-
 function T() {
-  var a = 0, b = 0;
+  var a = 0,
+    b = 0;
   a = g[260];
   a;
   b = S();
@@ -343,7 +362,6 @@ function T() {
     U(a);
   }
 }
-
 function L(a) {
   var b = 0;
   b = h[a + 74 | 0];
@@ -361,9 +379,9 @@ function L(a) {
   g[a + 16 >> 2] = b + g[a + 48 >> 2];
   return 0;
 }
-
 function V(a, b) {
-  var c = 0, d = 0;
+  var c = 0,
+    d = 0;
   c = a;
   d = c;
   a: {
@@ -378,7 +396,6 @@ function V(a, b) {
   }
   return b;
 }
-
 function O(a, b, c, d) {
   a = a | 0;
   b = b | 0;
@@ -387,7 +404,6 @@ function O(a, b, c, d) {
   B = 0;
   return 0;
 }
-
 function M(a) {
   if (!a) {
     return 0;
@@ -395,28 +411,25 @@ function M(a) {
   g[300] = a;
   return -1;
 }
-
 function W(a, b) {
   a = a | 0;
   b = b | 0;
   T();
   return 0;
 }
-
 function R(a) {
   a = a | 0;
   return v() | 0;
 }
-
 function P(a) {
   a = a | 0;
   return 0;
 }
-
 function X() {}
 
 // EMSCRIPTEN_END_FUNCS
 
+    ;
     d[1] = P;
     d[2] = Q;
     d[3] = O;
@@ -424,25 +437,26 @@ function X() {}
       return G.byteLength / 65536 | 0;
     }
     return {
-      __wasm_call_ctors: X,
-      main: W,
-      __growWasmMemory: R
+      "__wasm_call_ctors": X,
+      "main": W,
+      "__growWasmMemory": R
     };
   }
   return D({
-    Int8Array,
-    Int16Array,
-    Int32Array,
-    Uint8Array,
-    Uint16Array,
-    Uint32Array,
-    Float32Array,
-    Float64Array,
-    NaN,
-    Infinity: Infinity,
-    Math
+    'Int8Array': Int8Array,
+    'Int16Array': Int16Array,
+    'Int32Array': Int32Array,
+    'Uint8Array': Uint8Array,
+    'Uint16Array': Uint16Array,
+    'Uint32Array': Uint32Array,
+    'Float32Array': Float32Array,
+    'Float64Array': Float64Array,
+    'NaN': NaN,
+    'Infinity': Infinity,
+    'Math': Math
   }, H, I.buffer);
 }
+// EMSCRIPTEN_END_ASM
 // EMSCRIPTEN_END_ASM
 
 

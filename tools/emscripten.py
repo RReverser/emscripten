@@ -153,7 +153,7 @@ def apply_static_code_hooks(forwarded_json, code):
     if hook_code:
       hook_code = f'// Begin {name} hooks\n  {hook_code}\n  // End {name} hooks'
     else:
-      hook_code = f'// No {name} hooks'
+      hook_code = f'/* No {name} hooks */'
     code = code.replace(f'<<< {name} >>>', hook_code)
 
   inject_code_hooks('ATMODULES')
