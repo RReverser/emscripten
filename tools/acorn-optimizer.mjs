@@ -5,11 +5,7 @@ import * as terser from '../third_party/terser/terser.js';
 import * as fs from 'node:fs';
 import assert from 'node:assert';
 
-// Utilities
-
-function read(x) {
-  return fs.readFileSync(x, 'utf-8');
-}
+const EXTRA_INFO_PREFIX = '// EXTRA_INFO:';
 
 function assertAt(condition, node, message = '') {
   if (!condition) {
@@ -53,29 +49,28 @@ function visitChildren(node, c) {
 // if the type exists.
 function simpleWalk(node, cs) {
   visitChildren(node, (child) => simpleWalk(child, cs));
-  if (node.type in cs) {
-    cs[node.type](node);
-  }
+  cs[node.type]?.(node);
 }
 
 // Full post-order walk, calling a single function for all types. If |pre| is
 // provided, it is called in pre-order (before children).
+// If `pre` returns `false`, the node and its children are skipped.
 function fullWalk(node, c, pre) {
-  if (pre) {
-    pre(node);
+  if (pre?.(node) !== false) {
+    visitChildren(node, (child) => fullWalk(child, c, pre));
+    c(node);
   }
-  visitChildren(node, (child) => fullWalk(child, c, pre));
-  c(node);
 }
 
 // Recursive post-order walk, calling properties on an object by node type,
 // if the type exists, and if so leaving recursion to that function.
 function recursiveWalk(node, cs) {
   (function c(node) {
-    if (!(node.type in cs)) {
-      visitChildren(node, (child) => recursiveWalk(child, cs));
+    const handler = cs[node.type];
+    if (handler) {
+      handler(node, c);
     } else {
-      cs[node.type](node, c);
+      visitChildren(node, (child) => recursiveWalk(child, cs));
     }
   })(node);
 }
@@ -99,112 +94,93 @@ function dump(node) {
   console.log(JSON.stringify(node, null, ' '));
 }
 
-// Mark inner scopes temporarily as empty statements. Returns
-// a special object that must be used to restore them.
-function ignoreInnerScopes(node) {
-  const map = new WeakMap();
-  function ignore(node) {
-    map.set(node, node.type);
-    emptyOut(node);
-  }
-  simpleWalk(node, {
-    FunctionDeclaration(node) {
-      ignore(node);
-    },
-    FunctionExpression(node) {
-      ignore(node);
-    },
-    ArrowFunctionExpression(node) {
-      ignore(node);
-    },
-    // TODO: arrow etc.
-  });
-  return map;
-}
-
-// Mark inner scopes temporarily as empty statements.
-function restoreInnerScopes(node, map) {
-  fullWalk(node, (node) => {
-    if (map.has(node)) {
-      node.type = map.get(node);
-      map.delete(node);
-      restoreInnerScopes(node, map);
-    }
-  });
-}
-
 function hasSideEffects(node) {
-  // Conservative analysis.
-  const map = ignoreInnerScopes(node);
-  let has = false;
-  fullWalk(node, (node) => {
-    switch (node.type) {
-      case 'ExpressionStatement':
-        if (node.directive) {
-          has = true;
-        }
-        break;
-      // TODO: go through all the ESTree spec
-      case 'Literal':
-      case 'Identifier':
-      case 'UnaryExpression':
-      case 'BinaryExpression':
-      case 'LogicalExpression':
-      case 'UpdateOperator':
-      case 'ConditionalExpression':
-      case 'FunctionDeclaration':
-      case 'FunctionExpression':
-      case 'ArrowFunctionExpression':
-      case 'VariableDeclaration':
-      case 'VariableDeclarator':
-      case 'ObjectExpression':
-      case 'Property':
-      case 'SpreadElement':
-      case 'BlockStatement':
-      case 'ArrayExpression':
-      case 'EmptyStatement': {
-        break; // safe
-      }
-      case 'MemberExpression': {
-        // safe if on Math (or other familiar objects, TODO)
-        if (node.object.type !== 'Identifier' || node.object.name !== 'Math') {
-          // console.error('because member on ' + node.object.name);
-          has = true;
-        }
-        break;
-      }
-      case 'NewExpression': {
-        // default to unsafe, but can be safe on some familiar objects
-        if (node.callee.type === 'Identifier') {
-          const name = node.callee.name;
-          if (
-            name === 'TextDecoder' ||
-            name === 'ArrayBuffer' ||
-            name === 'Int8Array' ||
-            name === 'Uint8Array' ||
-            name === 'Int16Array' ||
-            name === 'Uint16Array' ||
-            name === 'Int32Array' ||
-            name === 'Uint32Array' ||
-            name === 'Float32Array' ||
-            name === 'Float64Array'
-          ) {
-            // no side effects, but the arguments might (we walk them in
-            // full walk as well)
+  // A unique symbol we can throw to stop recursive walk due to found side effect.
+  const HAS_SIDE_EFFECTS = Symbol();
+
+  try {
+    // Conservative analysis.
+    fullWalk(
+      node,
+      (node) => {
+        switch (node.type) {
+          case 'ExpressionStatement':
+            if (node.directive) {
+              throw HAS_SIDE_EFFECTS;
+            }
+            break;
+          // TODO: go through all the ESTree spec
+          case 'Literal':
+          case 'Identifier':
+          case 'UnaryExpression':
+          case 'BinaryExpression':
+          case 'LogicalExpression':
+          case 'UpdateOperator':
+          case 'ConditionalExpression':
+          case 'VariableDeclaration':
+          case 'VariableDeclarator':
+          case 'ObjectExpression':
+          case 'Property':
+          case 'SpreadElement':
+          case 'BlockStatement':
+          case 'ArrayExpression':
+          case 'EmptyStatement': {
+            break; // safe
+          }
+          case 'MemberExpression': {
+            // safe if on Math (or other familiar objects, TODO)
+            if (node.object.type !== 'Identifier' || node.object.name !== 'Math') {
+              // console.error('because member on ' + node.object.name);
+              throw HAS_SIDE_EFFECTS;
+            }
             break;
           }
+          case 'NewExpression': {
+            // default to unsafe, but can be safe on some familiar objects
+            if (node.callee.type === 'Identifier') {
+              const name = node.callee.name;
+              if (
+                name === 'TextDecoder' ||
+                name === 'ArrayBuffer' ||
+                name === 'Int8Array' ||
+                name === 'Uint8Array' ||
+                name === 'Int16Array' ||
+                name === 'Uint16Array' ||
+                name === 'Int32Array' ||
+                name === 'Uint32Array' ||
+                name === 'Float32Array' ||
+                name === 'Float64Array'
+              ) {
+                // no side effects, but the arguments might (we walk them in
+                // full walk as well)
+                break;
+              }
+            }
+            // not one of the safe cases
+            throw HAS_SIDE_EFFECTS;
+          }
+          default: {
+            throw HAS_SIDE_EFFECTS;
+          }
         }
-        // not one of the safe cases
-        has = true;
-        break;
-      }
-      default: {
-        has = true;
-      }
+      },
+      (node) => {
+        switch (node.type) {
+          case 'FunctionDeclaration':
+          case 'FunctionExpression':
+          case 'ArrowFunctionExpression':
+            // skip inner scopes
+            return false;
+        }
+      },
+    );
+    return false;
+  } catch (e) {
+    if (e === HAS_SIDE_EFFECTS) {
+      return true;
     }
-  });
-  restoreInnerScopes(node, map);
-  return has;
+    throw e;
+  }
 }
 
 // Passes
@@ -223,15 +199,14 @@ function hasSideEffects(node) {
 function JSDCE(ast, aggressive) {
   function iteration() {
     let removed = 0;
-    const scopes = [{}]; // begin with empty toplevel scope
+    const scopes = [Object.create(null)]; // begin with empty toplevel scope
+
     function ensureData(scope, name) {
-      if (Object.prototype.hasOwnProperty.call(scope, name)) return scope[name];
-      scope[name] = {
+      return (scope[name] ??= {
         def: 0,
         use: 0,
         param: 0, // true for function params, which cannot be eliminated
-      };
-      return scope[name];
+      });
     }
     function cleanUp(ast, names) {
       recursiveWalk(ast, {
@@ -255,7 +230,7 @@ function JSDCE(ast, aggressive) {
         VariableDeclaration(node, _c) {
           let removedHere = 0;
           node.declarations = node.declarations.filter((node) => {
-            assert(node.type === 'VariableDeclarator');
+            assertAt(node.type === 'VariableDeclarator', node);
             const id = node.id;
             if (id.type === 'ObjectPattern' || id.type === 'ArrayPattern') {
               // TODO: DCE into object patterns, that is, things like
@@ -263,10 +238,10 @@ function JSDCE(ast, aggressive) {
               //         let [ a, b ] = ..
               return true;
             }
-            assert(id.type === 'Identifier');
+            assertAt(id.type === 'Identifier', id);
             const curr = id.name;
             const value = node.init;
-            const keep = !(curr in names) || (value && hasSideEffects(value));
+            const keep = !names.has(curr) || (value && hasSideEffects(value));
             if (!keep) removedHere = 1;
             return keep;
           });
@@ -282,7 +257,7 @@ function JSDCE(ast, aggressive) {
           }
         },
         FunctionDeclaration(node, _c) {
-          if (Object.prototype.hasOwnProperty.call(names, node.id.name)) {
+          if (names.has(node.id.name)) {
             removed++;
             emptyOut(node);
             return;
@@ -295,86 +270,78 @@ function JSDCE(ast, aggressive) {
       });
     }
 
-    function handleFunction(node, c, defun) {
+    function handleFunction(node, visitExpr) {
       // defun names matter - function names (the y in var x = function y() {..}) are just for stack traces.
-      if (defun) {
+      if (node.type === 'FunctionDeclaration') {
         ensureData(scopes[scopes.length - 1], node.id.name).def = 1;
       }
-      const scope = {};
+      const scope = Object.create(null);
       scopes.push(scope);
-      node.params.forEach(function traverse(param) {
-        if (param.type === 'RestElement') {
-          param = param.argument;
-        }
-        if (param.type === 'AssignmentPattern') {
-          c(param.right);
-          param = param.left;
-        }
-        if (param.type === 'ArrayPattern') {
-          for (var elem of param.elements) {
-            if (elem) traverse(elem);
-          }
-        } else if (param.type === 'ObjectPattern') {
-          for (var prop of param.properties) {
-            traverse(prop.key);
-          }
-        } else {
-          assert(param.type === 'Identifier', param.type);
-          const name = param.name;
-          ensureData(scope, name).def = 1;
-          scope[name].param = 1;
-        }
-      });
-      c(node.body);
-      // we can ignore self-references, i.e., references to ourselves inside
-      // ourselves, for named defined (defun) functions
-      const ownName = defun ? node.id.name : '';
-      const names = {};
-      for (const name in scopes.pop()) {
-        if (name === ownName) continue;
-        const data = scope[name];
-        if (data.use && !data.def) {
-          // this is used from a higher scope, propagate the use down
-          ensureData(scopes[scopes.length - 1], name).use = 1;
-          continue;
-        }
-        if (data.def && !data.use && !data.param) {
-          // this is eliminateable!
-          names[name] = 0;
-        }
+      for (const param of node.params) {
+        recursiveWalk(param, {
+          AssignmentPattern(node, visitPat) {
+            visitPat(node.left);
+            visitExpr(node.right);
+          },
+          Property(node, visitPat) {
+            if (node.computed) {
+              visitExpr(node.key);
+            }
+            visitPat(node.value);
+          },
+          Identifier({name}) {
+            Object.assign(ensureData(scope, name), {
+              def: 1,
+              param: 1,
+            });
+          },
+        });
       }
+      visitExpr(node.body);
+      // we can ignore self-references, i.e., references to ourselves inside
+      // ourselves, for any named functions
+      const ownName = node.id?.name;
+      const names = new Set(
+        Object.entries(scopes.pop()).filter(([name, data]) => {
+          if (name === ownName) return false;
+          if (data.use && !data.def) {
+            // this is used from a higher scope, propagate the use down
+            ensureData(scopes[scopes.length - 1], name).use = 1;
+            return false;
+          }
+          return data.def && !data.use && !data.param;
+        }),
+      );
       cleanUp(node.body, names);
     }
 
     recursiveWalk(ast, {
-      VariableDeclarator(node, c) {
-        function traverse(id) {
-          if (id.type === 'ObjectPattern') {
-            for (const prop of id.properties) {
-              traverse(prop.value);
+      VariableDeclarator(node, visitExpr) {
+        recursiveWalk(node.id, {
+          AssignmentPattern(node, visitPat) {
+            visitPat(node.left);
+            visitExpr(node.right);
+          },
+          ObjectProperty(node, visitPat) {
+            if (node.computed) {
+              visitExpr(node.key);
             }
-          } else if (id.type === 'ArrayPattern') {
-            for (const elem of id.elements) {
-              if (elem) traverse(elem);
-            }
-          } else {
-            assertAt(id.type === 'Identifier', id, `expected Identifier but found ${id.type}`);
+            visitPat(node.value);
+          },
+          Identifier(id) {
             const name = id.name;
             ensureData(scopes[scopes.length - 1], name).def = 1;
-          }
-        }
-        traverse(node.id);
-        if (node.init) c(node.init);
-      },
-      ObjectExpression(node, c) {
-        // ignore the property identifiers
-        node.properties.forEach((node) => {
-          if (node.value) {
-            c(node.value);
-          } else if (node.argument) {
-            c(node.argument);
-          }
+          },
         });
+
+        if (node.init) visitExpr(node.init);
+      },
+      Property(node, c) {
+        // Ignore a property identifier (a.X), but notice a[X] (computed props).
+        if (node.computed) {
+          c(node.key);
+        }
+        c(node.value);
       },
       MemberExpression(node, c) {
         c(node.object);
@@ -384,7 +351,7 @@ function JSDCE(ast, aggressive) {
         }
       },
       FunctionDeclaration(node, c) {
-        handleFunction(node, c, true /* defun */);
+        handleFunction(node, c);
       },
       FunctionExpression(node, c) {
         handleFunction(node, c);
@@ -393,8 +360,7 @@ function JSDCE(ast, aggressive) {
         handleFunction(node, c);
       },
       Identifier(node, _c) {
-        const name = node.name;
-        ensureData(scopes[scopes.length - 1], name).use = 1;
+        ensureData(scopes[scopes.length - 1], node.name).use = 1;
       },
       ExportDefaultDeclaration(node, c) {
         const name = node.declaration.id.name;
@@ -407,7 +373,7 @@ function JSDCE(ast, aggressive) {
             const name = node.declaration.id.name;
             ensureData(scopes[scopes.length - 1], name).use = 1;
           } else {
-            assert(node.declaration.type == 'VariableDeclaration');
+            assertAt(node.declaration.type == 'VariableDeclaration', node.declaration);
             for (const decl of node.declaration.declarations) {
               const name = decl.id.name;
               ensureData(scopes[scopes.length - 1], name).use = 1;
@@ -425,16 +391,17 @@ function JSDCE(ast, aggressive) {
 
     // toplevel
     const scope = scopes.pop();
-    assert(scopes.length === 0);
+    assert.equal(scopes.length, 0);
 
-    const names = {};
-    for (const [name, data] of Object.entries(scope)) {
-      if (data.def && !data.use) {
-        assert(!data.param); // can't be
-        // this is eliminateable!
-        names[name] = 0;
-      }
-    }
+    const names = new Set(
+      Object.entries(scope)
+        .filter(([_, data]) => data.def && !data.use)
+        .map(([name, data]) => {
+          assert(!data.param); // can't be
+          // this is eliminateable!
+          return name;
+        }),
+    );
     cleanUp(ast, names);
     return removed;
   }
@@ -638,10 +605,9 @@ function emitDCEGraph(ast) {
   const imports = [];
   const defuns = [];
   const dynCallNames = [];
-  const nameToGraphName = {};
-  const modulePropertyToGraphName = {};
-  const exportNameToGraphName = {}; // identical to wasmExports['..'] nameToGraphName
-  const graph = [];
+  const nameToGraphName = Object.create(null);
+  const modulePropertyToGraphName = Object.create(null);
+  const exportNameToGraphName = Object.create(null); // identical to wasmExports['..'] nameToGraphName
   let foundWasmImportsAssign = false;
   let foundMinimalRuntimeExports = false;
 
@@ -681,7 +647,7 @@ function emitDCEGraph(ast) {
           }
           assertAt(value.type === 'Identifier', value);
           const nativeName = item.key.type == 'Literal' ? item.key.value : item.key.name;
-          assert(nativeName);
+          assertAt(nativeName, item.key);
           imports.push([value.name, nativeName]);
         });
         foundWasmImportsAssign = true;
@@ -756,10 +722,9 @@ function emitDCEGraph(ast) {
         ) {
           // This looks very much like what we are looking for.
           const body = node.body.body;
-          assert(!foundMinimalRuntimeExports);
+          assertAt(!foundMinimalRuntimeExports, node);
           foundMinimalRuntimeExports = true;
-          for (let i = 0; i < body.length; i++) {
-            const item = body[i];
+          for (const item of body) {
             if (
               item.type === 'ExpressionStatement' &&
               item.expression.type === 'AssignmentExpression' &&
@@ -781,11 +746,11 @@ function emitDCEGraph(ast) {
           nameToGraphName[name] = getGraphName(name, 'defun');
           emptyOut(node); // ignore this in the second pass; we scan defuns separately
         }
-      } else if (node.type === 'ArrowFunctionExpression') {
-        assert(specialScopes > 0);
-        specialScopes--;
-      } else if (node.type === 'Property' && node.method) {
-        assert(specialScopes > 0);
+      } else if (
+        node.type === 'ArrowFunctionExpression' ||
+        (node.type === 'Property' && node.method)
+      ) {
+        assertAt(specialScopes > 0, node);
         specialScopes--;
       }
     },
@@ -797,7 +762,7 @@ function emitDCEGraph(ast) {
     },
   );
   // Scoping must balance out.
-  assert(specialScopes === 0);
+  assert.equal(specialScopes, 0);
   // We must have found the info we need.
   assert(
     foundWasmImportsAssign,
@@ -815,16 +780,17 @@ function emitDCEGraph(ast) {
   function getGraphName(name, what) {
     return 'emcc$' + what + '$' + name;
   }
-  const infos = {}; // the graph name of the item => info for it
+  const infos = Object.create(null); // the graph name of the item => info for it
   for (const [jsName, nativeName] of imports) {
     const name = getGraphName(jsName, 'import');
     const info = (infos[name] = {
       name: name,
       import: ['env', nativeName],
-      reaches: {},
+      reaches: new Set(),
     });
-    if (nameToGraphName.hasOwnProperty(jsName)) {
-      info.reaches[nameToGraphName[jsName]] = 1;
+    const reached = nameToGraphName[jsName];
+    if (reached) {
+      info.reaches.add(reached);
     } // otherwise, it's a number, ignore
   }
   for (const [e, _] of Object.entries(exportNameToGraphName)) {
@@ -832,7 +798,7 @@ function emitDCEGraph(ast) {
     infos[name] = {
       name: name,
       export: e,
-      reaches: {},
+      reaches: new Set(),
     };
   }
   // a function that handles a node we visit, in either a defun or
@@ -842,15 +808,10 @@ function emitDCEGraph(ast) {
     //       from the top scope, which might create more uses than needed
     let reached;
     if (node.type === 'Identifier') {
-      const name = node.name;
-      if (nameToGraphName.hasOwnProperty(name)) {
-        reached = nameToGraphName[name];
-      }
+      reached = nameToGraphName[node.name];
     } else if (isModuleUse(node)) {
       const name = getExportOrModuleUseName(node);
-      if (modulePropertyToGraphName.hasOwnProperty(name)) {
-        reached = modulePropertyToGraphName[name];
-      }
+      reached = modulePropertyToGraphName[name];
     } else if (isStaticDynCall(node)) {
       reached = getGraphName(getStaticDynCallName(node), 'export');
     } else if (isDynamicDynCall(node)) {
@@ -859,15 +820,16 @@ function emitDCEGraph(ast) {
     } else if (isExportUse(node)) {
       // any remaining asm uses are always rooted in any case
       const name = getExportOrModuleUseName(node);
-      if (exportNameToGraphName.hasOwnProperty(name)) {
-        infos[exportNameToGraphName[name]].root = true;
+      const graphName = exportNameToGraphName[name];
+      if (graphName) {
+        infos[graphName].root = true;
       }
       return;
     }
     if (reached) {
       function addReach(reached) {
         if (defunInfo) {
-          defunInfo.reaches[reached] = 1; // defun reaches it
+          defunInfo.reaches.add(reached); // defun reaches it
         } else {
           if (infos[reached]) {
             infos[reached].root = true; // in global scope, root it
@@ -891,26 +853,19 @@ function emitDCEGraph(ast) {
     const name = getGraphName(defun.id.name, 'defun');
     const info = (infos[name] = {
       name: name,
-      reaches: {},
+      reaches: new Set(),
     });
     fullWalk(defun.body, (node) => visitNode(node, info));
   });
   fullWalk(ast, (node) => visitNode(node, null));
   // Final work: print out the graph
   // sort for determinism
-  function sortedNamesFromMap(map) {
-    const names = [];
-    for (const name of Object.keys(map)) {
-      names.push(name);
-    }
-    names.sort();
-    return names;
-  }
-  sortedNamesFromMap(infos).forEach((name) => {
-    const info = infos[name];
-    info.reaches = sortedNamesFromMap(info.reaches);
-    graph.push(info);
-  });
+  const graph = Object.entries(infos)
+    .sort(([name1], [name2]) => name1.localeCompare(name2))
+    .map(([_name, info]) => ({
+      ...info,
+      reaches: Array.from(info.reaches).sort(),
+    }));
   dump(graph);
 }
 
@@ -921,8 +876,6 @@ function emitDCEGraph(ast) {
 function applyDCEGraphRemovals(ast) {
   const unusedExports = new Set(extraInfo.unusedExports);
   const unusedImports = new Set(extraInfo.unusedImports);
-  const foundUnusedImports = new Set();
-  const foundUnusedExports = new Set();
   trace('unusedExports:', unusedExports);
   trace('unusedImports:', unusedImports);
 
@@ -932,8 +885,7 @@ function applyDCEGraphRemovals(ast) {
       assignedObject.properties = assignedObject.properties.filter((item) => {
         const name = item.key.name;
         const value = item.value;
-        if (unusedImports.has(name)) {
-          foundUnusedImports.add(name);
+        if (unusedImports.delete(name)) {
           return hasSideEffects(value);
         }
         return true;
@@ -953,19 +905,18 @@ function applyDCEGraphRemovals(ast) {
       }
       if (expr.operator === '=' && expr.left.type === 'Identifier' && isExportUse(expr.right)) {
         const export_name = getExportOrModuleUseName(expr.right);
-        if (unusedExports.has(export_name)) {
+        if (unusedExports.delete(export_name)) {
           emptyOut(node);
-          foundUnusedExports.add(export_name);
         }
       }
     }
   });
 
   for (const i of unusedImports) {
-    assert(foundUnusedImports.has(i), 'unused import not found: ' + i);
+    assert.fail('unused import not found: ' + i);
   }
   for (const e of unusedExports) {
-    assert(foundUnusedExports.has(e), 'unused export not found: ' + e);
+    assert.fail('unused export not found: ' + e);
   }
 }
 
@@ -973,7 +924,6 @@ function createLiteral(value) {
   return {
     type: 'Literal',
     value: value,
-    raw: '' + value,
   };
 }
 
@@ -1417,8 +1367,8 @@ function ensureMinifiedNames(n) {
   while (minifiedNames.length < n + 1) {
     // generate the current name
     let name = VALID_MIN_INITS[minifiedState[0]];
-    for (let i = 1; i < minifiedState.length; i++) {
-      name += VALID_MIN_LATERS[minifiedState[i]];
+    for (const state of minifiedState.slice(1)) {
+      name += VALID_MIN_LATERS[state];
     }
     if (!RESERVED.has(name)) minifiedNames.push(name);
     // increment the state
@@ -1444,10 +1394,7 @@ function minifyLocals(ast) {
       continue;
     }
     // Find the list of local names, including params.
-    const localNames = new Set();
-    for (const param of fun.params) {
-      localNames.add(param.name);
-    }
+    const localNames = new Set(fun.params.map(p => p.name));
     simpleWalk(fun, {
       VariableDeclaration(node, _c) {
         for (const dec of node.declarations) {
@@ -1475,7 +1422,7 @@ function minifyLocals(ast) {
     // Don't actually minify them yet as that might interfere with local
     // variable names; just mark them as used, and what their new name will be.
     simpleWalk(fun, {
-      Identifier(node, _c) {
+      Identifier(node) {
         const name = node.name;
         if (!isLocalName(name)) {
           const minified = extraInfo.globals[name];
@@ -1485,7 +1432,7 @@ function minifyLocals(ast) {
           }
         }
       },
-      CallExpression(node, _c) {
+      CallExpression(node) {
         // We should never call a local name, as in asm.js-style code our
         // locals are just numbers, not functions; functions are all declared
         // in the outer scope. If a local is called, that is a bug.
@@ -1560,8 +1507,8 @@ function minifyLocals(ast) {
 
     // Finally, the function name, after restoring it.
     fun.id = funId;
-    assert(extraInfo.globals.hasOwnProperty(fun.id.name));
     fun.id.name = extraInfo.globals[fun.id.name];
+    assertAt(fun.id.name, fun);
   }
 }
 
@@ -1651,14 +1598,10 @@ function minifyGlobals(ast) {
     return minifiedNames[nextMinifiedName++];
   }
 
-  const minified = new Map();
+  const minified = Object.create(null);
 
   function minify(name) {
-    if (!minified.has(name)) {
-      minified.set(name, getNewMinifiedName());
-    }
-    assert(minified.get(name));
-    return minified.get(name);
+    return (minified[name] ??= getNewMinifiedName());
   }
 
   // Start with the declared things in the lowest indices. Things like HEAP8
@@ -1687,10 +1630,7 @@ function minifyGlobals(ast) {
   fun.id = funId;
 
   // Emit the metadata
-  const json = {};
-  for (const x of minified.entries()) json[x[0]] = x[1];
-
-  suffix = '// EXTRA_INFO:' + JSON.stringify(json);
+  suffix = EXTRA_INFO_PREFIX + JSON.stringify(minified);
 }
 
 // Utilities
@@ -1785,15 +1725,16 @@ if (outfileIndex != -1) {
 const infile = argv[0];
 const passes = argv.slice(1);
 
-const input = read(infile);
-const extraInfoStart = input.lastIndexOf('// EXTRA_INFO:');
+let input = fs.readFileSync(infile, 'utf-8');
+const extraInfoStart = input.lastIndexOf(EXTRA_INFO_PREFIX);
 let extraInfo = null;
 if (extraInfoStart > 0) {
-  extraInfo = JSON.parse(input.slice(extraInfoStart + 14));
+  extraInfo = JSON.parse(input.slice(extraInfoStart + EXTRA_INFO_PREFIX.length));
+  input = input.slice(0, extraInfoStart);
 }
 // Collect all JS code comments to this map so that we can retain them in the
 // outputted code if --closureFriendly was requested.
-const sourceComments = {};
+const sourceComments = Object.create(null);
 const params = {
   ecmaVersion: 'latest',
   sourceType: exportES6 ? 'module' : 'script',
