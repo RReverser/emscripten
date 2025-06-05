@@ -104,7 +104,7 @@ addToLibrary({
 
     var yday = ydayFromDate(date)|0;
     {{{ makeSetValue('tmPtr', C_STRUCTS.tm.tm_yday, 'yday', 'i32') }}};
-    {{{ makeSetValue('tmPtr', C_STRUCTS.tm.tm_gmtoff, '-(date.getTimezoneOffset() * 60)', LONG_TYPE) }}};
+    {{{ makeSetValue('tmPtr', C_STRUCTS.tm.tm_gmtoff, '-(date.getTimezoneOffset() * 60)', '*') }}};
 
     // Attention: DST is in December in South, and some regions don't have DST at all.
     var start = new Date(date.getFullYear(), 0, 1);
@@ -506,7 +506,7 @@ addToLibrary({
       {{{ makeSetValue('tm', C_STRUCTS.tm.tm_wday, 'fullDate.getDay()', 'i32') }}};
       {{{ makeSetValue('tm', C_STRUCTS.tm.tm_yday, 'arraySum(isLeapYear(fullDate.getFullYear()) ? MONTH_DAYS_LEAP : MONTH_DAYS_REGULAR, fullDate.getMonth()-1)+fullDate.getDate()-1', 'i32') }}};
       {{{ makeSetValue('tm', C_STRUCTS.tm.tm_isdst, '0', 'i32') }}};
-      {{{ makeSetValue('tm', C_STRUCTS.tm.tm_gmtoff, 'date.gmtoff', LONG_TYPE) }}};
+      {{{ makeSetValue('tm', C_STRUCTS.tm.tm_gmtoff, 'date.gmtoff', '*') }}};
 
       // we need to convert the matched sequence into an integer array to take care of UTF-8 characters > 0x7F
       // TODO: not sure that intArrayFromString handles all unicode characters correctly

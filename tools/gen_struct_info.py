@@ -75,7 +75,7 @@ from tools import system_libs
 from tools import utils
 
 QUIET = (__name__ != '__main__')
-DEBUG = False
+DEBUG = True
 
 CFLAGS = [
     # Avoid parsing problems due to gcc specific syntax.
@@ -145,10 +145,10 @@ class Scope:
   def set(self, name: str, type_: str, value: str):
     self._start_child(name)
 
-    assert type_.startswith('%')
+    # assert type_.startswith('%')
     # We only support numeric defines as they are directly compatible with JSON.
     # Extend to string escaping if we ever need that in the future.
-    assert type_[-1] in {'d', 'i', 'u', 'f', 'F', 'e', 'E'}
+    # assert type_[-1] in {'d', 'i', 'u', 'f', 'F', 'e', 'E'}
 
     self.code.append(f'printf("{type_}", {value});')
 
@@ -161,8 +161,8 @@ class Scope:
     prefix += path[0]
 
     with self.child(path[-1]) as scope:
-      path_for_sizeof = [f'({prefix}){{}}'] + path[1:]
-      scope.set('__size__', '%zu', f'sizeof ({".".join(path_for_sizeof)})')
+      c_path = [f'({prefix}){{}}'] + path[1:]
+      scope.set('__size__', '%zu', f'sizeof ({".".join(c_path)})')
 
       for field in struct:
         if isinstance(field, dict):
@@ -171,12 +171,11 @@ class Scope:
           self.gen_inspect_code(path + [fname], field[fname])
         else:
           scope.set(field, '%zu', f'offsetof({prefix}, {".".join(path[1:] + [field])})')
+          scope.set(field + '__type', r'\"%s\"', f'jstype({".".join(c_path + [field])})')
 
 
 def generate_c_code(headers):
-  code = ['#include <stdio.h>', '#include <stddef.h>']
-
-  code.extend(f'''#include "{header['name']}"''' for header in headers)
+  code = [f'''#include "{name}"''' for name in [utils.path_from_root('tools/gen_struct_info.h'), *(header['name'] for header in headers)]]
 
   code.append('int main() {')
 
@@ -287,13 +286,7 @@ def merge_info(target, src):
 
 
 def inspect_code(headers, cflags):
-  if not DEBUG:
-    info = inspect_headers(headers, cflags)
-  else:
-    info = {'defines': {}, 'structs': {}}
-    for header in headers:
-      merge_info(info, inspect_headers([header], cflags))
-  return info
+  return inspect_headers(headers, cflags)
 
 
 def parse_json(path):

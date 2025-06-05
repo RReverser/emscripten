@@ -181,7 +181,7 @@ addToLibrary({
     assert(typeof value == 'undefined' || typeof value === 'number', `native promises can only handle numeric results (${value} ${typeof value})`);
 #endif
     var result = fulfill ? {{{ cDefs.EM_PROMISE_FULFILL }}} : {{{ cDefs.EM_PROMISE_REJECT }}}
-    {{{ makeSetValue('ptr', C_STRUCTS.em_settled_result_t.result, 'result', 'i32') }}};
+    {{{ makeSetValue('ptr', C_STRUCTS.em_settled_result_t.result, 'result', 'u32') }}};
     {{{ makeSetValue('ptr', C_STRUCTS.em_settled_result_t.value, 'value', '*') }}};
   },
 

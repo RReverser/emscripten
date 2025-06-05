@@ -314,12 +314,34 @@ function addToLibrary(obj, options = null) {
 let structs = {};
 let defines = {};
 
+class FieldInfo {
+  constructor(offset, type) {
+    this.offset = offset;
+    this.type = type;
+  }
+
+  valueOf() {
+    return this.offset;
+  }
+
+  toString() {
+    return this.offset.toString();
+  }
+}
+
 /**
  * Read JSON file containing struct and macro/define information
  * that can then be used in JavaScript via macros.
  */
 function loadStructInfo(filename) {
-  const temp = JSON.parse(readFile(filename));
+  const temp = JSON.parse(readFile(filename), function (k, v) {
+    if (k.endsWith('__type')) {
+      k = k.slice(0, -'__type'.length);
+      this[k] = new FieldInfo(this[k], v);
+    } else {
+      return v;
+    }
+  });
   Object.assign(structs, temp.structs);
   Object.assign(defines, temp.defines);
 }

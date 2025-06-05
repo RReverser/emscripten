@@ -10250,6 +10250,7 @@ end
     'no_exception_throwing': (['-sDISABLE_EXCEPTION_THROWING'],),
     'minimal_runtime': (['-sMINIMAL_RUNTIME'],),
     'embind': (['-lembind'],),
+    'wasm64': (['-sMEMORY64'],),
   })
   def test_full_js_library(self, args):
     self.run_process([EMCC, test_file('hello_world.c'), '-sSTRICT_JS', '-sINCLUDE_FULL_LIBRARY'] + args)

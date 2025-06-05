@@ -790,7 +790,7 @@ addToLibrary({
   $readSockaddr__deps: ['$inetNtop4', '$inetNtop6', 'ntohs'],
   $readSockaddr: (sa, salen) => {
     // family / port offsets are common to both sockaddr_in and sockaddr_in6
-    var family = {{{ makeGetValue('sa', C_STRUCTS.sockaddr_in.sin_family, 'i16') }}};
+    var family = {{{ makeGetValue('sa', C_STRUCTS.sockaddr_in.sin_family, 'u16') }}};
     var port = _ntohs({{{ makeGetValue('sa', C_STRUCTS.sockaddr_in.sin_port, 'u16') }}});
     var addr;
 
@@ -799,7 +799,7 @@ addToLibrary({
         if (salen !== {{{ C_STRUCTS.sockaddr_in.__size__ }}}) {
           return { errno: {{{ cDefs.EINVAL }}} };
         }
-        addr = {{{ makeGetValue('sa', C_STRUCTS.sockaddr_in.sin_addr.s_addr, 'i32') }}};
+        addr = {{{ makeGetValue('sa', C_STRUCTS.sockaddr_in.sin_addr.s_addr, 'u32') }}};
         addr = inetNtop4(addr);
         break;
       case {{{ cDefs.AF_INET6 }}}:
@@ -830,9 +830,9 @@ addToLibrary({
         if (addrlen) {
           {{{ makeSetValue('addrlen', 0, C_STRUCTS.sockaddr_in.__size__, 'i32') }}};
         }
-        {{{ makeSetValue('sa', C_STRUCTS.sockaddr_in.sin_family, 'family', 'i16') }}};
-        {{{ makeSetValue('sa', C_STRUCTS.sockaddr_in.sin_addr.s_addr, 'addr', 'i32') }}};
-        {{{ makeSetValue('sa', C_STRUCTS.sockaddr_in.sin_port, '_htons(port)', 'i16') }}};
+        {{{ makeSetValue('sa', C_STRUCTS.sockaddr_in.sin_family, 'family', 'u16') }}};
+        {{{ makeSetValue('sa', C_STRUCTS.sockaddr_in.sin_addr.s_addr, 'addr', 'u32') }}};
+        {{{ makeSetValue('sa', C_STRUCTS.sockaddr_in.sin_port, '_htons(port)', 'u16') }}};
         break;
       case {{{ cDefs.AF_INET6 }}}:
         addr = inetPton6(addr);
@@ -840,12 +840,12 @@ addToLibrary({
         if (addrlen) {
           {{{ makeSetValue('addrlen', 0, C_STRUCTS.sockaddr_in6.__size__, 'i32') }}};
         }
-        {{{ makeSetValue('sa', C_STRUCTS.sockaddr_in6.sin6_family, 'family', 'i32') }}};
+        {{{ makeSetValue('sa', C_STRUCTS.sockaddr_in6.sin6_family, 'family', 'u16') }}};
         {{{ makeSetValue('sa', C_STRUCTS.sockaddr_in6.sin6_addr.__in6_union.__s6_addr+0, 'addr[0]', 'i32') }}};
         {{{ makeSetValue('sa', C_STRUCTS.sockaddr_in6.sin6_addr.__in6_union.__s6_addr+4, 'addr[1]', 'i32') }}};
         {{{ makeSetValue('sa', C_STRUCTS.sockaddr_in6.sin6_addr.__in6_union.__s6_addr+8, 'addr[2]', 'i32') }}};
         {{{ makeSetValue('sa', C_STRUCTS.sockaddr_in6.sin6_addr.__in6_union.__s6_addr+12, 'addr[3]', 'i32') }}};
-        {{{ makeSetValue('sa', C_STRUCTS.sockaddr_in6.sin6_port, '_htons(port)', 'i16') }}};
+        {{{ makeSetValue('sa', C_STRUCTS.sockaddr_in6.sin6_port, '_htons(port)', 'u16') }}};
         break;
       default:
         return {{{ cDefs.EAFNOSUPPORT }}};
@@ -947,11 +947,11 @@ addToLibrary({
       {{{ makeSetValue('ai', C_STRUCTS.addrinfo.ai_canonname, 'canon', '*') }}};
       {{{ makeSetValue('ai', C_STRUCTS.addrinfo.ai_addr, 'sa', '*') }}};
       if (family === {{{ cDefs.AF_INET6 }}}) {
-        {{{ makeSetValue('ai', C_STRUCTS.addrinfo.ai_addrlen, C_STRUCTS.sockaddr_in6.__size__, 'i32') }}};
+        {{{ makeSetValue('ai', C_STRUCTS.addrinfo.ai_addrlen, C_STRUCTS.sockaddr_in6.__size__, 'u32') }}};
       } else {
-        {{{ makeSetValue('ai', C_STRUCTS.addrinfo.ai_addrlen, C_STRUCTS.sockaddr_in.__size__, 'i32') }}};
+        {{{ makeSetValue('ai', C_STRUCTS.addrinfo.ai_addrlen, C_STRUCTS.sockaddr_in.__size__, 'u32') }}};
       }
-      {{{ makeSetValue('ai', C_STRUCTS.addrinfo.ai_next, '0', 'i32') }}};
+      {{{ makeSetValue('ai', C_STRUCTS.addrinfo.ai_next, '0', '*') }}};
 
       return ai;
     }

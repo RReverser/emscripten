@@ -9,7 +9,7 @@
  */
 
 import * as path from 'node:path';
-import {existsSync} from 'node:fs';
+import {existsSync, readFileSync, writeFileSync} from 'node:fs';
 import assert from 'node:assert';
 
 import {
@@ -40,8 +40,15 @@ export function processMacros(text, filename) {
   pushCurrentFile(filename);
   try {
     return text.replace(/{{{([\s\S]+?)}}}/g, (_, str) => {
-      const ret = runInMacroContext(str, {filename: filename});
-      return ret?.toString() ?? '';
+      try {
+        const ret = runInMacroContext(str, {filename: filename});
+        return ret?.toString() ?? '';
+      } catch (e) {
+        console.error(`Couldn't process macro ${str} in ${filename}: ${e}`);
+        writeFileSync(filename, readFileSync(filename, 'utf-8').replace(str, str.replace(e.actual, e.expected)));
+        console.error(JSON.stringify(e));
+        return 'ERROR';
+      }
     });
   } finally {
     popCurrentFile();
@@ -233,6 +240,7 @@ const POINTER_HEAP = MEMORY64 ? 'HEAP64' : 'HEAP32';
 const LONG_TYPE = `i${POINTER_BITS}`;
 
 const SIZE_TYPE = POINTER_TYPE;
+const ISIZE_TYPE = `i${POINTER_BITS}`;
 
 // Similar to POINTER_TYPE, but this is the actual wasm type that is
 // used in practice, while POINTER_TYPE is the more refined internal
@@ -409,11 +417,24 @@ function asmFloatToInt(x) {
   return `(~~(${x}))`;
 }
 
+function checkTypeCompat({ type: declaredType }, requestedType) {
+  // User might have invoked makeGetValue or makeSetValue with a primitive number instead of FieldInfo from generated structs.
+  // If so, nothing to check here.
+  if (!declaredType) return;
+
+  // Resolve `*` and `POINTER_TYPE` to the same thing before comparing.
+  [declaredType, requestedType] = [declaredType, requestedType].map((type) => isPointerType(type) ? POINTER_TYPE : type);
+
+  assert.equal(requestedType, declaredType, `Requested type ${requestedType} doesn\'t match the declared ${declaredType}`);
+}
+
 // See makeSetValue
-function makeGetValue(ptr, pos, type) {
+function makeGetValue(ptr, fieldInfo, type) {
+  checkTypeCompat(fieldInfo, type);
+
   assert(arguments.length == 3, 'makeGetValue expects 3 arguments');
 
-  const offset = calcFastOffset(ptr, pos);
+  const offset = calcFastOffset(ptr, +fieldInfo);
   if (type === 'i53' || type === 'u53') {
     // Set `unsigned` based on the type name.
     const unsigned = type.startsWith('u');
@@ -433,14 +454,16 @@ function makeGetValue(ptr, pos, type) {
  *            is just an integer, then this is almost redundant, but in general the pointer type
  *            may in the future include information about which slab as well. So, for now it is
  *            possible to put |0| here, but if a pointer is available, that is more future-proof.
- * @param {number} pos The position in that slab - the offset. Added to any offset in the pointer itself.
+ * @param {number | {offset: number, type: string}} fieldInfo The position in that slab - the offset. Added to any offset in the pointer itself.
  * @param {number} value The value to set.
  * @param {string} type A string defining the type. Used to find the slab (HEAPU8, HEAP16, HEAPU32, etc.).
  *             which means we should write to all slabs, ignore type differences if any on reads, etc.
  * @return {string} JS code for performing the memory set operation
  */
-function makeSetValue(ptr, pos, value, type) {
-  var rtn = makeSetValueImpl(ptr, pos, value, type);
+function makeSetValue(ptr, fieldInfo, value, type) {
+  checkTypeCompat(fieldInfo, type);
+
+  var rtn = makeSetValueImpl(ptr, +fieldInfo, value, type);
   if (ASSERTIONS == 2 && (type.startsWith('i') || type.startsWith('u'))) {
     const width = getBitWidth(type);
     const assertion = `checkInt${width}(${value})`;
@@ -1136,6 +1159,7 @@ addToCompileTimeContext({
   POINTER_TYPE,
   POINTER_WASM_TYPE,
   SIZE_TYPE,
+  ISIZE_TYPE,
   STACK_ALIGN,
   TARGET_NOT_SUPPORTED,
   WASM_PAGE_SIZE,

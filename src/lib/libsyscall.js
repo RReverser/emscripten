@@ -42,12 +42,12 @@ var SyscallsLibrary = {
     },
 
     writeStat(buf, stat) {
-      {{{ makeSetValue('buf', C_STRUCTS.stat.st_dev, 'stat.dev', 'i32') }}};
-      {{{ makeSetValue('buf', C_STRUCTS.stat.st_mode, 'stat.mode', 'i32') }}};
+      {{{ makeSetValue('buf', C_STRUCTS.stat.st_dev, 'stat.dev', 'u32') }}};
+      {{{ makeSetValue('buf', C_STRUCTS.stat.st_mode, 'stat.mode', 'u32') }}};
       {{{ makeSetValue('buf', C_STRUCTS.stat.st_nlink, 'stat.nlink', SIZE_TYPE) }}};
-      {{{ makeSetValue('buf', C_STRUCTS.stat.st_uid, 'stat.uid', 'i32') }}};
-      {{{ makeSetValue('buf', C_STRUCTS.stat.st_gid, 'stat.gid', 'i32') }}};
-      {{{ makeSetValue('buf', C_STRUCTS.stat.st_rdev, 'stat.rdev', 'i32') }}};
+      {{{ makeSetValue('buf', C_STRUCTS.stat.st_uid, 'stat.uid', 'u32') }}};
+      {{{ makeSetValue('buf', C_STRUCTS.stat.st_gid, 'stat.gid', 'u32') }}};
+      {{{ makeSetValue('buf', C_STRUCTS.stat.st_rdev, 'stat.rdev', 'u32') }}};
       {{{ makeSetValue('buf', C_STRUCTS.stat.st_size, 'stat.size', 'i64') }}};
       {{{ makeSetValue('buf', C_STRUCTS.stat.st_blksize, '4096', 'i32') }}};
       {{{ makeSetValue('buf', C_STRUCTS.stat.st_blocks, 'stat.blocks', 'i32') }}};
@@ -55,25 +55,25 @@ var SyscallsLibrary = {
       var mtime = stat.mtime.getTime();
       var ctime = stat.ctime.getTime();
       {{{ makeSetValue('buf', C_STRUCTS.stat.st_atim.tv_sec, 'Math.floor(atime / 1000)', 'i64') }}};
-      {{{ makeSetValue('buf', C_STRUCTS.stat.st_atim.tv_nsec, '(atime % 1000) * 1000 * 1000', SIZE_TYPE) }}};
+      {{{ makeSetValue('buf', C_STRUCTS.stat.st_atim.tv_nsec, '(atime % 1000) * 1000 * 1000', '*') }}};
       {{{ makeSetValue('buf', C_STRUCTS.stat.st_mtim.tv_sec, 'Math.floor(mtime / 1000)', 'i64') }}};
-      {{{ makeSetValue('buf', C_STRUCTS.stat.st_mtim.tv_nsec, '(mtime % 1000) * 1000 * 1000', SIZE_TYPE) }}};
+      {{{ makeSetValue('buf', C_STRUCTS.stat.st_mtim.tv_nsec, '(mtime % 1000) * 1000 * 1000', '*') }}};
       {{{ makeSetValue('buf', C_STRUCTS.stat.st_ctim.tv_sec, 'Math.floor(ctime / 1000)', 'i64') }}};
-      {{{ makeSetValue('buf', C_STRUCTS.stat.st_ctim.tv_nsec, '(ctime % 1000) * 1000 * 1000', SIZE_TYPE) }}};
-      {{{ makeSetValue('buf', C_STRUCTS.stat.st_ino, 'stat.ino', 'i64') }}};
+      {{{ makeSetValue('buf', C_STRUCTS.stat.st_ctim.tv_nsec, '(ctime % 1000) * 1000 * 1000', '*') }}};
+      {{{ makeSetValue('buf', C_STRUCTS.stat.st_ino, 'stat.ino', 'u64') }}};
       return 0;
     },
     writeStatFs(buf, stats) {
-      {{{ makeSetValue('buf', C_STRUCTS.statfs.f_bsize, 'stats.bsize', 'i32') }}};
-      {{{ makeSetValue('buf', C_STRUCTS.statfs.f_frsize, 'stats.bsize', 'i32') }}};
-      {{{ makeSetValue('buf', C_STRUCTS.statfs.f_blocks, 'stats.blocks', 'i32') }}};
-      {{{ makeSetValue('buf', C_STRUCTS.statfs.f_bfree, 'stats.bfree', 'i32') }}};
-      {{{ makeSetValue('buf', C_STRUCTS.statfs.f_bavail, 'stats.bavail', 'i32') }}};
-      {{{ makeSetValue('buf', C_STRUCTS.statfs.f_files, 'stats.files', 'i32') }}};
-      {{{ makeSetValue('buf', C_STRUCTS.statfs.f_ffree, 'stats.ffree', 'i32') }}};
+      {{{ makeSetValue('buf', C_STRUCTS.statfs.f_bsize, 'stats.bsize', SIZE_TYPE) }}};
+      {{{ makeSetValue('buf', C_STRUCTS.statfs.f_frsize, 'stats.bsize', SIZE_TYPE) }}};
+      {{{ makeSetValue('buf', C_STRUCTS.statfs.f_blocks, 'stats.blocks', 'u32') }}};
+      {{{ makeSetValue('buf', C_STRUCTS.statfs.f_bfree, 'stats.bfree', 'u32') }}};
+      {{{ makeSetValue('buf', C_STRUCTS.statfs.f_bavail, 'stats.bavail', 'u32') }}};
+      {{{ makeSetValue('buf', C_STRUCTS.statfs.f_files, 'stats.files', 'u32') }}};
+      {{{ makeSetValue('buf', C_STRUCTS.statfs.f_ffree, 'stats.ffree', 'u32') }}};
       {{{ makeSetValue('buf', C_STRUCTS.statfs.f_fsid, 'stats.fsid', 'i32') }}};
-      {{{ makeSetValue('buf', C_STRUCTS.statfs.f_flags, 'stats.flags', 'i32') }}};  // ST_NOSUID
-      {{{ makeSetValue('buf', C_STRUCTS.statfs.f_namelen, 'stats.namelen', 'i32') }}};
+      {{{ makeSetValue('buf', C_STRUCTS.statfs.f_flags, 'stats.flags', SIZE_TYPE) }}};  // ST_NOSUID
+      {{{ makeSetValue('buf', C_STRUCTS.statfs.f_namelen, 'stats.namelen', SIZE_TYPE) }}};
     },
     doMsync(addr, stream, len, flags, offset) {
       if (!FS.isFile(stream.node.mode)) {
@@ -236,12 +236,12 @@ var SyscallsLibrary = {
         if (stream.tty.ops.ioctl_tcgets) {
           var termios = stream.tty.ops.ioctl_tcgets(stream);
           var argp = syscallGetVarargP();
-          {{{ makeSetValue('argp', C_STRUCTS.termios.c_iflag, 'termios.c_iflag || 0', 'i32') }}};
-          {{{ makeSetValue('argp', C_STRUCTS.termios.c_oflag, 'termios.c_oflag || 0', 'i32') }}};
-          {{{ makeSetValue('argp', C_STRUCTS.termios.c_cflag, 'termios.c_cflag || 0', 'i32') }}};
-          {{{ makeSetValue('argp', C_STRUCTS.termios.c_lflag, 'termios.c_lflag || 0', 'i32') }}};
+          {{{ makeSetValue('argp', C_STRUCTS.termios.c_iflag, 'termios.c_iflag || 0', 'u32') }}};
+          {{{ makeSetValue('argp', C_STRUCTS.termios.c_oflag, 'termios.c_oflag || 0', 'u32') }}};
+          {{{ makeSetValue('argp', C_STRUCTS.termios.c_cflag, 'termios.c_cflag || 0', 'u32') }}};
+          {{{ makeSetValue('argp', C_STRUCTS.termios.c_lflag, 'termios.c_lflag || 0', 'u32') }}};
           for (var i = 0; i < {{{ cDefs.NCCS }}}; i++) {
-            {{{ makeSetValue('argp + i', C_STRUCTS.termios.c_cc, 'termios.c_cc[i] || 0', 'i8') }}};
+            {{{ makeSetValue('argp + i', +C_STRUCTS.termios.c_cc, 'termios.c_cc[i] || 0', 'u8') }}};
           }
           return 0;
         }
@@ -262,13 +262,13 @@ var SyscallsLibrary = {
         if (!stream.tty) return -{{{ cDefs.ENOTTY }}};
         if (stream.tty.ops.ioctl_tcsets) {
           var argp = syscallGetVarargP();
-          var c_iflag = {{{ makeGetValue('argp', C_STRUCTS.termios.c_iflag, 'i32') }}};
-          var c_oflag = {{{ makeGetValue('argp', C_STRUCTS.termios.c_oflag, 'i32') }}};
-          var c_cflag = {{{ makeGetValue('argp', C_STRUCTS.termios.c_cflag, 'i32') }}};
-          var c_lflag = {{{ makeGetValue('argp', C_STRUCTS.termios.c_lflag, 'i32') }}};
+          var c_iflag = {{{ makeGetValue('argp', C_STRUCTS.termios.c_iflag, 'u32') }}};
+          var c_oflag = {{{ makeGetValue('argp', C_STRUCTS.termios.c_oflag, 'u32') }}};
+          var c_cflag = {{{ makeGetValue('argp', C_STRUCTS.termios.c_cflag, 'u32') }}};
+          var c_lflag = {{{ makeGetValue('argp', C_STRUCTS.termios.c_lflag, 'u32') }}};
           var c_cc = []
           for (var i = 0; i < {{{ cDefs.NCCS }}}; i++) {
-            c_cc.push({{{ makeGetValue('argp + i', C_STRUCTS.termios.c_cc, 'i8') }}});
+            c_cc.push({{{ makeGetValue('argp + i', +C_STRUCTS.termios.c_cc, 'u8') }}});
           }
           return stream.tty.ops.ioctl_tcsets(stream.tty, op, { c_iflag, c_oflag, c_cflag, c_lflag, c_cc });
         }
@@ -458,7 +458,7 @@ var SyscallsLibrary = {
     // read the address and port to send to
     var addr, port;
     var name = {{{ makeGetValue('message', C_STRUCTS.msghdr.msg_name, '*') }}};
-    var namelen = {{{ makeGetValue('message', C_STRUCTS.msghdr.msg_namelen, 'i32') }}};
+    var namelen = {{{ makeGetValue('message', C_STRUCTS.msghdr.msg_namelen, 'u32') }}};
     if (name) {
       var info = getSocketAddress(name, namelen);
       port = info.port;
@@ -745,10 +745,10 @@ var SyscallsLibrary = {
 #if ASSERTIONS
       assert(id);
 #endif
-      {{{ makeSetValue('dirp + pos', C_STRUCTS.dirent.d_ino, 'id', 'i64') }}};
+      {{{ makeSetValue('dirp + pos', C_STRUCTS.dirent.d_ino, 'id', 'u64') }}};
       {{{ makeSetValue('dirp + pos', C_STRUCTS.dirent.d_off, '(idx + 1) * struct_size', 'i64') }}};
-      {{{ makeSetValue('dirp + pos', C_STRUCTS.dirent.d_reclen, C_STRUCTS.dirent.__size__, 'i16') }}};
-      {{{ makeSetValue('dirp + pos', C_STRUCTS.dirent.d_type, 'type', 'i8') }}};
+      {{{ makeSetValue('dirp + pos', C_STRUCTS.dirent.d_reclen, C_STRUCTS.dirent.__size__, 'u16') }}};
+      {{{ makeSetValue('dirp + pos', C_STRUCTS.dirent.d_type, 'type', 'u8') }}};
       stringToUTF8(name, dirp + pos + {{{ C_STRUCTS.dirent.d_name }}}, 256);
       pos += struct_size;
     }
@@ -970,8 +970,8 @@ var SyscallsLibrary = {
       atime = now;
       mtime = now;
     } else {
-      var seconds = {{{ makeGetValue('times', C_STRUCTS.timespec.tv_sec, 'i53') }}};
-      var nanoseconds = {{{ makeGetValue('times', C_STRUCTS.timespec.tv_nsec, 'i32') }}};
+      var seconds = {{{ makeGetValue('times', C_STRUCTS.timespec.tv_sec, 'i64') }}};
+      var nanoseconds = {{{ makeGetValue('times', C_STRUCTS.timespec.tv_nsec, '*') }}};
       if (nanoseconds == {{{ cDefs.UTIME_NOW }}}) {
         atime = now;
       } else if (nanoseconds == {{{ cDefs.UTIME_OMIT }}}) {
@@ -980,8 +980,8 @@ var SyscallsLibrary = {
         atime = (seconds*1000) + (nanoseconds/(1000*1000));
       }
       times += {{{ C_STRUCTS.timespec.__size__ }}};
-      seconds = {{{ makeGetValue('times', C_STRUCTS.timespec.tv_sec, 'i53') }}};
-      nanoseconds = {{{ makeGetValue('times', C_STRUCTS.timespec.tv_nsec, 'i32') }}};
+      seconds = {{{ makeGetValue('times', C_STRUCTS.timespec.tv_sec, 'i64') }}};
+      nanoseconds = {{{ makeGetValue('times', C_STRUCTS.timespec.tv_nsec, '*') }}};
       if (nanoseconds == {{{ cDefs.UTIME_NOW }}}) {
         mtime = now;
       } else if (nanoseconds == {{{ cDefs.UTIME_OMIT }}}) {

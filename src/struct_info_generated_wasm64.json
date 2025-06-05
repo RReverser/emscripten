@@ -523,287 +523,479 @@
         "AudioParamFrame": {
             "__size__": 16,
             "data": 8,
-            "length": 0
+            "data__type": "*",
+            "length": 0,
+            "length__type": "i32"
         },
         "AudioSampleFrame": {
             "__size__": 16,
             "data": 8,
+            "data__type": "*",
             "numberOfChannels": 0,
-            "samplesPerChannel": 4
+            "numberOfChannels__type": "i32",
+            "samplesPerChannel": 4,
+            "samplesPerChannel__type": "i32"
         },
         "EmscriptenBatteryEvent": {
             "__size__": 32,
             "charging": 24,
             "chargingTime": 0,
+            "chargingTime__type": "",
+            "charging__type": "u8",
             "dischargingTime": 8,
-            "level": 16
+            "dischargingTime__type": "",
+            "level": 16,
+            "level__type": ""
         },
         "EmscriptenDeviceMotionEvent": {
             "__size__": 80,
             "accelerationIncludingGravityX": 24,
+            "accelerationIncludingGravityX__type": "",
             "accelerationIncludingGravityY": 32,
+            "accelerationIncludingGravityY__type": "",
             "accelerationIncludingGravityZ": 40,
+            "accelerationIncludingGravityZ__type": "",
             "accelerationX": 0,
+            "accelerationX__type": "",
             "accelerationY": 8,
+            "accelerationY__type": "",
             "accelerationZ": 16,
+            "accelerationZ__type": "",
             "rotationRateAlpha": 48,
+            "rotationRateAlpha__type": "",
             "rotationRateBeta": 56,
-            "rotationRateGamma": 64
+            "rotationRateBeta__type": "",
+            "rotationRateGamma": 64,
+            "rotationRateGamma__type": ""
         },
         "EmscriptenDeviceOrientationEvent": {
             "__size__": 32,
             "absolute": 24,
+            "absolute__type": "u8",
             "alpha": 0,
+            "alpha__type": "",
             "beta": 8,
-            "gamma": 16
+            "beta__type": "",
+            "gamma": 16,
+            "gamma__type": ""
         },
         "EmscriptenFocusEvent": {
             "__size__": 256,
             "id": 128,
-            "nodeName": 0
+            "id__type": "*",
+            "nodeName": 0,
+            "nodeName__type": "*"
         },
         "EmscriptenFullscreenChangeEvent": {
             "__size__": 276,
             "elementHeight": 264,
+            "elementHeight__type": "i32",
             "elementWidth": 260,
+            "elementWidth__type": "i32",
             "fullscreenEnabled": 1,
+            "fullscreenEnabled__type": "u8",
             "id": 130,
+            "id__type": "*",
             "isFullscreen": 0,
+            "isFullscreen__type": "u8",
             "nodeName": 2,
+            "nodeName__type": "*",
             "screenHeight": 272,
-            "screenWidth": 268
+            "screenHeight__type": "i32",
+            "screenWidth": 268,
+            "screenWidth__type": "i32"
         },
         "EmscriptenFullscreenStrategy": {
             "__size__": 40,
             "canvasResizedCallback": 16,
             "canvasResizedCallbackTargetThread": 32,
+            "canvasResizedCallbackTargetThread__type": "*",
             "canvasResizedCallbackUserData": 24,
+            "canvasResizedCallbackUserData__type": "*",
+            "canvasResizedCallback__type": "*",
             "canvasResolutionScaleMode": 4,
+            "canvasResolutionScaleMode__type": "i32",
             "filteringMode": 8,
-            "scaleMode": 0
+            "filteringMode__type": "i32",
+            "scaleMode": 0,
+            "scaleMode__type": "i32"
         },
         "EmscriptenGamepadEvent": {
             "__size__": 1240,
             "analogButton": 528,
+            "analogButton__type": "*",
             "axis": 16,
+            "axis__type": "*",
             "connected": 1104,
+            "connected__type": "u8",
             "digitalButton": 1040,
+            "digitalButton__type": "*",
             "id": 1112,
+            "id__type": "*",
             "index": 1108,
+            "index__type": "i32",
             "mapping": 1176,
+            "mapping__type": "*",
             "numAxes": 8,
+            "numAxes__type": "i32",
             "numButtons": 12,
-            "timestamp": 0
+            "numButtons__type": "i32",
+            "timestamp": 0,
+            "timestamp__type": ""
         },
         "EmscriptenKeyboardEvent": {
             "__size__": 160,
             "altKey": 14,
+            "altKey__type": "u8",
             "charCode": 20,
+            "charCode__type": "u32",
             "charValue": 96,
+            "charValue__type": "*",
             "code": 64,
+            "code__type": "*",
             "ctrlKey": 12,
+            "ctrlKey__type": "u8",
             "key": 32,
             "keyCode": 24,
+            "keyCode__type": "u32",
+            "key__type": "*",
             "locale": 128,
+            "locale__type": "*",
             "location": 8,
+            "location__type": "u32",
             "metaKey": 15,
+            "metaKey__type": "u8",
             "repeat": 16,
+            "repeat__type": "u8",
             "shiftKey": 13,
+            "shiftKey__type": "u8",
             "timestamp": 0,
-            "which": 28
+            "timestamp__type": "",
+            "which": 28,
+            "which__type": "u32"
         },
         "EmscriptenMouseEvent": {
             "__size__": 64,
             "altKey": 26,
+            "altKey__type": "u8",
             "button": 28,
+            "button__type": "u16",
             "buttons": 30,
+            "buttons__type": "u16",
             "canvasX": 48,
+            "canvasX__type": "i32",
             "canvasY": 52,
+            "canvasY__type": "i32",
             "clientX": 16,
+            "clientX__type": "i32",
             "clientY": 20,
+            "clientY__type": "i32",
             "ctrlKey": 24,
+            "ctrlKey__type": "u8",
             "metaKey": 27,
+            "metaKey__type": "u8",
             "movementX": 32,
+            "movementX__type": "i32",
             "movementY": 36,
+            "movementY__type": "i32",
             "screenX": 8,
+            "screenX__type": "i32",
             "screenY": 12,
+            "screenY__type": "i32",
             "shiftKey": 25,
+            "shiftKey__type": "u8",
             "targetX": 40,
+            "targetX__type": "i32",
             "targetY": 44,
-            "timestamp": 0
+            "targetY__type": "i32",
+            "timestamp": 0,
+            "timestamp__type": ""
         },
         "EmscriptenOrientationChangeEvent": {
             "__size__": 8,
             "orientationAngle": 4,
-            "orientationIndex": 0
+            "orientationAngle__type": "i32",
+            "orientationIndex": 0,
+            "orientationIndex__type": "i32"
         },
         "EmscriptenPointerlockChangeEvent": {
             "__size__": 257,
             "id": 129,
+            "id__type": "*",
             "isActive": 0,
-            "nodeName": 1
+            "isActive__type": "u8",
+            "nodeName": 1,
+            "nodeName__type": "*"
         },
         "EmscriptenTouchEvent": {
             "__size__": 1552,
             "altKey": 14,
+            "altKey__type": "u8",
             "ctrlKey": 12,
+            "ctrlKey__type": "u8",
             "metaKey": 15,
+            "metaKey__type": "u8",
             "numTouches": 8,
+            "numTouches__type": "i32",
             "shiftKey": 13,
+            "shiftKey__type": "u8",
             "timestamp": 0,
-            "touches": 16
+            "timestamp__type": "",
+            "touches": 16,
+            "touches__type": "*"
         },
         "EmscriptenTouchPoint": {
             "__size__": 48,
             "canvasX": 40,
+            "canvasX__type": "i32",
             "canvasY": 44,
+            "canvasY__type": "i32",
             "clientX": 12,
+            "clientX__type": "i32",
             "clientY": 16,
+            "clientY__type": "i32",
             "identifier": 0,
+            "identifier__type": "i32",
             "isChanged": 28,
+            "isChanged__type": "u8",
             "onTarget": 29,
+            "onTarget__type": "u8",
             "pageX": 20,
+            "pageX__type": "i32",
             "pageY": 24,
+            "pageY__type": "i32",
             "screenX": 4,
+            "screenX__type": "i32",
             "screenY": 8,
+            "screenY__type": "i32",
             "targetX": 32,
-            "targetY": 36
+            "targetX__type": "i32",
+            "targetY": 36,
+            "targetY__type": "i32"
         },
         "EmscriptenUiEvent": {
             "__size__": 36,
             "detail": 0,
+            "detail__type": "i32",
             "documentBodyClientHeight": 8,
+            "documentBodyClientHeight__type": "i32",
             "documentBodyClientWidth": 4,
+            "documentBodyClientWidth__type": "i32",
             "scrollLeft": 32,
+            "scrollLeft__type": "i32",
             "scrollTop": 28,
+            "scrollTop__type": "i32",
             "windowInnerHeight": 16,
+            "windowInnerHeight__type": "i32",
             "windowInnerWidth": 12,
+            "windowInnerWidth__type": "i32",
             "windowOuterHeight": 24,
-            "windowOuterWidth": 20
+            "windowOuterHeight__type": "i32",
+            "windowOuterWidth": 20,
+            "windowOuterWidth__type": "i32"
         },
         "EmscriptenVisibilityChangeEvent": {
             "__size__": 8,
             "hidden": 0,
-            "visibilityState": 4
+            "hidden__type": "u8",
+            "visibilityState": 4,
+            "visibilityState__type": "i32"
         },
         "EmscriptenWebGLContextAttributes": {
             "__size__": 36,
             "alpha": 0,
+            "alpha__type": "u8",
             "antialias": 3,
+            "antialias__type": "u8",
             "depth": 1,
+            "depth__type": "u8",
             "enableExtensionsByDefault": 24,
+            "enableExtensionsByDefault__type": "u8",
             "explicitSwapControl": 25,
+            "explicitSwapControl__type": "u8",
             "failIfMajorPerformanceCaveat": 12,
+            "failIfMajorPerformanceCaveat__type": "u8",
             "majorVersion": 16,
+            "majorVersion__type": "i32",
             "minorVersion": 20,
+            "minorVersion__type": "i32",
             "powerPreference": 8,
+            "powerPreference__type": "i32",
             "premultipliedAlpha": 4,
+            "premultipliedAlpha__type": "u8",
             "preserveDrawingBuffer": 5,
+            "preserveDrawingBuffer__type": "u8",
             "proxyContextToMainThread": 28,
+            "proxyContextToMainThread__type": "i32",
             "renderViaOffscreenBackBuffer": 32,
-            "stencil": 2
+            "renderViaOffscreenBackBuffer__type": "u8",
+            "stencil": 2,
+            "stencil__type": "u8"
         },
         "EmscriptenWebSocketCloseEvent": {
             "__size__": 520,
             "code": 6,
+            "code__type": "u16",
             "reason": 8,
-            "wasClean": 4
+            "reason__type": "*",
+            "wasClean": 4,
+            "wasClean__type": "u8"
         },
         "EmscriptenWebSocketCreateAttributes": {
             "__size__": 24,
-            "protocols": 8
+            "protocols": 8,
+            "protocols__type": "*"
         },
         "EmscriptenWebSocketMessageEvent": {
             "__size__": 24,
             "data": 8,
+            "data__type": "*",
             "isText": 20,
-            "numBytes": 16
+            "isText__type": "u8",
+            "numBytes": 16,
+            "numBytes__type": "u32"
         },
         "EmscriptenWheelEvent": {
             "__size__": 96,
             "deltaMode": 88,
+            "deltaMode__type": "u32",
             "deltaX": 64,
+            "deltaX__type": "",
             "deltaY": 72,
+            "deltaY__type": "",
             "deltaZ": 80,
-            "mouse": 0
+            "deltaZ__type": "",
+            "mouse": 0,
+            "mouse__type": ""
         },
         "SDL_AudioSpec": {
             "__size__": 32,
             "callback": 16,
+            "callback__type": "*",
             "channels": 6,
+            "channels__type": "u8",
             "format": 4,
+            "format__type": "u16",
             "freq": 0,
+            "freq__type": "i32",
             "samples": 8,
+            "samples__type": "u16",
             "silence": 7,
-            "userdata": 24
+            "silence__type": "u8",
+            "userdata": 24,
+            "userdata__type": "*"
         },
         "SDL_JoyAxisEvent": {
             "__size__": 12,
             "axis": 5,
+            "axis__type": "u8",
             "type": 0,
+            "type__type": "u32",
             "value": 8,
-            "which": 4
+            "value__type": "i32",
+            "which": 4,
+            "which__type": "u8"
         },
         "SDL_JoyButtonEvent": {
             "__size__": 8,
             "button": 5,
+            "button__type": "u8",
             "state": 6,
+            "state__type": "u8",
             "type": 0,
-            "which": 4
+            "type__type": "u32",
+            "which": 4,
+            "which__type": "u8"
         },
         "SDL_KeyboardEvent": {
             "__size__": 28,
             "keysym": 12,
+            "keysym__type": "",
             "repeat": 9,
+            "repeat__type": "u8",
             "state": 8,
-            "type": 0
+            "state__type": "u8",
+            "type": 0,
+            "type__type": "u32"
         },
         "SDL_Keysym": {
             "__size__": 16,
             "mod": 8,
+            "mod__type": "u16",
             "scancode": 0,
+            "scancode__type": "u32",
             "sym": 4,
-            "unicode": 12
+            "sym__type": "i32",
+            "unicode": 12,
+            "unicode__type": "u32"
         },
         "SDL_MouseButtonEvent": {
             "__size__": 28,
             "button": 16,
+            "button__type": "u8",
             "state": 17,
+            "state__type": "u8",
             "timestamp": 4,
+            "timestamp__type": "u32",
             "type": 0,
+            "type__type": "u32",
             "which": 12,
+            "which__type": "u32",
             "windowID": 8,
+            "windowID__type": "u32",
             "x": 20,
-            "y": 24
+            "x__type": "i32",
+            "y": 24,
+            "y__type": "i32"
         },
         "SDL_MouseMotionEvent": {
             "__size__": 36,
             "state": 16,
+            "state__type": "u32",
             "timestamp": 4,
+            "timestamp__type": "u32",
             "type": 0,
+            "type__type": "u32",
             "which": 12,
+            "which__type": "u32",
             "windowID": 8,
+            "windowID__type": "u32",
             "x": 20,
+            "x__type": "i32",
             "xrel": 28,
+            "xrel__type": "i32",
             "y": 24,
-            "yrel": 32
+            "y__type": "i32",
+            "yrel": 32,
+            "yrel__type": "i32"
         },
         "SDL_MouseWheelEvent": {
             "__size__": 24,
             "type": 0,
+            "type__type": "u32",
             "x": 16,
-            "y": 20
+            "x__type": "i32",
+            "y": 20,
+            "y__type": "i32"
         },
         "SDL_PixelFormat": {
             "Amask": 32,
+            "Amask__type": "u32",
             "BitsPerPixel": 16,
+            "BitsPerPixel__type": "u8",
             "Bmask": 28,
+            "Bmask__type": "u32",
             "BytesPerPixel": 17,
+            "BytesPerPixel__type": "u8",
             "Gmask": 24,
+            "Gmask__type": "u32",
             "Rmask": 20,
+            "Rmask__type": "u32",
             "__size__": 56,
             "format": 0,
-            "palette": 8
+            "format__type": "u32",
+            "palette": 8,
+            "palette__type": "*"
         },
         "SDL_RWops": {
             "__size__": 64,
@@ -812,846 +1004,1364 @@
                 "mem": {
                     "__size__": 24,
                     "base": 40,
-                    "stop": 56
+                    "base__type": "*",
+                    "stop": 56,
+                    "stop__type": "*"
                 },
                 "stdio": {
                     "__size__": 16,
-                    "fp": 48
+                    "fp": 48,
+                    "fp__type": "*"
                 }
             },
-            "type": 32
+            "type": 32,
+            "type__type": "u32"
         },
         "SDL_Rect": {
             "__size__": 16,
             "h": 12,
+            "h__type": "i32",
             "w": 8,
+            "w__type": "i32",
             "x": 0,
-            "y": 4
+            "x__type": "i32",
+            "y": 4,
+            "y__type": "i32"
         },
         "SDL_ResizeEvent": {
             "__size__": 12,
             "h": 8,
-            "w": 4
+            "h__type": "i32",
+            "w": 4,
+            "w__type": "i32"
         },
         "SDL_Surface": {
             "__size__": 96,
             "clip_rect": 64,
+            "clip_rect__type": "",
             "flags": 0,
+            "flags__type": "u32",
             "format": 8,
+            "format__type": "*",
             "h": 20,
+            "h__type": "i32",
             "pitch": 24,
+            "pitch__type": "i32",
             "pixels": 32,
+            "pixels__type": "*",
             "refcount": 88,
-            "w": 16
+            "refcount__type": "i32",
+            "w": 16,
+            "w__type": "i32"
         },
         "SDL_TextInputEvent": {
             "__size__": 40,
             "text": 8,
-            "type": 0
+            "text__type": "*",
+            "type": 0,
+            "type__type": "u32"
         },
         "SDL_TouchFingerEvent": {
             "__size__": 48,
             "dx": 32,
+            "dx__type": "",
             "dy": 36,
+            "dy__type": "",
             "fingerId": 16,
+            "fingerId__type": "i64",
             "pressure": 40,
+            "pressure__type": "",
             "timestamp": 4,
+            "timestamp__type": "u32",
             "touchId": 8,
+            "touchId__type": "i64",
             "type": 0,
+            "type__type": "u32",
             "x": 24,
-            "y": 28
+            "x__type": "",
+            "y": 28,
+            "y__type": ""
         },
         "SDL_VideoInfo": {
             "__size__": 24,
             "current_h": 20,
-            "current_w": 16
+            "current_h__type": "i32",
+            "current_w": 16,
+            "current_w__type": "i32"
         },
         "SDL_WindowEvent": {
             "__size__": 20,
             "event": 8,
+            "event__type": "u8",
             "type": 0,
-            "windowID": 4
+            "type__type": "u32",
+            "windowID": 4,
+            "windowID__type": "u32"
         },
         "SDL_version": {
             "__size__": 3,
             "major": 0,
+            "major__type": "u8",
             "minor": 1,
-            "patch": 2
+            "minor__type": "u8",
+            "patch": 2,
+            "patch__type": "u8"
         },
         "WGPUAdapterInfo": {
             "__size__": 56,
             "adapterType": 44,
+            "adapterType__type": "u32",
             "architecture": 16,
+            "architecture__type": "*",
             "backendType": 40,
+            "backendType__type": "u32",
             "description": 32,
+            "description__type": "*",
             "device": 24,
             "deviceID": 52,
+            "deviceID__type": "u32",
+            "device__type": "*",
             "nextInChain": 0,
+            "nextInChain__type": "*",
             "vendor": 8,
-            "vendorID": 48
+            "vendorID": 48,
+            "vendorID__type": "u32",
+            "vendor__type": "*"
         },
         "WGPUAdapterProperties": {
             "__size__": 72,
             "adapterType": 56,
+            "adapterType__type": "u32",
             "architecture": 24,
+            "architecture__type": "*",
             "backendType": 60,
+            "backendType__type": "u32",
             "compatibilityMode": 64,
+            "compatibilityMode__type": "u32",
             "deviceID": 32,
+            "deviceID__type": "u32",
             "driverDescription": 48,
+            "driverDescription__type": "*",
             "name": 40,
+            "name__type": "*",
             "nextInChain": 0,
+            "nextInChain__type": "*",
             "vendorID": 8,
-            "vendorName": 16
+            "vendorID__type": "u32",
+            "vendorName": 16,
+            "vendorName__type": "*"
         },
         "WGPUBindGroupDescriptor": {
             "__size__": 40,
             "entries": 32,
+            "entries__type": "*",
             "entryCount": 24,
+            "entryCount__type": "*",
             "label": 8,
+            "label__type": "*",
             "layout": 16,
-            "nextInChain": 0
+            "layout__type": "*",
+            "nextInChain": 0,
+            "nextInChain__type": "*"
         },
         "WGPUBindGroupEntry": {
             "__size__": 56,
             "binding": 8,
+            "binding__type": "u32",
             "buffer": 16,
+            "buffer__type": "*",
             "nextInChain": 0,
+            "nextInChain__type": "*",
             "offset": 24,
+            "offset__type": "u64",
             "sampler": 40,
+            "sampler__type": "*",
             "size": 32,
-            "textureView": 48
+            "size__type": "u64",
+            "textureView": 48,
+            "textureView__type": "*"
         },
         "WGPUBindGroupLayoutDescriptor": {
             "__size__": 32,
             "entries": 24,
+            "entries__type": "*",
             "entryCount": 16,
+            "entryCount__type": "*",
             "label": 8,
-            "nextInChain": 0
+            "label__type": "*",
+            "nextInChain": 0,
+            "nextInChain__type": "*"
         },
         "WGPUBindGroupLayoutEntry": {
             "__size__": 104,
             "binding": 8,
+            "binding__type": "u32",
             "buffer": 16,
+            "buffer__type": "",
             "nextInChain": 0,
+            "nextInChain__type": "*",
             "sampler": 40,
+            "sampler__type": "",
             "storageTexture": 80,
+            "storageTexture__type": "",
             "texture": 56,
-            "visibility": 12
+            "texture__type": "",
+            "visibility": 12,
+            "visibility__type": "u32"
         },
         "WGPUBlendComponent": {
             "__size__": 12,
             "dstFactor": 8,
+            "dstFactor__type": "u32",
             "operation": 0,
-            "srcFactor": 4
+            "operation__type": "u32",
+            "srcFactor": 4,
+            "srcFactor__type": "u32"
         },
         "WGPUBlendState": {
             "__size__": 24,
             "alpha": 12,
-            "color": 0
+            "alpha__type": "",
+            "color": 0,
+            "color__type": ""
         },
         "WGPUBufferBindingLayout": {
             "__size__": 24,
             "hasDynamicOffset": 12,
+            "hasDynamicOffset__type": "u32",
             "minBindingSize": 16,
+            "minBindingSize__type": "u64",
             "nextInChain": 0,
-            "type": 8
+            "nextInChain__type": "*",
+            "type": 8,
+            "type__type": "u32"
         },
         "WGPUBufferDescriptor": {
             "__size__": 40,
             "label": 8,
+            "label__type": "*",
             "mappedAtCreation": 32,
+            "mappedAtCreation__type": "u32",
             "nextInChain": 0,
+            "nextInChain__type": "*",
             "size": 24,
-            "usage": 16
+            "size__type": "u64",
+            "usage": 16,
+            "usage__type": "u32"
         },
         "WGPUBufferMapCallbackInfo": {
             "__size__": 32,
             "callback": 16,
+            "callback__type": "*",
             "mode": 8,
+            "mode__type": "u32",
             "nextInChain": 0,
-            "userdata": 24
+            "nextInChain__type": "*",
+            "userdata": 24,
+            "userdata__type": "*"
         },
         "WGPUChainedStruct": {
             "__size__": 16,
             "next": 0,
-            "sType": 8
+            "next__type": "*",
+            "sType": 8,
+            "sType__type": "u32"
         },
         "WGPUColor": {
             "__size__": 32,
             "a": 24,
+            "a__type": "",
             "b": 16,
+            "b__type": "",
             "g": 8,
-            "r": 0
+            "g__type": "",
+            "r": 0,
+            "r__type": ""
         },
         "WGPUColorTargetState": {
             "__size__": 32,
             "blend": 16,
+            "blend__type": "*",
             "format": 8,
+            "format__type": "u32",
             "nextInChain": 0,
-            "writeMask": 24
+            "nextInChain__type": "*",
+            "writeMask": 24,
+            "writeMask__type": "u32"
         },
         "WGPUCommandBufferDescriptor": {
             "__size__": 16,
             "label": 8,
-            "nextInChain": 0
+            "label__type": "*",
+            "nextInChain": 0,
+            "nextInChain__type": "*"
         },
         "WGPUCommandEncoderDescriptor": {
             "__size__": 16,
             "label": 8,
-            "nextInChain": 0
+            "label__type": "*",
+            "nextInChain": 0,
+            "nextInChain__type": "*"
         },
         "WGPUCompilationInfo": {
             "__size__": 24,
             "messageCount": 8,
+            "messageCount__type": "*",
             "messages": 16,
-            "nextInChain": 0
+            "messages__type": "*",
+            "nextInChain": 0,
+            "nextInChain__type": "*"
         },
         "WGPUCompilationMessage": {
             "__size__": 80,
             "length": 48,
+            "length__type": "u64",
             "lineNum": 24,
+            "lineNum__type": "u64",
             "linePos": 32,
+            "linePos__type": "u64",
             "message": 8,
+            "message__type": "*",
             "nextInChain": 0,
+            "nextInChain__type": "*",
             "offset": 40,
+            "offset__type": "u64",
             "type": 16,
+            "type__type": "u32",
             "utf16Length": 72,
+            "utf16Length__type": "u64",
             "utf16LinePos": 56,
-            "utf16Offset": 64
+            "utf16LinePos__type": "u64",
+            "utf16Offset": 64,
+            "utf16Offset__type": "u64"
         },
         "WGPUComputePassDescriptor": {
             "__size__": 24,
             "label": 8,
+            "label__type": "*",
             "nextInChain": 0,
-            "timestampWrites": 16
+            "nextInChain__type": "*",
+            "timestampWrites": 16,
+            "timestampWrites__type": "*"
         },
         "WGPUComputePassTimestampWrites": {
             "__size__": 16,
             "beginningOfPassWriteIndex": 8,
+            "beginningOfPassWriteIndex__type": "u32",
             "endOfPassWriteIndex": 12,
-            "querySet": 0
+            "endOfPassWriteIndex__type": "u32",
+            "querySet": 0,
+            "querySet__type": "*"
         },
         "WGPUComputePipelineDescriptor": {
             "__size__": 64,
             "compute": 24,
+            "compute__type": "",
             "label": 8,
+            "label__type": "*",
             "layout": 16,
-            "nextInChain": 0
+            "layout__type": "*",
+            "nextInChain": 0,
+            "nextInChain__type": "*"
         },
         "WGPUConstantEntry": {
             "__size__": 24,
             "key": 8,
+            "key__type": "*",
             "nextInChain": 0,
-            "value": 16
+            "nextInChain__type": "*",
+            "value": 16,
+            "value__type": ""
         },
         "WGPUDepthStencilState": {
             "__size__": 72,
             "depthBias": 60,
             "depthBiasClamp": 68,
+            "depthBiasClamp__type": "",
             "depthBiasSlopeScale": 64,
+            "depthBiasSlopeScale__type": "",
+            "depthBias__type": "i32",
             "depthCompare": 16,
+            "depthCompare__type": "u32",
             "depthWriteEnabled": 12,
+            "depthWriteEnabled__type": "u32",
             "format": 8,
+            "format__type": "u32",
             "nextInChain": 0,
+            "nextInChain__type": "*",
             "stencilBack": 36,
+            "stencilBack__type": "",
             "stencilFront": 20,
+            "stencilFront__type": "",
             "stencilReadMask": 52,
-            "stencilWriteMask": 56
+            "stencilReadMask__type": "u32",
+            "stencilWriteMask": 56,
+            "stencilWriteMask__type": "u32"
         },
         "WGPUDeviceDescriptor": {
             "__size__": 72,
             "defaultQueue": 40,
+            "defaultQueue__type": "",
             "deviceLostCallback": 56,
+            "deviceLostCallback__type": "*",
             "deviceLostUserdata": 64,
+            "deviceLostUserdata__type": "*",
             "label": 8,
+            "label__type": "*",
             "nextInChain": 0,
+            "nextInChain__type": "*",
             "requiredFeatureCount": 16,
+            "requiredFeatureCount__type": "*",
             "requiredFeatures": 24,
-            "requiredLimits": 32
+            "requiredFeatures__type": "*",
+            "requiredLimits": 32,
+            "requiredLimits__type": "*"
         },
         "WGPUExtent3D": {
             "__size__": 12,
             "depthOrArrayLayers": 8,
+            "depthOrArrayLayers__type": "u32",
             "height": 4,
-            "width": 0
+            "height__type": "u32",
+            "width": 0,
+            "width__type": "u32"
         },
         "WGPUFragmentState": {
             "__size__": 56,
             "constantCount": 24,
+            "constantCount__type": "*",
             "constants": 32,
+            "constants__type": "*",
             "entryPoint": 16,
+            "entryPoint__type": "*",
             "module": 8,
+            "module__type": "*",
             "nextInChain": 0,
+            "nextInChain__type": "*",
             "targetCount": 40,
-            "targets": 48
+            "targetCount__type": "*",
+            "targets": 48,
+            "targets__type": "*"
         },
         "WGPUFuture": {
             "__size__": 8,
-            "id": 0
+            "id": 0,
+            "id__type": "u64"
         },
         "WGPUFutureWaitInfo": {
             "__size__": 16,
             "completed": 8,
-            "future": 0
+            "completed__type": "u32",
+            "future": 0,
+            "future__type": ""
         },
         "WGPUImageCopyBuffer": {
             "__size__": 40,
             "buffer": 32,
+            "buffer__type": "*",
             "layout": 8,
-            "nextInChain": 0
+            "layout__type": "",
+            "nextInChain": 0,
+            "nextInChain__type": "*"
         },
         "WGPUImageCopyTexture": {
             "__size__": 40,
             "aspect": 32,
+            "aspect__type": "u32",
             "mipLevel": 16,
+            "mipLevel__type": "u32",
             "nextInChain": 0,
+            "nextInChain__type": "*",
             "origin": 20,
-            "texture": 8
+            "origin__type": "",
+            "texture": 8,
+            "texture__type": "*"
         },
         "WGPUInstanceDescriptor": {
             "__size__": 32,
             "features": 8,
-            "nextInChain": 0
+            "features__type": "",
+            "nextInChain": 0,
+            "nextInChain__type": "*"
         },
         "WGPUInstanceFeatures": {
             "__size__": 24,
             "nextInChain": 0,
+            "nextInChain__type": "*",
             "timedWaitAnyEnable": 8,
-            "timedWaitAnyMaxCount": 16
+            "timedWaitAnyEnable__type": "u32",
+            "timedWaitAnyMaxCount": 16,
+            "timedWaitAnyMaxCount__type": "*"
         },
         "WGPULimits": {
             "__size__": 144,
             "maxBindGroups": 16,
             "maxBindGroupsPlusVertexBuffers": 20,
+            "maxBindGroupsPlusVertexBuffers__type": "u32",
+            "maxBindGroups__type": "u32",
             "maxBindingsPerBindGroup": 24,
+            "maxBindingsPerBindGroup__type": "u32",
             "maxBufferSize": 88,
+            "maxBufferSize__type": "u64",
             "maxColorAttachmentBytesPerSample": 116,
+            "maxColorAttachmentBytesPerSample__type": "u32",
             "maxColorAttachments": 112,
+            "maxColorAttachments__type": "u32",
             "maxComputeInvocationsPerWorkgroup": 124,
+            "maxComputeInvocationsPerWorkgroup__type": "u32",
             "maxComputeWorkgroupSizeX": 128,
+            "maxComputeWorkgroupSizeX__type": "u32",
             "maxComputeWorkgroupSizeY": 132,
+            "maxComputeWorkgroupSizeY__type": "u32",
             "maxComputeWorkgroupSizeZ": 136,
+            "maxComputeWorkgroupSizeZ__type": "u32",
             "maxComputeWorkgroupStorageSize": 120,
+            "maxComputeWorkgroupStorageSize__type": "u32",
             "maxComputeWorkgroupsPerDimension": 140,
+            "maxComputeWorkgroupsPerDimension__type": "u32",
             "maxDynamicStorageBuffersPerPipelineLayout": 32,
+            "maxDynamicStorageBuffersPerPipelineLayout__type": "u32",
             "maxDynamicUniformBuffersPerPipelineLayout": 28,
+            "maxDynamicUniformBuffersPerPipelineLayout__type": "u32",
             "maxInterStageShaderComponents": 104,
+            "maxInterStageShaderComponents__type": "u32",
             "maxInterStageShaderVariables": 108,
+            "maxInterStageShaderVariables__type": "u32",
             "maxSampledTexturesPerShaderStage": 36,
+            "maxSampledTexturesPerShaderStage__type": "u32",
             "maxSamplersPerShaderStage": 40,
+            "maxSamplersPerShaderStage__type": "u32",
             "maxStorageBufferBindingSize": 64,
+            "maxStorageBufferBindingSize__type": "u64",
             "maxStorageBuffersPerShaderStage": 44,
+            "maxStorageBuffersPerShaderStage__type": "u32",
             "maxStorageTexturesPerShaderStage": 48,
+            "maxStorageTexturesPerShaderStage__type": "u32",
             "maxTextureArrayLayers": 12,
+            "maxTextureArrayLayers__type": "u32",
             "maxTextureDimension1D": 0,
+            "maxTextureDimension1D__type": "u32",
             "maxTextureDimension2D": 4,
+            "maxTextureDimension2D__type": "u32",
             "maxTextureDimension3D": 8,
+            "maxTextureDimension3D__type": "u32",
             "maxUniformBufferBindingSize": 56,
+            "maxUniformBufferBindingSize__type": "u64",
             "maxUniformBuffersPerShaderStage": 52,
+            "maxUniformBuffersPerShaderStage__type": "u32",
             "maxVertexAttributes": 96,
+            "maxVertexAttributes__type": "u32",
             "maxVertexBufferArrayStride": 100,
+            "maxVertexBufferArrayStride__type": "u32",
             "maxVertexBuffers": 80,
+            "maxVertexBuffers__type": "u32",
             "minStorageBufferOffsetAlignment": 76,
-            "minUniformBufferOffsetAlignment": 72
+            "minStorageBufferOffsetAlignment__type": "u32",
+            "minUniformBufferOffsetAlignment": 72,
+            "minUniformBufferOffsetAlignment__type": "u32"
         },
         "WGPUMultisampleState": {
             "__size__": 24,
             "alphaToCoverageEnabled": 16,
+            "alphaToCoverageEnabled__type": "u32",
             "count": 8,
+            "count__type": "u32",
             "mask": 12,
-            "nextInChain": 0
+            "mask__type": "u32",
+            "nextInChain": 0,
+            "nextInChain__type": "*"
         },
         "WGPUOrigin3D": {
             "__size__": 12,
             "x": 0,
+            "x__type": "u32",
             "y": 4,
-            "z": 8
+            "y__type": "u32",
+            "z": 8,
+            "z__type": "u32"
         },
         "WGPUPipelineLayoutDescriptor": {
             "__size__": 32,
             "bindGroupLayoutCount": 16,
+            "bindGroupLayoutCount__type": "*",
             "bindGroupLayouts": 24,
+            "bindGroupLayouts__type": "*",
             "label": 8,
-            "nextInChain": 0
+            "label__type": "*",
+            "nextInChain": 0,
+            "nextInChain__type": "*"
         },
         "WGPUPrimitiveDepthClipControl": {
             "__size__": 24,
             "chain": 0,
-            "unclippedDepth": 16
+            "chain__type": "",
+            "unclippedDepth": 16,
+            "unclippedDepth__type": "u32"
         },
         "WGPUPrimitiveState": {
             "__size__": 24,
             "cullMode": 20,
+            "cullMode__type": "u32",
             "frontFace": 16,
+            "frontFace__type": "u32",
             "nextInChain": 0,
+            "nextInChain__type": "*",
             "stripIndexFormat": 12,
-            "topology": 8
+            "stripIndexFormat__type": "u32",
+            "topology": 8,
+            "topology__type": "u32"
         },
         "WGPUProgrammableStageDescriptor": {
             "__size__": 40,
             "constantCount": 24,
+            "constantCount__type": "*",
             "constants": 32,
+            "constants__type": "*",
             "entryPoint": 16,
+            "entryPoint__type": "*",
             "module": 8,
-            "nextInChain": 0
+            "module__type": "*",
+            "nextInChain": 0,
+            "nextInChain__type": "*"
         },
         "WGPUQuerySetDescriptor": {
             "__size__": 24,
             "count": 20,
+            "count__type": "u32",
             "label": 8,
+            "label__type": "*",
             "nextInChain": 0,
-            "type": 16
+            "nextInChain__type": "*",
+            "type": 16,
+            "type__type": "u32"
         },
         "WGPUQueueDescriptor": {
             "__size__": 16,
             "label": 8,
-            "nextInChain": 0
+            "label__type": "*",
+            "nextInChain": 0,
+            "nextInChain__type": "*"
         },
         "WGPUQueueWorkDoneCallbackInfo": {
             "__size__": 32,
             "callback": 16,
+            "callback__type": "*",
             "mode": 8,
+            "mode__type": "u32",
             "nextInChain": 0,
-            "userdata": 24
+            "nextInChain__type": "*",
+            "userdata": 24,
+            "userdata__type": "*"
         },
         "WGPURenderBundleDescriptor": {
             "__size__": 16,
             "label": 8,
-            "nextInChain": 0
+            "label__type": "*",
+            "nextInChain": 0,
+            "nextInChain__type": "*"
         },
         "WGPURenderBundleEncoderDescriptor": {
             "__size__": 48,
             "colorFormatCount": 16,
+            "colorFormatCount__type": "*",
             "colorFormats": 24,
+            "colorFormats__type": "*",
             "depthReadOnly": 40,
+            "depthReadOnly__type": "u32",
             "depthStencilFormat": 32,
+            "depthStencilFormat__type": "u32",
             "label": 8,
+            "label__type": "*",
             "nextInChain": 0,
+            "nextInChain__type": "*",
             "sampleCount": 36,
-            "stencilReadOnly": 44
+            "sampleCount__type": "u32",
+            "stencilReadOnly": 44,
+            "stencilReadOnly__type": "u32"
         },
         "WGPURenderPassColorAttachment": {
             "__size__": 72,
             "clearValue": 40,
+            "clearValue__type": "",
             "depthSlice": 16,
+            "depthSlice__type": "u32",
             "loadOp": 32,
+            "loadOp__type": "u32",
             "nextInChain": 0,
+            "nextInChain__type": "*",
             "resolveTarget": 24,
+            "resolveTarget__type": "*",
             "storeOp": 36,
-            "view": 8
+            "storeOp__type": "u32",
+            "view": 8,
+            "view__type": "*"
         },
         "WGPURenderPassDepthStencilAttachment": {
             "__size__": 40,
             "depthClearValue": 16,
+            "depthClearValue__type": "",
             "depthLoadOp": 8,
+            "depthLoadOp__type": "u32",
             "depthReadOnly": 20,
+            "depthReadOnly__type": "u32",
             "depthStoreOp": 12,
+            "depthStoreOp__type": "u32",
             "stencilClearValue": 32,
+            "stencilClearValue__type": "u32",
             "stencilLoadOp": 24,
+            "stencilLoadOp__type": "u32",
             "stencilReadOnly": 36,
+            "stencilReadOnly__type": "u32",
             "stencilStoreOp": 28,
-            "view": 0
+            "stencilStoreOp__type": "u32",
+            "view": 0,
+            "view__type": "*"
         },
         "WGPURenderPassDescriptor": {
             "__size__": 56,
             "colorAttachmentCount": 16,
+            "colorAttachmentCount__type": "*",
             "colorAttachments": 24,
+            "colorAttachments__type": "*",
             "depthStencilAttachment": 32,
+            "depthStencilAttachment__type": "*",
             "label": 8,
+            "label__type": "*",
             "nextInChain": 0,
+            "nextInChain__type": "*",
             "occlusionQuerySet": 40,
-            "timestampWrites": 48
+            "occlusionQuerySet__type": "*",
+            "timestampWrites": 48,
+            "timestampWrites__type": "*"
         },
         "WGPURenderPassDescriptorMaxDrawCount": {
             "__size__": 24,
             "chain": 0,
-            "maxDrawCount": 16
+            "chain__type": "",
+            "maxDrawCount": 16,
+            "maxDrawCount__type": "u64"
         },
         "WGPURenderPassTimestampWrites": {
             "__size__": 16,
             "beginningOfPassWriteIndex": 8,
+            "beginningOfPassWriteIndex__type": "u32",
             "endOfPassWriteIndex": 12,
-            "querySet": 0
+            "endOfPassWriteIndex__type": "u32",
+            "querySet": 0,
+            "querySet__type": "*"
         },
         "WGPURenderPipelineDescriptor": {
             "__size__": 144,
             "depthStencil": 104,
+            "depthStencil__type": "*",
             "fragment": 136,
+            "fragment__type": "*",
             "label": 8,
+            "label__type": "*",
             "layout": 16,
+            "layout__type": "*",
             "multisample": 112,
+            "multisample__type": "",
             "nextInChain": 0,
+            "nextInChain__type": "*",
             "primitive": 80,
-            "vertex": 24
+            "primitive__type": "",
+            "vertex": 24,
+            "vertex__type": ""
         },
         "WGPURequestAdapterCallbackInfo": {
             "__size__": 32,
             "callback": 16,
+            "callback__type": "*",
             "mode": 8,
+            "mode__type": "u32",
             "nextInChain": 0,
-            "userdata": 24
+            "nextInChain__type": "*",
+            "userdata": 24,
+            "userdata__type": "*"
         },
         "WGPURequestAdapterOptions": {
             "__size__": 32,
             "backendType": 20,
+            "backendType__type": "u32",
             "compatibilityMode": 28,
+            "compatibilityMode__type": "u32",
             "compatibleSurface": 8,
+            "compatibleSurface__type": "*",
             "forceFallbackAdapter": 24,
+            "forceFallbackAdapter__type": "u32",
             "nextInChain": 0,
-            "powerPreference": 16
+            "nextInChain__type": "*",
+            "powerPreference": 16,
+            "powerPreference__type": "u32"
         },
         "WGPURequiredLimits": {
             "__size__": 152,
             "limits": 8,
-            "nextInChain": 0
+            "limits__type": "",
+            "nextInChain": 0,
+            "nextInChain__type": "*"
         },
         "WGPUSamplerBindingLayout": {
             "__size__": 16,
             "nextInChain": 0,
-            "type": 8
+            "nextInChain__type": "*",
+            "type": 8,
+            "type__type": "u32"
         },
         "WGPUSamplerDescriptor": {
             "__size__": 56,
             "addressModeU": 16,
+            "addressModeU__type": "u32",
             "addressModeV": 20,
+            "addressModeV__type": "u32",
             "addressModeW": 24,
+            "addressModeW__type": "u32",
             "compare": 48,
+            "compare__type": "u32",
             "label": 8,
+            "label__type": "*",
             "lodMaxClamp": 44,
+            "lodMaxClamp__type": "",
             "lodMinClamp": 40,
+            "lodMinClamp__type": "",
             "magFilter": 28,
+            "magFilter__type": "u32",
             "maxAnisotropy": 52,
+            "maxAnisotropy__type": "u16",
             "minFilter": 32,
+            "minFilter__type": "u32",
             "mipmapFilter": 36,
-            "nextInChain": 0
+            "mipmapFilter__type": "u32",
+            "nextInChain": 0,
+            "nextInChain__type": "*"
         },
         "WGPUShaderModuleDescriptor": {
             "__size__": 16,
             "label": 8,
-            "nextInChain": 0
+            "label__type": "*",
+            "nextInChain": 0,
+            "nextInChain__type": "*"
         },
         "WGPUShaderModuleSPIRVDescriptor": {
             "__size__": 32,
             "chain": 0,
+            "chain__type": "",
             "code": 24,
-            "codeSize": 16
+            "codeSize": 16,
+            "codeSize__type": "u32",
+            "code__type": "*"
         },
         "WGPUShaderModuleWGSLDescriptor": {
             "__size__": 24,
             "chain": 0,
-            "code": 16
+            "chain__type": "",
+            "code": 16,
+            "code__type": "*"
         },
         "WGPUStencilFaceState": {
             "__size__": 16,
             "compare": 0,
+            "compare__type": "u32",
             "depthFailOp": 8,
+            "depthFailOp__type": "u32",
             "failOp": 4,
-            "passOp": 12
+            "failOp__type": "u32",
+            "passOp": 12,
+            "passOp__type": "u32"
         },
         "WGPUStorageTextureBindingLayout": {
             "__size__": 24,
             "access": 8,
+            "access__type": "u32",
             "format": 12,
+            "format__type": "u32",
             "nextInChain": 0,
-            "viewDimension": 16
+            "nextInChain__type": "*",
+            "viewDimension": 16,
+            "viewDimension__type": "u32"
         },
         "WGPUSupportedLimits": {
             "__size__": 152,
             "limits": 8,
-            "nextInChain": 0
+            "limits__type": "",
+            "nextInChain": 0,
+            "nextInChain__type": "*"
         },
         "WGPUSurfaceCapabilities": {
             "__size__": 56,
             "alphaModeCount": 40,
+            "alphaModeCount__type": "*",
             "alphaModes": 48,
+            "alphaModes__type": "*",
             "formatCount": 8,
+            "formatCount__type": "*",
             "formats": 16,
+            "formats__type": "*",
             "nextInChain": 0,
+            "nextInChain__type": "*",
             "presentModeCount": 24,
-            "presentModes": 32
+            "presentModeCount__type": "*",
+            "presentModes": 32,
+            "presentModes__type": "*"
         },
         "WGPUSurfaceConfiguration": {
             "__size__": 56,
             "alphaMode": 40,
+            "alphaMode__type": "u32",
             "device": 8,
+            "device__type": "*",
             "format": 16,
+            "format__type": "u32",
             "height": 48,
+            "height__type": "u32",
             "nextInChain": 0,
+            "nextInChain__type": "*",
             "presentMode": 52,
+            "presentMode__type": "u32",
             "usage": 20,
+            "usage__type": "u32",
             "viewFormatCount": 24,
+            "viewFormatCount__type": "*",
             "viewFormats": 32,
-            "width": 44
+            "viewFormats__type": "*",
+            "width": 44,
+            "width__type": "u32"
         },
         "WGPUSurfaceDescriptor": {
             "__size__": 16,
             "label": 8,
-            "nextInChain": 0
+            "label__type": "*",
+            "nextInChain": 0,
+            "nextInChain__type": "*"
         },
         "WGPUSurfaceDescriptorFromCanvasHTMLSelector": {
             "__size__": 24,
             "chain": 0,
-            "selector": 16
+            "chain__type": "",
+            "selector": 16,
+            "selector__type": "*"
         },
         "WGPUSurfaceTexture": {
             "__size__": 16,
             "status": 12,
+            "status__type": "u32",
             "suboptimal": 8,
-            "texture": 0
+            "suboptimal__type": "u32",
+            "texture": 0,
+            "texture__type": "*"
         },
         "WGPUSwapChainDescriptor": {
             "__size__": 40,
             "format": 20,
+            "format__type": "u32",
             "height": 28,
+            "height__type": "u32",
             "label": 8,
+            "label__type": "*",
             "nextInChain": 0,
+            "nextInChain__type": "*",
             "presentMode": 32,
+            "presentMode__type": "u32",
             "usage": 16,
-            "width": 24
+            "usage__type": "u32",
+            "width": 24,
+            "width__type": "u32"
         },
         "WGPUTextureBindingLayout": {
             "__size__": 24,
             "multisampled": 16,
+            "multisampled__type": "u32",
             "nextInChain": 0,
+            "nextInChain__type": "*",
             "sampleType": 8,
-            "viewDimension": 12
+            "sampleType__type": "u32",
+            "viewDimension": 12,
+            "viewDimension__type": "u32"
         },
         "WGPUTextureBindingViewDimensionDescriptor": {
             "__size__": 24,
             "chain": 0,
-            "textureBindingViewDimension": 16
+            "chain__type": "",
+            "textureBindingViewDimension": 16,
+            "textureBindingViewDimension__type": "u32"
         },
         "WGPUTextureDataLayout": {
             "__size__": 24,
             "bytesPerRow": 16,
+            "bytesPerRow__type": "u32",
             "nextInChain": 0,
+            "nextInChain__type": "*",
             "offset": 8,
-            "rowsPerImage": 20
+            "offset__type": "u64",
+            "rowsPerImage": 20,
+            "rowsPerImage__type": "u32"
         },
         "WGPUTextureDescriptor": {
             "__size__": 64,
             "dimension": 20,
+            "dimension__type": "u32",
             "format": 36,
+            "format__type": "u32",
             "label": 8,
+            "label__type": "*",
             "mipLevelCount": 40,
+            "mipLevelCount__type": "u32",
             "nextInChain": 0,
+            "nextInChain__type": "*",
             "sampleCount": 44,
+            "sampleCount__type": "u32",
             "size": 24,
+            "size__type": "",
             "usage": 16,
+            "usage__type": "u32",
             "viewFormatCount": 48,
-            "viewFormats": 56
+            "viewFormatCount__type": "*",
+            "viewFormats": 56,
+            "viewFormats__type": "*"
         },
         "WGPUTextureViewDescriptor": {
             "__size__": 48,
             "arrayLayerCount": 36,
+            "arrayLayerCount__type": "u32",
             "aspect": 40,
+            "aspect__type": "u32",
             "baseArrayLayer": 32,
+            "baseArrayLayer__type": "u32",
             "baseMipLevel": 24,
+            "baseMipLevel__type": "u32",
             "dimension": 20,
+            "dimension__type": "u32",
             "format": 16,
+            "format__type": "u32",
             "label": 8,
+            "label__type": "*",
             "mipLevelCount": 28,
-            "nextInChain": 0
+            "mipLevelCount__type": "u32",
+            "nextInChain": 0,
+            "nextInChain__type": "*"
         },
         "WGPUVertexAttribute": {
             "__size__": 24,
             "format": 0,
+            "format__type": "u32",
             "offset": 8,
-            "shaderLocation": 16
+            "offset__type": "u64",
+            "shaderLocation": 16,
+            "shaderLocation__type": "u32"
         },
         "WGPUVertexBufferLayout": {
             "__size__": 32,
             "arrayStride": 0,
+            "arrayStride__type": "u64",
             "attributeCount": 16,
+            "attributeCount__type": "*",
             "attributes": 24,
-            "stepMode": 8
+            "attributes__type": "*",
+            "stepMode": 8,
+            "stepMode__type": "u32"
         },
         "WGPUVertexState": {
             "__size__": 56,
             "bufferCount": 40,
+            "bufferCount__type": "*",
             "buffers": 48,
+            "buffers__type": "*",
             "constantCount": 24,
+            "constantCount__type": "*",
             "constants": 32,
+            "constants__type": "*",
             "entryPoint": 16,
+            "entryPoint__type": "*",
             "module": 8,
-            "nextInChain": 0
+            "module__type": "*",
+            "nextInChain": 0,
+            "nextInChain__type": "*"
         },
         "__cxa_exception": {
             "__size__": 48,
             "adjustedPtr": 32,
+            "adjustedPtr__type": "*",
             "caught": 24,
+            "caught__type": "u8",
             "exceptionDestructor": 16,
+            "exceptionDestructor__type": "*",
             "exceptionType": 8,
+            "exceptionType__type": "*",
             "referenceCount": 0,
-            "rethrown": 25
+            "referenceCount__type": "*",
+            "rethrown": 25,
+            "rethrown__type": "u8"
         },
         "__wasi_fdstat_t": {
             "__size__": 24,
             "fs_filetype": 0,
+            "fs_filetype__type": "u8",
             "fs_flags": 2,
+            "fs_flags__type": "u16",
             "fs_rights_base": 8,
-            "fs_rights_inheriting": 16
+            "fs_rights_base__type": "u64",
+            "fs_rights_inheriting": 16,
+            "fs_rights_inheriting__type": "u64"
         },
         "__wasi_filestat_t": {
             "__size__": 64,
             "atim": 40,
+            "atim__type": "u64",
             "ctim": 56,
+            "ctim__type": "u64",
             "dev": 0,
+            "dev__type": "u64",
             "filetype": 16,
+            "filetype__type": "u8",
             "ino": 8,
+            "ino__type": "u64",
             "mtim": 48,
+            "mtim__type": "u64",
             "nlink": 24,
-            "size": 32
+            "nlink__type": "u64",
+            "size": 32,
+            "size__type": "u64"
         },
         "__wasi_prestat_dir_t": {
             "__size__": 8,
-            "pr_name_len": 0
+            "pr_name_len": 0,
+            "pr_name_len__type": "*"
         },
         "__wasi_prestat_t": {
             "__size__": 16,
             "pr_type": 0,
-            "u": 8
+            "pr_type__type": "u8",
+            "u": 8,
+            "u__type": ""
         },
         "addrinfo": {
             "__size__": 48,
             "ai_addr": 24,
+            "ai_addr__type": "*",
             "ai_addrlen": 16,
+            "ai_addrlen__type": "u32",
             "ai_canonname": 32,
+            "ai_canonname__type": "*",
             "ai_family": 4,
+            "ai_family__type": "i32",
             "ai_flags": 0,
+            "ai_flags__type": "i32",
             "ai_next": 40,
+            "ai_next__type": "*",
             "ai_protocol": 12,
-            "ai_socktype": 8
+            "ai_protocol__type": "i32",
+            "ai_socktype": 8,
+            "ai_socktype__type": "i32"
         },
         "asyncify_data_s": {
             "__size__": 24,
             "rewind_id": 16,
+            "rewind_id__type": "i32",
             "stack_limit": 8,
-            "stack_ptr": 0
+            "stack_limit__type": "*",
+            "stack_ptr": 0,
+            "stack_ptr__type": "*"
         },
         "dirent": {
             "__size__": 280,
             "d_ino": 0,
+            "d_ino__type": "u64",
             "d_name": 19,
+            "d_name__type": "*",
             "d_off": 8,
+            "d_off__type": "i64",
             "d_reclen": 16,
-            "d_type": 18
+            "d_reclen__type": "u16",
+            "d_type": 18,
+            "d_type__type": "u8"
         },
         "dso": {
             "__size__": 64,
             "file_data": 48,
+            "file_data__type": "*",
             "file_data_size": 56,
+            "file_data_size__type": "*",
             "flags": 8,
+            "flags__type": "i32",
             "mem_addr": 16,
+            "mem_addr__type": "*",
             "mem_allocated": 12,
+            "mem_allocated__type": "u8",
             "mem_size": 24,
+            "mem_size__type": "*",
             "name": 64,
+            "name__type": "*",
             "table_addr": 32,
-            "table_size": 40
+            "table_addr__type": "*",
+            "table_size": 40,
+            "table_size__type": "*"
         },
         "em_settled_result_t": {
             "__size__": 16,
             "result": 0,
-            "value": 8
+            "result__type": "u32",
+            "value": 8,
+            "value__type": "*"
         },
         "emscripten_fetch_attr_t": {
             "__size__": 144,
             "attributes": 72,
+            "attributes__type": "u32",
             "destinationPath": 88,
+            "destinationPath__type": "*",
             "onerror": 48,
+            "onerror__type": "*",
             "onprogress": 56,
+            "onprogress__type": "*",
             "onreadystatechange": 64,
+            "onreadystatechange__type": "*",
             "onsuccess": 40,
+            "onsuccess__type": "*",
             "overriddenMimeType": 120,
+            "overriddenMimeType__type": "*",
             "password": 104,
+            "password__type": "*",
             "requestData": 128,
             "requestDataSize": 136,
+            "requestDataSize__type": "*",
+            "requestData__type": "*",
             "requestHeaders": 112,
+            "requestHeaders__type": "*",
             "requestMethod": 0,
+            "requestMethod__type": "*",
             "timeoutMSecs": 76,
+            "timeoutMSecs__type": "u32",
             "userData": 32,
+            "userData__type": "*",
             "userName": 96,
-            "withCredentials": 80
+            "userName__type": "*",
+            "withCredentials": 80,
+            "withCredentials__type": "u8"
         },
         "emscripten_fetch_t": {
             "__attributes": 128,
+            "__attributes__type": "",
             "__size__": 280,
             "data": 24,
             "dataOffset": 40,
+            "dataOffset__type": "u64",
+            "data__type": "*",
             "id": 0,
+            "id__type": "u32",
             "numBytes": 32,
+            "numBytes__type": "u64",
             "readyState": 56,
+            "readyState__type": "u16",
             "responseUrl": 272,
+            "responseUrl__type": "*",
             "status": 58,
             "statusText": 60,
+            "statusText__type": "*",
+            "status__type": "u16",
             "totalBytes": 48,
+            "totalBytes__type": "u64",
             "url": 16,
-            "userData": 8
+            "url__type": "*",
+            "userData": 8,
+            "userData__type": "*"
         },
         "emscripten_fiber_s": {
             "__size__": 64,
             "asyncify_data": 40,
+            "asyncify_data__type": "",
             "entry": 24,
+            "entry__type": "*",
             "stack_base": 0,
+            "stack_base__type": "*",
             "stack_limit": 8,
+            "stack_limit__type": "*",
             "stack_ptr": 16,
-            "user_data": 32
+            "stack_ptr__type": "*",
+            "user_data": 32,
+            "user_data__type": "*"
         },
         "flock": {
             "__size__": 32,
-            "l_type": 0
+            "l_type": 0,
+            "l_type__type": "i16"
         },
         "hostent": {
             "__size__": 32,
             "h_addr_list": 24,
+            "h_addr_list__type": "*",
             "h_addrtype": 16,
+            "h_addrtype__type": "i32",
             "h_aliases": 8,
+            "h_aliases__type": "*",
             "h_length": 20,
-            "h_name": 0
+            "h_length__type": "i32",
+            "h_name": 0,
+            "h_name__type": "*"
         },
         "iovec": {
             "__size__": 16,
             "iov_base": 0,
-            "iov_len": 8
+            "iov_base__type": "*",
+            "iov_len": 8,
+            "iov_len__type": "*"
         },
         "msghdr": {
             "__size__": 56,
             "msg_iov": 16,
+            "msg_iov__type": "*",
             "msg_iovlen": 24,
+            "msg_iovlen__type": "i32",
             "msg_name": 0,
-            "msg_namelen": 8
+            "msg_name__type": "*",
+            "msg_namelen": 8,
+            "msg_namelen__type": "u32"
         },
         "pollfd": {
             "__size__": 8,
             "events": 4,
+            "events__type": "i16",
             "fd": 0,
-            "revents": 6
+            "fd__type": "i32",
+            "revents": 6,
+            "revents__type": "i16"
         },
         "protoent": {
             "__size__": 24,
             "p_aliases": 8,
+            "p_aliases__type": "*",
             "p_name": 0,
-            "p_proto": 16
+            "p_name__type": "*",
+            "p_proto": 16,
+            "p_proto__type": "i32"
         },
         "pthread": {
             "__size__": 232,
             "profilerBlock": 200,
+            "profilerBlock__type": "*",
             "stack": 88,
+            "stack__type": "*",
             "stack_size": 96,
-            "waiting_async": 228
+            "stack_size__type": "*",
+            "waiting_async": 228,
+            "waiting_async__type": "i32"
         },
         "pthread_attr_t": {
             "__size__": 88,
-            "_a_transferredcanvases": 80
+            "_a_transferredcanvases": 80,
+            "_a_transferredcanvases__type": "*"
         },
         "sockaddr_in": {
             "__size__": 16,
             "sin_addr": {
                 "__size__": 4,
-                "s_addr": 4
+                "s_addr": 4,
+                "s_addr__type": "u32"
             },
             "sin_family": 0,
-            "sin_port": 2
+            "sin_family__type": "u16",
+            "sin_port": 2,
+            "sin_port__type": "u16"
         },
         "sockaddr_in6": {
             "__size__": 28,
@@ -1659,95 +2369,152 @@
                 "__in6_union": {
                     "__s6_addr": 8,
                     "__s6_addr16": 8,
+                    "__s6_addr16__type": "*",
                     "__s6_addr32": 8,
+                    "__s6_addr32__type": "*",
+                    "__s6_addr__type": "*",
                     "__size__": 16
                 },
                 "__size__": 16
             },
             "sin6_family": 0,
-            "sin6_port": 2
+            "sin6_family__type": "u16",
+            "sin6_port": 2,
+            "sin6_port__type": "u16"
         },
         "stat": {
             "__size__": 104,
             "st_atim": {
                 "__size__": 16,
                 "tv_nsec": 56,
-                "tv_sec": 48
+                "tv_nsec__type": "*",
+                "tv_sec": 48,
+                "tv_sec__type": "i64"
             },
             "st_blksize": 40,
+            "st_blksize__type": "i32",
             "st_blocks": 44,
+            "st_blocks__type": "i32",
             "st_ctim": {
                 "__size__": 16,
                 "tv_nsec": 88,
-                "tv_sec": 80
+                "tv_nsec__type": "*",
+                "tv_sec": 80,
+                "tv_sec__type": "i64"
             },
             "st_dev": 0,
+            "st_dev__type": "u32",
             "st_gid": 20,
+            "st_gid__type": "u32",
             "st_ino": 96,
+            "st_ino__type": "u64",
             "st_mode": 4,
+            "st_mode__type": "u32",
             "st_mtim": {
                 "__size__": 16,
                 "tv_nsec": 72,
-                "tv_sec": 64
+                "tv_nsec__type": "*",
+                "tv_sec": 64,
+                "tv_sec__type": "i64"
             },
             "st_nlink": 8,
+            "st_nlink__type": "*",
             "st_rdev": 24,
+            "st_rdev__type": "u32",
             "st_size": 32,
-            "st_uid": 16
+            "st_size__type": "i64",
+            "st_uid": 16,
+            "st_uid__type": "u32"
         },
         "statfs": {
             "__size__": 104,
             "f_bavail": 24,
+            "f_bavail__type": "u32",
             "f_bfree": 20,
+            "f_bfree__type": "u32",
             "f_blocks": 16,
+            "f_blocks__type": "u32",
             "f_bsize": 8,
+            "f_bsize__type": "*",
             "f_ffree": 32,
+            "f_ffree__type": "u32",
             "f_files": 28,
+            "f_files__type": "u32",
             "f_flags": 64,
+            "f_flags__type": "*",
             "f_frsize": 56,
+            "f_frsize__type": "*",
             "f_fsid": 36,
-            "f_namelen": 48
+            "f_fsid__type": "",
+            "f_namelen": 48,
+            "f_namelen__type": "*"
         },
         "termios": {
             "__c_ispeed": 52,
+            "__c_ispeed__type": "u32",
             "__c_ospeed": 56,
+            "__c_ospeed__type": "u32",
             "__size__": 60,
             "c_cc": 17,
+            "c_cc__type": "*",
             "c_cflag": 8,
+            "c_cflag__type": "u32",
             "c_iflag": 0,
+            "c_iflag__type": "u32",
             "c_lflag": 12,
+            "c_lflag__type": "u32",
             "c_line": 16,
-            "c_oflag": 4
+            "c_line__type": "u8",
+            "c_oflag": 4,
+            "c_oflag__type": "u32"
         },
         "thread_profiler_block": {
             "__size__": 104,
             "name": 72,
+            "name__type": "*",
             "threadStatus": 0,
-            "timeSpentInStatus": 16
+            "threadStatus__type": "i32",
+            "timeSpentInStatus": 16,
+            "timeSpentInStatus__type": "*"
         },
         "timespec": {
             "__size__": 16,
             "tv_nsec": 8,
-            "tv_sec": 0
+            "tv_nsec__type": "*",
+            "tv_sec": 0,
+            "tv_sec__type": "i64"
         },
         "timeval": {
             "__size__": 16,
             "tv_sec": 0,
-            "tv_usec": 8
+            "tv_sec__type": "i64",
+            "tv_usec": 8,
+            "tv_usec__type": "i32"
         },
         "tm": {
             "__size__": 56,
             "tm_gmtoff": 40,
+            "tm_gmtoff__type": "*",
             "tm_hour": 8,
+            "tm_hour__type": "i32",
             "tm_isdst": 32,
+            "tm_isdst__type": "i32",
             "tm_mday": 12,
+            "tm_mday__type": "i32",
             "tm_min": 4,
+            "tm_min__type": "i32",
             "tm_mon": 16,
+            "tm_mon__type": "i32",
             "tm_sec": 0,
+            "tm_sec__type": "i32",
             "tm_wday": 24,
+            "tm_wday__type": "i32",
             "tm_yday": 28,
+            "tm_yday__type": "i32",
             "tm_year": 20,
-            "tm_zone": 48
+            "tm_year__type": "i32",
+            "tm_zone": 48,
+            "tm_zone__type": "*"
         }
     }
 }

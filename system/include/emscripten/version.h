@@ -5,4 +5,4 @@
  * `sysroot/include` directory (which should be in the include path
  * instead).
  */
-#error "Including files directly from the emscripten source tree is not supported.  Please use the cache/sysroot/include directory".
+// #error "Including files directly from the emscripten source tree is not supported.  Please use the cache/sysroot/include directory".

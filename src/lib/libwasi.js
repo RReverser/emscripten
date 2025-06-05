@@ -525,10 +525,10 @@ var WasiLibrary = {
       flags = {{{ cDefs.__WASI_FDFLAGS_APPEND }}};
 #endif
     }
-    {{{ makeSetValue('pbuf', C_STRUCTS.__wasi_fdstat_t.fs_filetype, 'type', 'i8') }}};
-    {{{ makeSetValue('pbuf', C_STRUCTS.__wasi_fdstat_t.fs_flags, 'flags', 'i16') }}};
-    {{{ makeSetValue('pbuf', C_STRUCTS.__wasi_fdstat_t.fs_rights_base, 'rightsBase', 'i64') }}};
-    {{{ makeSetValue('pbuf', C_STRUCTS.__wasi_fdstat_t.fs_rights_inheriting, 'rightsInheriting', 'i64') }}};
+    {{{ makeSetValue('pbuf', C_STRUCTS.__wasi_fdstat_t.fs_filetype, 'type', 'u8') }}};
+    {{{ makeSetValue('pbuf', C_STRUCTS.__wasi_fdstat_t.fs_flags, 'flags', 'u16') }}};
+    {{{ makeSetValue('pbuf', C_STRUCTS.__wasi_fdstat_t.fs_rights_base, 'rightsBase', 'u64') }}};
+    {{{ makeSetValue('pbuf', C_STRUCTS.__wasi_fdstat_t.fs_rights_inheriting, 'rightsInheriting', 'u64') }}};
     return 0;
   },
 

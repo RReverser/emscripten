@@ -324,7 +324,7 @@ var LibrarySDL = {
     checkPixelFormat(fmt) {
 #if ASSERTIONS
       // Canvas screens are always RGBA.
-      var format = {{{ makeGetValue('fmt', C_STRUCTS.SDL_PixelFormat.format, 'i32') }}};
+      var format = {{{ makeGetValue('fmt', C_STRUCTS.SDL_PixelFormat.format, 'u32') }}};
       if (format != {{{ cDefs.SDL_PIXELFORMAT_RGBA8888 }}}) {
         warnOnce('Unsupported pixel format!');
       }
@@ -366,7 +366,7 @@ var LibrarySDL = {
         buffer = _malloc(width * height * 4);
       }
 
-      {{{ makeSetValue('surf', C_STRUCTS.SDL_Surface.flags, 'flags', 'i32') }}};
+      {{{ makeSetValue('surf', C_STRUCTS.SDL_Surface.flags, 'flags', 'u32') }}};
       {{{ makeSetValue('surf', C_STRUCTS.SDL_Surface.format, 'pixelFormat', '*') }}};
       {{{ makeSetValue('surf', C_STRUCTS.SDL_Surface.w, 'width', 'i32') }}};
       {{{ makeSetValue('surf', C_STRUCTS.SDL_Surface.h, 'height', 'i32') }}};
@@ -382,15 +382,15 @@ var LibrarySDL = {
 
       {{{ makeSetValue('surf', C_STRUCTS.SDL_Surface.refcount, '1', 'i32') }}};
 
-      {{{ makeSetValue('pixelFormat', C_STRUCTS.SDL_PixelFormat.format, cDefs.SDL_PIXELFORMAT_RGBA8888, 'i32') }}};
-      {{{ makeSetValue('pixelFormat', C_STRUCTS.SDL_PixelFormat.palette, '0', 'i32') }}};// TODO
-      {{{ makeSetValue('pixelFormat', C_STRUCTS.SDL_PixelFormat.BitsPerPixel, 'bpp * 8', 'i8') }}};
-      {{{ makeSetValue('pixelFormat', C_STRUCTS.SDL_PixelFormat.BytesPerPixel, 'bpp', 'i8') }}};
+      {{{ makeSetValue('pixelFormat', C_STRUCTS.SDL_PixelFormat.format, cDefs.SDL_PIXELFORMAT_RGBA8888, 'u32') }}};
+      {{{ makeSetValue('pixelFormat', C_STRUCTS.SDL_PixelFormat.palette, '0', '*') }}};// TODO
+      {{{ makeSetValue('pixelFormat', C_STRUCTS.SDL_PixelFormat.BitsPerPixel, 'bpp * 8', 'u8') }}};
+      {{{ makeSetValue('pixelFormat', C_STRUCTS.SDL_PixelFormat.BytesPerPixel, 'bpp', 'u8') }}};
 
-      {{{ makeSetValue('pixelFormat', C_STRUCTS.SDL_PixelFormat.Rmask, 'rmask || 0x000000ff', 'i32') }}};
-      {{{ makeSetValue('pixelFormat', C_STRUCTS.SDL_PixelFormat.Gmask, 'gmask || 0x0000ff00', 'i32') }}};
-      {{{ makeSetValue('pixelFormat', C_STRUCTS.SDL_PixelFormat.Bmask, 'bmask || 0x00ff0000', 'i32') }}};
-      {{{ makeSetValue('pixelFormat', C_STRUCTS.SDL_PixelFormat.Amask, 'amask || 0xff000000', 'i32') }}};
+      {{{ makeSetValue('pixelFormat', C_STRUCTS.SDL_PixelFormat.Rmask, 'rmask || 0x000000ff', 'u32') }}};
+      {{{ makeSetValue('pixelFormat', C_STRUCTS.SDL_PixelFormat.Gmask, 'gmask || 0x0000ff00', 'u32') }}};
+      {{{ makeSetValue('pixelFormat', C_STRUCTS.SDL_PixelFormat.Bmask, 'bmask || 0x00ff0000', 'u32') }}};
+      {{{ makeSetValue('pixelFormat', C_STRUCTS.SDL_PixelFormat.Amask, 'amask || 0xff000000', 'u32') }}};
 
       // Decide if we want to use WebGL or not
       SDL.GL = SDL.GL || is_SDL_OPENGL;
@@ -950,9 +950,9 @@ var LibrarySDL = {
             scan = SDL.scanCodes[key] || key;
           }
 
-          {{{ makeSetValue('ptr', C_STRUCTS.SDL_KeyboardEvent.type, 'SDL.DOMEventToSDLEvent[event.type]', 'i32') }}};
-          {{{ makeSetValue('ptr', C_STRUCTS.SDL_KeyboardEvent.state, 'down ? 1 : 0', 'i8') }}};
-          {{{ makeSetValue('ptr', C_STRUCTS.SDL_KeyboardEvent.repeat, '0', 'i8') }}}; // TODO
+          {{{ makeSetValue('ptr', C_STRUCTS.SDL_KeyboardEvent.type, 'SDL.DOMEventToSDLEvent[event.type]', 'u32') }}};
+          {{{ makeSetValue('ptr', C_STRUCTS.SDL_KeyboardEvent.state, 'down ? 1 : 0', 'u8') }}};
+          {{{ makeSetValue('ptr', C_STRUCTS.SDL_KeyboardEvent.repeat, '0', 'u8') }}}; // TODO
           {{{ makeSetValue('ptr', C_STRUCTS.SDL_KeyboardEvent.keysym + C_STRUCTS.SDL_Keysym.scancode, 'scan', 'i32') }}};
           {{{ makeSetValue('ptr', C_STRUCTS.SDL_KeyboardEvent.keysym + C_STRUCTS.SDL_Keysym.sym, 'key', 'i32') }}};
           {{{ makeSetValue('ptr', C_STRUCTS.SDL_KeyboardEvent.keysym + C_STRUCTS.SDL_Keysym.mod, 'SDL.modState', 'i16') }}};
@@ -962,7 +962,7 @@ var LibrarySDL = {
           break;
         }
         case 'keypress': {
-          {{{ makeSetValue('ptr', C_STRUCTS.SDL_TextInputEvent.type, 'SDL.DOMEventToSDLEvent[event.type]', 'i32') }}};
+          {{{ makeSetValue('ptr', C_STRUCTS.SDL_TextInputEvent.type, 'SDL.DOMEventToSDLEvent[event.type]', 'u32') }}};
           // Not filling in windowID for now
           stringToUTF8(String.fromCharCode(event.charCode), ptr + {{{ C_STRUCTS.SDL_TextInputEvent.text }}}, 4);
           break;
@@ -970,20 +970,20 @@ var LibrarySDL = {
         case 'mousedown': case 'mouseup': case 'mousemove': {
           if (event.type != 'mousemove') {
             var down = event.type === 'mousedown';
-            {{{ makeSetValue('ptr', C_STRUCTS.SDL_MouseButtonEvent.type, 'SDL.DOMEventToSDLEvent[event.type]', 'i32') }}};
-            {{{ makeSetValue('ptr', C_STRUCTS.SDL_MouseButtonEvent.timestamp, '0', 'i32') }}};
-            {{{ makeSetValue('ptr', C_STRUCTS.SDL_MouseButtonEvent.windowID, '0', 'i32') }}};
-            {{{ makeSetValue('ptr', C_STRUCTS.SDL_MouseButtonEvent.which, '0', 'i32') }}};
-            {{{ makeSetValue('ptr', C_STRUCTS.SDL_MouseButtonEvent.button, 'event.button+1', 'i8') }}}; // DOM buttons are 0-2, SDL 1-3
-            {{{ makeSetValue('ptr', C_STRUCTS.SDL_MouseButtonEvent.state, 'down ? 1 : 0', 'i8') }}};
+            {{{ makeSetValue('ptr', C_STRUCTS.SDL_MouseButtonEvent.type, 'SDL.DOMEventToSDLEvent[event.type]', 'u32') }}};
+            {{{ makeSetValue('ptr', C_STRUCTS.SDL_MouseButtonEvent.timestamp, '0', 'u32') }}};
+            {{{ makeSetValue('ptr', C_STRUCTS.SDL_MouseButtonEvent.windowID, '0', 'u32') }}};
+            {{{ makeSetValue('ptr', C_STRUCTS.SDL_MouseButtonEvent.which, '0', 'u32') }}};
+            {{{ makeSetValue('ptr', C_STRUCTS.SDL_MouseButtonEvent.button, 'event.button+1', 'u8') }}}; // DOM buttons are 0-2, SDL 1-3
+            {{{ makeSetValue('ptr', C_STRUCTS.SDL_MouseButtonEvent.state, 'down ? 1 : 0', 'u8') }}};
             {{{ makeSetValue('ptr', C_STRUCTS.SDL_MouseButtonEvent.x, 'Browser.mouseX', 'i32') }}};
             {{{ makeSetValue('ptr', C_STRUCTS.SDL_MouseButtonEvent.y, 'Browser.mouseY', 'i32') }}};
           } else {
-            {{{ makeSetValue('ptr', C_STRUCTS.SDL_MouseMotionEvent.type, 'SDL.DOMEventToSDLEvent[event.type]', 'i32') }}};
-            {{{ makeSetValue('ptr', C_STRUCTS.SDL_MouseMotionEvent.timestamp, '0', 'i32') }}};
-            {{{ makeSetValue('ptr', C_STRUCTS.SDL_MouseMotionEvent.windowID, '0', 'i32') }}};
-            {{{ makeSetValue('ptr', C_STRUCTS.SDL_MouseMotionEvent.which, '0', 'i32') }}};
-            {{{ makeSetValue('ptr', C_STRUCTS.SDL_MouseMotionEvent.state, 'SDL.buttonState', 'i32') }}};
+            {{{ makeSetValue('ptr', C_STRUCTS.SDL_MouseMotionEvent.type, 'SDL.DOMEventToSDLEvent[event.type]', 'u32') }}};
+            {{{ makeSetValue('ptr', C_STRUCTS.SDL_MouseMotionEvent.timestamp, '0', 'u32') }}};
+            {{{ makeSetValue('ptr', C_STRUCTS.SDL_MouseMotionEvent.windowID, '0', 'u32') }}};
+            {{{ makeSetValue('ptr', C_STRUCTS.SDL_MouseMotionEvent.which, '0', 'u32') }}};
+            {{{ makeSetValue('ptr', C_STRUCTS.SDL_MouseMotionEvent.state, 'SDL.buttonState', 'u32') }}};
             {{{ makeSetValue('ptr', C_STRUCTS.SDL_MouseMotionEvent.x, 'Browser.mouseX', 'i32') }}};
             {{{ makeSetValue('ptr', C_STRUCTS.SDL_MouseMotionEvent.y, 'Browser.mouseY', 'i32') }}};
             {{{ makeSetValue('ptr', C_STRUCTS.SDL_MouseMotionEvent.xrel, 'Browser.mouseMovementX', 'i32') }}};
@@ -992,7 +992,7 @@ var LibrarySDL = {
           break;
         }
         case 'wheel': {
-          {{{ makeSetValue('ptr', C_STRUCTS.SDL_MouseWheelEvent.type, 'SDL.DOMEventToSDLEvent[event.type]', 'i32') }}};
+          {{{ makeSetValue('ptr', C_STRUCTS.SDL_MouseWheelEvent.type, 'SDL.DOMEventToSDLEvent[event.type]', 'u32') }}};
           {{{ makeSetValue('ptr', C_STRUCTS.SDL_MouseWheelEvent.x, 'event.deltaX', 'i32') }}};
           {{{ makeSetValue('ptr', C_STRUCTS.SDL_MouseWheelEvent.y, 'event.deltaY', 'i32') }}};
           break;
@@ -1009,8 +1009,8 @@ var LibrarySDL = {
           var dy = y - ly;
           if (touch['deviceID'] === undefined) touch.deviceID = SDL.TOUCH_DEFAULT_ID;
           if (dx === 0 && dy === 0 && event.type === 'touchmove') return false; // don't send these if nothing happened
-          {{{ makeSetValue('ptr', C_STRUCTS.SDL_TouchFingerEvent.type, 'SDL.DOMEventToSDLEvent[event.type]', 'i32') }}};
-          {{{ makeSetValue('ptr', C_STRUCTS.SDL_TouchFingerEvent.timestamp, '_SDL_GetTicks()', 'i32') }}};
+          {{{ makeSetValue('ptr', C_STRUCTS.SDL_TouchFingerEvent.type, 'SDL.DOMEventToSDLEvent[event.type]', 'u32') }}};
+          {{{ makeSetValue('ptr', C_STRUCTS.SDL_TouchFingerEvent.timestamp, '_SDL_GetTicks()', 'u32') }}};
           {{{ makeSetValue('ptr', C_STRUCTS.SDL_TouchFingerEvent.touchId, 'touch.deviceID', 'i64') }}};
           {{{ makeSetValue('ptr', C_STRUCTS.SDL_TouchFingerEvent.fingerId, 'touch.identifier', 'i64') }}};
           {{{ makeSetValue('ptr', C_STRUCTS.SDL_TouchFingerEvent.x, 'x', 'float') }}};
@@ -1025,47 +1025,47 @@ var LibrarySDL = {
           break;
         }
         case 'unload': {
-          {{{ makeSetValue('ptr', C_STRUCTS.SDL_KeyboardEvent.type, 'SDL.DOMEventToSDLEvent[event.type]', 'i32') }}};
+          {{{ makeSetValue('ptr', C_STRUCTS.SDL_KeyboardEvent.type, 'SDL.DOMEventToSDLEvent[event.type]', 'u32') }}};
           break;
         }
         case 'resize': {
-          {{{ makeSetValue('ptr', C_STRUCTS.SDL_KeyboardEvent.type, 'SDL.DOMEventToSDLEvent[event.type]', 'i32') }}};
+          {{{ makeSetValue('ptr', C_STRUCTS.SDL_KeyboardEvent.type, 'SDL.DOMEventToSDLEvent[event.type]', 'u32') }}};
           {{{ makeSetValue('ptr', C_STRUCTS.SDL_ResizeEvent.w, 'event.w', 'i32') }}};
           {{{ makeSetValue('ptr', C_STRUCTS.SDL_ResizeEvent.h, 'event.h', 'i32') }}};
           break;
         }
         case 'joystick_button_up': case 'joystick_button_down': {
           var state = event.type === 'joystick_button_up' ? 0 : 1;
-          {{{ makeSetValue('ptr', C_STRUCTS.SDL_JoyButtonEvent.type, 'SDL.DOMEventToSDLEvent[event.type]', 'i32') }}};
-          {{{ makeSetValue('ptr', C_STRUCTS.SDL_JoyButtonEvent.which, 'event.index', 'i8') }}};
-          {{{ makeSetValue('ptr', C_STRUCTS.SDL_JoyButtonEvent.button, 'event.button', 'i8') }}};
-          {{{ makeSetValue('ptr', C_STRUCTS.SDL_JoyButtonEvent.state, 'state', 'i8') }}};
+          {{{ makeSetValue('ptr', C_STRUCTS.SDL_JoyButtonEvent.type, 'SDL.DOMEventToSDLEvent[event.type]', 'u32') }}};
+          {{{ makeSetValue('ptr', C_STRUCTS.SDL_JoyButtonEvent.which, 'event.index', 'u8') }}};
+          {{{ makeSetValue('ptr', C_STRUCTS.SDL_JoyButtonEvent.button, 'event.button', 'u8') }}};
+          {{{ makeSetValue('ptr', C_STRUCTS.SDL_JoyButtonEvent.state, 'state', 'u8') }}};
           break;
         }
         case 'joystick_axis_motion': {
-          {{{ makeSetValue('ptr', C_STRUCTS.SDL_JoyAxisEvent.type, 'SDL.DOMEventToSDLEvent[event.type]', 'i32') }}};
-          {{{ makeSetValue('ptr', C_STRUCTS.SDL_JoyAxisEvent.which, 'event.index', 'i8') }}};
-          {{{ makeSetValue('ptr', C_STRUCTS.SDL_JoyAxisEvent.axis, 'event.axis', 'i8') }}};
+          {{{ makeSetValue('ptr', C_STRUCTS.SDL_JoyAxisEvent.type, 'SDL.DOMEventToSDLEvent[event.type]', 'u32') }}};
+          {{{ makeSetValue('ptr', C_STRUCTS.SDL_JoyAxisEvent.which, 'event.index', 'u8') }}};
+          {{{ makeSetValue('ptr', C_STRUCTS.SDL_JoyAxisEvent.axis, 'event.axis', 'u8') }}};
           {{{ makeSetValue('ptr', C_STRUCTS.SDL_JoyAxisEvent.value, 'SDL.joystickAxisValueConversion(event.value)', 'i32') }}};
           break;
         }
         case 'focus': {
-          {{{ makeSetValue('ptr', C_STRUCTS.SDL_WindowEvent.type, 'SDL.DOMEventToSDLEvent[event.type]', 'i32') }}};
-          {{{ makeSetValue('ptr', C_STRUCTS.SDL_WindowEvent.windowID, '0', 'i32') }}};
-          {{{ makeSetValue('ptr', C_STRUCTS.SDL_WindowEvent.event, cDefs.SDL_WINDOWEVENT_FOCUS_GAINED, 'i8') }}};
+          {{{ makeSetValue('ptr', C_STRUCTS.SDL_WindowEvent.type, 'SDL.DOMEventToSDLEvent[event.type]', 'u32') }}};
+          {{{ makeSetValue('ptr', C_STRUCTS.SDL_WindowEvent.windowID, '0', 'u32') }}};
+          {{{ makeSetValue('ptr', C_STRUCTS.SDL_WindowEvent.event, cDefs.SDL_WINDOWEVENT_FOCUS_GAINED, 'u8') }}};
           break;
         }
         case 'blur': {
-          {{{ makeSetValue('ptr', C_STRUCTS.SDL_WindowEvent.type, 'SDL.DOMEventToSDLEvent[event.type]', 'i32') }}};
-          {{{ makeSetValue('ptr', C_STRUCTS.SDL_WindowEvent.windowID, '0', 'i32') }}};
-          {{{ makeSetValue('ptr', C_STRUCTS.SDL_WindowEvent.event, cDefs.SDL_WINDOWEVENT_FOCUS_LOST, 'i8') }}};
+          {{{ makeSetValue('ptr', C_STRUCTS.SDL_WindowEvent.type, 'SDL.DOMEventToSDLEvent[event.type]', 'u32') }}};
+          {{{ makeSetValue('ptr', C_STRUCTS.SDL_WindowEvent.windowID, '0', 'u32') }}};
+          {{{ makeSetValue('ptr', C_STRUCTS.SDL_WindowEvent.event, cDefs.SDL_WINDOWEVENT_FOCUS_LOST, 'u8') }}};
           break;
         }
         case 'visibilitychange': {
           var visibilityEventID = event.visible ? {{{ cDefs.SDL_WINDOWEVENT_SHOWN }}} : {{{ cDefs.SDL_WINDOWEVENT_HIDDEN }}};
-          {{{ makeSetValue('ptr', C_STRUCTS.SDL_WindowEvent.type, 'SDL.DOMEventToSDLEvent[event.type]', 'i32') }}};
-          {{{ makeSetValue('ptr', C_STRUCTS.SDL_WindowEvent.windowID, 0, 'i32') }}};
-          {{{ makeSetValue('ptr', C_STRUCTS.SDL_WindowEvent.event, 'visibilityEventID' , 'i8') }}};
+          {{{ makeSetValue('ptr', C_STRUCTS.SDL_WindowEvent.type, 'SDL.DOMEventToSDLEvent[event.type]', 'u32') }}};
+          {{{ makeSetValue('ptr', C_STRUCTS.SDL_WindowEvent.windowID, 0, 'u32') }}};
+          {{{ makeSetValue('ptr', C_STRUCTS.SDL_WindowEvent.event, 'visibilityEventID' , 'u8') }}};
           break;
         }
         default: throw 'Unhandled SDL event: ' + event.type;
@@ -1371,9 +1371,9 @@ var LibrarySDL = {
   SDL_Linked_Version: () => {
     if (SDL.version === null) {
       SDL.version = _malloc({{{ C_STRUCTS.SDL_version.__size__ }}});
-      {{{ makeSetValue('SDL.version', C_STRUCTS.SDL_version.major, '1', 'i8') }}};
-      {{{ makeSetValue('SDL.version', C_STRUCTS.SDL_version.minor, '3', 'i8') }}};
-      {{{ makeSetValue('SDL.version', C_STRUCTS.SDL_version.patch, '0', 'i8') }}};
+      {{{ makeSetValue('SDL.version', C_STRUCTS.SDL_version.major, '1', 'u8') }}};
+      {{{ makeSetValue('SDL.version', C_STRUCTS.SDL_version.minor, '3', 'u8') }}};
+      {{{ makeSetValue('SDL.version', C_STRUCTS.SDL_version.patch, '0', 'u8') }}};
     }
     return SDL.version;
   },
@@ -2357,7 +2357,7 @@ var LibrarySDL = {
   SDL_OpenAudio: (desired, obtained) => {
     try {
       SDL.audio = {
-        freq: {{{ makeGetValue('desired', C_STRUCTS.SDL_AudioSpec.freq, 'u32') }}},
+        freq: {{{ makeGetValue('desired', C_STRUCTS.SDL_AudioSpec.freq, 'i32') }}},
         format: {{{ makeGetValue('desired', C_STRUCTS.SDL_AudioSpec.format, 'u16') }}},
         channels: {{{ makeGetValue('desired', C_STRUCTS.SDL_AudioSpec.channels, 'u8') }}},
         samples: {{{ makeGetValue('desired', C_STRUCTS.SDL_AudioSpec.samples, 'u16') }}}, // Samples in the CB buffer per single sound channel.
@@ -2550,10 +2550,10 @@ var LibrarySDL = {
       if (obtained) {
         // Report back the initialized audio parameters.
         {{{ makeSetValue('obtained', C_STRUCTS.SDL_AudioSpec.freq, 'SDL.audio.freq', 'i32') }}};
-        {{{ makeSetValue('obtained', C_STRUCTS.SDL_AudioSpec.format, 'SDL.audio.format', 'i16') }}};
-        {{{ makeSetValue('obtained', C_STRUCTS.SDL_AudioSpec.channels, 'SDL.audio.channels', 'i8') }}};
-        {{{ makeSetValue('obtained', C_STRUCTS.SDL_AudioSpec.silence, 'SDL.audio.silence', 'i8') }}};
-        {{{ makeSetValue('obtained', C_STRUCTS.SDL_AudioSpec.samples, 'SDL.audio.samples', 'i16') }}};
+        {{{ makeSetValue('obtained', C_STRUCTS.SDL_AudioSpec.format, 'SDL.audio.format', 'u16') }}};
+        {{{ makeSetValue('obtained', C_STRUCTS.SDL_AudioSpec.channels, 'SDL.audio.channels', 'u8') }}};
+        {{{ makeSetValue('obtained', C_STRUCTS.SDL_AudioSpec.silence, 'SDL.audio.silence', 'u8') }}};
+        {{{ makeSetValue('obtained', C_STRUCTS.SDL_AudioSpec.samples, 'SDL.audio.samples', 'u16') }}};
         {{{ makeSetValue('obtained', C_STRUCTS.SDL_AudioSpec.callback, 'SDL.audio.callback', '*') }}};
         {{{ makeSetValue('obtained', C_STRUCTS.SDL_AudioSpec.userdata, 'SDL.audio.userdata', '*') }}};
       }
@@ -2565,10 +2565,10 @@ var LibrarySDL = {
       SDL.allocateChannels(0);
       if (obtained) {
         {{{ makeSetValue('obtained', C_STRUCTS.SDL_AudioSpec.freq, 0, 'i32') }}};
-        {{{ makeSetValue('obtained', C_STRUCTS.SDL_AudioSpec.format, 0, 'i16') }}};
-        {{{ makeSetValue('obtained', C_STRUCTS.SDL_AudioSpec.channels, 0, 'i8') }}};
-        {{{ makeSetValue('obtained', C_STRUCTS.SDL_AudioSpec.silence, 0, 'i8') }}};
-        {{{ makeSetValue('obtained', C_STRUCTS.SDL_AudioSpec.samples, 0, 'i16') }}};
+        {{{ makeSetValue('obtained', C_STRUCTS.SDL_AudioSpec.format, 0, 'u16') }}};
+        {{{ makeSetValue('obtained', C_STRUCTS.SDL_AudioSpec.channels, 0, 'u8') }}};
+        {{{ makeSetValue('obtained', C_STRUCTS.SDL_AudioSpec.silence, 0, 'u8') }}};
+        {{{ makeSetValue('obtained', C_STRUCTS.SDL_AudioSpec.samples, 0, 'u16') }}};
         {{{ makeSetValue('obtained', C_STRUCTS.SDL_AudioSpec.callback, 0, '*') }}};
         {{{ makeSetValue('obtained', C_STRUCTS.SDL_AudioSpec.userdata, 0, '*') }}};
       }

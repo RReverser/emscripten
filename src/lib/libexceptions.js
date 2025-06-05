@@ -45,20 +45,20 @@ var LibraryExceptions = {
 
     set_caught(caught) {
       caught = caught ? 1 : 0;
-      {{{ makeSetValue('this.ptr', C_STRUCTS.__cxa_exception.caught, 'caught', 'i8') }}};
+      {{{ makeSetValue('this.ptr', C_STRUCTS.__cxa_exception.caught, 'caught', 'u8') }}};
     }
 
     get_caught() {
-      return {{{ makeGetValue('this.ptr', C_STRUCTS.__cxa_exception.caught, 'i8') }}} != 0;
+      return {{{ makeGetValue('this.ptr', C_STRUCTS.__cxa_exception.caught, 'u8') }}} != 0;
     }
 
     set_rethrown(rethrown) {
       rethrown = rethrown ? 1 : 0;
-      {{{ makeSetValue('this.ptr', C_STRUCTS.__cxa_exception.rethrown, 'rethrown', 'i8') }}};
+      {{{ makeSetValue('this.ptr', C_STRUCTS.__cxa_exception.rethrown, 'rethrown', 'u8') }}};
     }
 
     get_rethrown() {
-      return {{{ makeGetValue('this.ptr', C_STRUCTS.__cxa_exception.rethrown, 'i8') }}} != 0;
+      return {{{ makeGetValue('this.ptr', C_STRUCTS.__cxa_exception.rethrown, 'u8') }}} != 0;
     }
 
     // Initialize native structure fields. Should be called once after allocated.
