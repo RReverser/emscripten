@@ -14,6 +14,7 @@
 #include <cassert>
 #include <array>
 #include <climits>
+#include <emscripten/em_macros.h>
 #include <emscripten/wire.h>
 #include <cstdint> // uintptr_t
 #include <vector>
@@ -55,7 +56,7 @@ enum {
 };
 
 typedef struct _EM_DESTRUCTORS* EM_DESTRUCTORS;
-typedef struct _EM_METHOD_CALLER* EM_METHOD_CALLER;
+typedef const struct _EM_METHOD_CALLER* EM_METHOD_CALLER;
 typedef double EM_GENERIC_WIRE_TYPE;
 typedef const void* EM_VAR_ARGS;
 
@@ -93,9 +94,11 @@ EM_GENERIC_WIRE_TYPE _emval_call(
     EM_DESTRUCTORS* destructors,
     EM_VAR_ARGS argv);
 
-// DO NOT call this more than once per signature. It will
-// leak generated function objects!
-EM_METHOD_CALLER _emval_get_method_caller(
+
+  // DO NOT call this more than once per signature. It will
+  // leak generated function objects!
+void _emval_register_method_caller(
+    EM_METHOD_CALLER mc,
     unsigned argCount, // including return value
     const TYPEID argTypes[],
     EM_METHOD_CALLER_KIND asCtor);
@@ -142,7 +145,17 @@ struct Signature {
   */
   static EM_METHOD_CALLER get_method_caller() {
     static constexpr WithPolicies<>::ArgTypeList<ReturnType, Args...> args;
-    thread_local EM_METHOD_CALLER mc = _emval_get_method_caller(args.getCount(), args.getTypes(), Kind);
+    static EM_METHOD_CALLER mc = static_cast<EM_METHOD_CALLER>(TypeID<AllowedRawPointer<ReturnType(*)(Args...)>>::get());
+
+    thread_local struct RegisterMC {
+      EMSCRIPTEN_KEEPALIVE
+      RegisterMC() {
+        // Register the method caller for this signature.
+        // This is thread-local, so it will be registered once per thread.
+        _emval_register_method_caller(mc, args.getCount(), args.getTypes(), Kind);
+      }
+    } registerMC;
+
     return mc;
   }
 };

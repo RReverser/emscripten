@@ -283,20 +283,22 @@ var LibraryEmVal = {
 
   // Leave id 0 undefined.  It's not a big deal, but might be confusing
   // to have null be a valid method caller.
-  $emval_methodCallers: [undefined],
+  $emval_methodCallers:
+#if EMBIND_AOT && !EMBIND_GEN_MODE
+    '<<< EMVAL_METHOD_CALLERS >>>'
+#else
+    {}
+#endif
+  ,
 
-  $emval_addMethodCaller__deps: ['$emval_methodCallers'],
-  $emval_addMethodCaller: (caller) => {
-    var id = emval_methodCallers.length;
-    emval_methodCallers.push(caller);
-    return id;
-  },
-
-  _emval_get_method_caller__deps: [
-    '$emval_addMethodCaller', '$emval_lookupTypes',
+#if !(EMBIND_AOT && !EMBIND_GEN_MODE)
+  _emval_register_method_caller__deps: [
+    '$emval_methodCallers', '$emval_lookupTypes',
     '$createNamedFunction', '$emval_returnValue',
   ],
-  _emval_get_method_caller: (argCount, argTypes, kind) => {
+#endif
+  _emval_register_method_caller: (mc, argCount, argTypes, kind) => {
+#if !(EMBIND_AOT && !EMBIND_GEN_MODE)
     var GenericWireTypeSize = {{{ 2 * POINTER_SIZE }}};
 
     var types = emval_lookupTypes(argCount, argTypes);
@@ -348,7 +350,8 @@ var LibraryEmVal = {
     var invokerFunction = new Function(...params, functionBody)(...args);
 #endif
     var functionName = `methodCaller<(${types.map(t => t.name).join(', ')}) => ${retType.name}>`;
-    return emval_addMethodCaller(createNamedFunction(functionName, invokerFunction));
+    emval_methodCallers[mc] = createNamedFunction(functionName, invokerFunction);
+#endif
   },
 
   _emval_call_method__deps: ['$getStringOrSymbol', '$emval_methodCallers', '$Emval'],

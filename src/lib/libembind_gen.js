@@ -451,8 +451,9 @@ var LibraryEmbind = {
   },
 
   $JsPrinter: class {
-    constructor(definitions) {
+    constructor(definitions, methodCallers) {
       this.definitions = definitions;
+      this.methodCallers = methodCallers;
     }
 
     print() {
@@ -471,6 +472,11 @@ var LibraryEmbind = {
       return JSON.stringify({
         'invokers': out.join(''),
         publicSymbols,
+        'methodCallers': [
+          '{',
+          ...Object.entries(this.methodCallers).map(([id, fn]) => `  ${id}${fn.toString().replace(/^function /, '')},`),
+          '}',
+        ].join('\n')
       });
     }
   },
@@ -843,7 +849,7 @@ var LibraryEmbind = {
     });
   },
 
-  $emitOutput__deps: ['$awaitingDependencies', '$throwBindingError', '$getTypeName', '$moduleDefinitions',
+  $emitOutput__deps: ['$awaitingDependencies', '$throwBindingError', '$getTypeName', '$moduleDefinitions', '$emval_methodCallers',
 #if EMBIND_AOT
     '$JsPrinter',
 #else
@@ -852,11 +858,16 @@ var LibraryEmbind = {
   ],
   $emitOutput__postset: () => { addAtPostCtor('emitOutput()'); },
   $emitOutput: () => {
+    for (const name in wasmExports) {
+      // janky: detect mangled but exported C++ names of our generic method caller registrations
+      if (!name.endsWith('17get_method_callerEvEN10RegisterMCC2Ev')) continue;
+      wasmExports[name]();
+    }
     for (const typeId in awaitingDependencies) {
       throwBindingError(`Missing binding for type: '${getTypeName(typeId)}' typeId: ${typeId}`);
     }
 #if EMBIND_AOT
-    const printer = new JsPrinter(moduleDefinitions);
+    const printer = new JsPrinter(moduleDefinitions, emval_methodCallers);
 #else
     const printer = new TsPrinter(moduleDefinitions);
 #endif
@@ -865,10 +876,11 @@ var LibraryEmbind = {
     fs.writeFileSync(process.argv[2], output + '\n');
   },
 
+  $createNamedFunction: (name, func) => func,
+
   // Stub functions used by eval, but not needed for TS generation:
   $makeLegalFunctionName: () => { throw new Error('stub function should not be called'); },
   $runDestructors: () => { throw new Error('stub function should not be called'); },
-  $createNamedFunction: () => { throw new Error('stub function should not be called'); },
   $flushPendingDeletes: () => { throw new Error('stub function should not be called'); },
   $setDelayFunction: () => { throw new Error('stub function should not be called'); },
   $PureVirtualError: () => { throw new Error('stub function should not be called'); },

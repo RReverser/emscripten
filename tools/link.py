@@ -2074,7 +2074,8 @@ def phase_embind_aot(options, wasm_target, js_syms):
     write_file(in_temp('embind_aot.json'), out)
   out = json.loads(out)
   src = read_file(final_js)
-  src = do_replace(src, '<<< EMBIND_AOT_INVOKERS >>>', out['invokers'])
+  src = src.replace('<<< EMBIND_AOT_INVOKERS >>>', out['invokers'])
+  src = src.replace('<<< EMVAL_METHOD_CALLERS >>>', out['methodCallers'])
   if settings.MODULARIZE == 'instance':
     # Add ES module exports for the embind exports.
     decls = '\n'.join([f'export var {name};' for name in out['publicSymbols']])
