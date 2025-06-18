@@ -14,6 +14,7 @@
 #include <cassert>
 #include <array>
 #include <climits>
+#include <emscripten/em_asm.h>
 #include <emscripten/wire.h>
 #include <cstdint> // uintptr_t
 #include <vector>
@@ -43,6 +44,15 @@ enum class EM_INVOKER_KIND {
   CAST,
 };
 
+typedef struct _EM_DESTRUCTORS* EM_DESTRUCTORS;
+
+template<typename Ret, typename... Args>
+using EM_INVOKER = BindingType<Ret>::WireType(*)(
+  EM_VAL handle,
+  const char* methodName,
+  EM_DESTRUCTORS* destructors,
+  typename BindingType<Args>::WireType...);
+
 // Implemented in JavaScript.  Don't call these directly.
 extern "C" {
 
@@ -56,8 +66,6 @@ enum {
   _EMVAL_LAST_RESERVED_HANDLE = 8,
 };
 
-typedef struct _EM_DESTRUCTORS* EM_DESTRUCTORS;
-typedef struct _EM_INVOKER* EM_INVOKER;
 typedef double EM_GENERIC_WIRE_TYPE;
 typedef const void* EM_VAR_ARGS;
 
@@ -86,22 +94,11 @@ bool _emval_not(EM_VAL object);
 
 // DO NOT call this more than once per signature. It will
 // leak generated function objects!
-EM_INVOKER _emval_create_invoker(
+EM_INVOKER<void> _emval_create_invoker(
     unsigned argCount, // including return value
     const TYPEID argTypes[],
+    const char* sig,
     EM_INVOKER_KIND kind);
-EM_GENERIC_WIRE_TYPE _emval_invoke(
-    EM_INVOKER caller,
-    EM_VAL handle,
-    const char* methodName,
-    EM_DESTRUCTORS* destructors,
-    EM_VAR_ARGS argv);
-int64_t _emval_invoke_i64(
-    EM_INVOKER caller,
-    EM_VAL handle,
-    const char* methodName,
-    EM_DESTRUCTORS* destructors,
-    EM_VAR_ARGS argv);
 EM_VAL _emval_typeof(EM_VAL value);
 bool _emval_instanceof(EM_VAL object, EM_VAL constructor);
 bool _emval_is_number(EM_VAL object);
@@ -128,133 +125,42 @@ struct symbol_registrar {
   }
 };
 
-struct DestructorsRunner {
-public:
-  explicit DestructorsRunner(EM_DESTRUCTORS d)
-      : destructors(d)
-  {}
-  ~DestructorsRunner() {
-    if (destructors) {
-      _emval_run_destructors(destructors);
-    }
-  }
+} // end namespace internal
 
-  DestructorsRunner(const DestructorsRunner&) = delete;
-  void operator=(const DestructorsRunner&) = delete;
+////////////////////////////////////////////////////////////////////////////////
+// SignatureCode, SignatureString
+////////////////////////////////////////////////////////////////////////////////
 
-private:
-  EM_DESTRUCTORS destructors;
-};
+namespace internal {
 
-template<typename WireType>
-struct GenericWireTypeConverter {
-  static WireType from(double wt) {
-    return static_cast<WireType>(wt);
-  }
-};
+// TODO: this is a historical default, but we should probably use 'p' instead,
+// and only enable it for smart_ptr_trait<> descendants.
+template<typename T, typename = decltype(__em_asm_sig<int>::value)>
+struct SignatureCode : __em_asm_sig<int> {};
 
-template<typename Pointee>
-struct GenericWireTypeConverter<Pointee*> {
-  static Pointee* from(double wt) {
-    return reinterpret_cast<Pointee*>(static_cast<uintptr_t>(wt));
-  }
+template<typename T>
+struct SignatureCode<T, decltype(__em_asm_sig<T>::value)> : __em_asm_sig<T> {};
+
+template<typename T>
+struct SignatureCode<T&> : SignatureCode<T*> {};
+
+template<>
+struct SignatureCode<void> {
+    static constexpr char value = 'v';
 };
 
 template<>
-struct GenericWireTypeConverter<BindingType<void>::WireType> {
-  static BindingType<void>::WireType from(double) {
-    return {};
-  }
+struct SignatureCode<BindingType<void>::WireType> {
+    static constexpr char value = 'v';
 };
 
 template<typename... Args>
-struct PackSize;
+constexpr const char Signature[] = { SignatureCode<Args>::value..., 0 };
 
-template<>
-struct PackSize<> {
-  static constexpr size_t value = 0;
-};
-
-template<typename Arg, typename... Args>
-struct PackSize<Arg, Args...> {
-  static constexpr size_t value = (sizeof(typename BindingType<Arg>::WireType) + 7) / 8 + PackSize<Args...>::value;
-};
-
-union GenericWireType {
-  union {
-    unsigned u;
-    size_t s;
-    float f;
-    const void* p;
-  } w[2];
-  double d;
-  uint64_t u;
-};
-static_assert(sizeof(GenericWireType) == 2*sizeof(void*), "GenericWireType must be size of 2 pointers");
-static_assert(alignof(GenericWireType) == 8, "GenericWireType must be 8-byte-aligned");
-
-inline void writeGenericWireType(GenericWireType*& cursor, float wt) {
-  cursor->w[0].f = wt;
-  ++cursor;
+template<typename Return, typename... Args>
+constexpr const char* getSignature(Return (*)(Args...)) {
+    return Signature<Return, Args...>;
 }
-
-inline void writeGenericWireType(GenericWireType*& cursor, double wt) {
-  cursor->d = wt;
-  ++cursor;
-}
-
-inline void writeGenericWireType(GenericWireType*& cursor, int64_t wt) {
-  cursor->u = wt;
-  ++cursor;
-}
-
-inline void writeGenericWireType(GenericWireType*& cursor, uint64_t wt) {
-  cursor->u = wt;
-  ++cursor;
-}
-
-template<typename T>
-void writeGenericWireType(GenericWireType*& cursor, T* wt) {
-  cursor->w[0].p = wt;
-  ++cursor;
-}
-
-template<typename ElementType>
-inline void writeGenericWireType(GenericWireType*& cursor, const memory_view<ElementType>& wt) {
-  cursor->w[0].s = wt.size;
-  cursor->w[1].p = (void*)wt.data;
-  ++cursor;
-}
-
-template<typename T>
-void writeGenericWireType(GenericWireType*& cursor, T wt) {
-  cursor->w[0].u = static_cast<unsigned>(wt);
-  ++cursor;
-}
-
-inline void writeGenericWireTypes(GenericWireType*&) {
-}
-
-template<typename First, typename... Rest>
-EMSCRIPTEN_ALWAYS_INLINE void writeGenericWireTypes(GenericWireType*& cursor, First&& first, Rest&&... rest) {
-  writeGenericWireType(cursor, BindingType<First>::toWireType(std::forward<First>(first), rvp::default_tag{}));
-  writeGenericWireTypes(cursor, std::forward<Rest>(rest)...);
-}
-
-template<typename... Args>
-struct WireTypePack {
-  WireTypePack(Args&&... args) {
-    GenericWireType* cursor = elements.data();
-    writeGenericWireTypes(cursor, std::forward<Args>(args)...);
-  }
-
-  operator EM_VAR_ARGS() const {
-    return elements.data();
-  }
-
-private:
-  std::array<GenericWireType, PackSize<Args...>::value> elements;
-};
 
 } // end namespace internal
 
@@ -580,33 +486,29 @@ private:
 
     using namespace internal;
 
-    using RetWire = BindingType<Ret>::WireType;
-
     static constexpr typename Policy::template ArgTypeList<Ret, Args...> argTypes;
-    thread_local EM_INVOKER mc = _emval_create_invoker(argTypes.getCount(), argTypes.getTypes(), Kind);
 
-    WireTypePack<Args...> argv(std::forward<Args>(args)...);
-    EM_DESTRUCTORS destructors = nullptr;
+    using Sig = EM_INVOKER<Ret, Args...>;
 
-    RetWire result;
-    if constexpr (std::is_integral<RetWire>::value && sizeof(RetWire) == 8) {
-      // 64-bit integers can't go through "generic wire type" because double and int64 have different ABI.
-      result = static_cast<RetWire>(_emval_invoke_i64(
-        mc,
-        handle,
-        methodName,
-        &destructors,
-        argv));
-    } else {
-      result = GenericWireTypeConverter<RetWire>::from(_emval_invoke(
-        mc,
-        handle,
-        methodName,
-        &destructors,
-        argv));
-    }
-    DestructorsRunner rd(destructors);
-    return BindingType<Ret>::fromWireType(result);
+    thread_local Sig mc = reinterpret_cast<Sig>(
+      _emval_create_invoker(argTypes.getCount(), argTypes.getTypes(), getSignature(Sig{}), Kind));
+
+    struct DestructorsRunner {
+      EM_DESTRUCTORS destructors = nullptr;
+
+      ~DestructorsRunner() {
+        if (destructors) {
+          _emval_run_destructors(destructors);
+        }
+      }
+    } dr;
+
+    return BindingType<Ret>::fromWireType(mc(
+      handle,
+      methodName,
+      &dr.destructors,
+      BindingType<Args>::toWireType(std::forward<Args>(args), rvp::default_tag{})...
+    ));
   }
 
   template<typename T>

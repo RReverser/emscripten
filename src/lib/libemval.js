@@ -246,37 +246,21 @@ var LibraryEmVal = {
     return a;
   },
 
-  // Leave id 0 undefined.  It's not a big deal, but might be confusing
-  // to have null be a valid method caller.
-  $emval_methodCallers: [undefined],
-
-  $emval_addMethodCaller__deps: ['$emval_methodCallers'],
-  $emval_addMethodCaller: (caller) => {
-    var id = emval_methodCallers.length;
-    emval_methodCallers.push(caller);
-    return id;
-  },
-
   _emval_create_invoker__deps: [
-    '$emval_addMethodCaller', '$emval_lookupTypes',
+    '$emval_lookupTypes',
     '$createNamedFunction', '$emval_returnValue',
-    '$Emval', '$getStringOrSymbol',
+    '$Emval', '$getStringOrSymbol', '$addFunction',
   ],
-  _emval_create_invoker: (argCount, argTypesPtr, kind) => {
-    var GenericWireTypeSize = {{{ 2 * POINTER_SIZE }}};
-
+  _emval_create_invoker: (argCount, argTypesPtr, sig, kind) => {
     var [retType, ...argTypes] = emval_lookupTypes(argCount, argTypesPtr);
     var toReturnWire = retType.toWireType.bind(retType);
-    var argFromPtr = argTypes.map(type => type.readValueFromPointer.bind(type));
+    var argFromWire = argTypes.map(type => type.fromWireType.bind(type));
     argCount--; // remove the extracted return type
 
 #if !DYNAMIC_EXECUTION
-    var argN = new Array(argCount);
-    var invokerFunction = (handle, methodName, destructorsRef, args) => {
-      var offset = 0;
-      for (var i = 0; i < argCount; ++i) {
-        argN[i] = argFromPtr[i](args + offset);
-        offset += GenericWireTypeSize;
+    var invokerFunction = (handle, methodName, destructorsRef, ...argN) => {
+      for (var i = 0; i < argN.length; ++i) {
+        argN[i] = argFromWire[i](argN[i]);
       }
       var rv;
       switch (kind) {
@@ -332,18 +316,8 @@ ${functionBody}
     var invokerFunction = new Function(Object.keys(captures), functionBody)(...Object.values(captures));
 #endif
     var functionName = `methodCaller<(${argTypes.map(t => t.name)}) => ${retType.name}>`;
-    return emval_addMethodCaller(createNamedFunction(functionName, invokerFunction));
+    return addFunction(createNamedFunction(functionName, invokerFunction), AsciiToString(sig));
   },
-
-  _emval_invoke__deps: ['$getStringOrSymbol', '$emval_methodCallers', '$Emval'],
-  _emval_invoke: (caller, handle, methodName, destructorsRef, args) => {
-    return emval_methodCallers[caller](handle, methodName, destructorsRef, args);
-  },
-
-  // Same as `_emval_invoke`, just imported into Wasm under a different return type.
-  // TODO: remove this if/when https://github.com/emscripten-core/emscripten/issues/20478 is fixed.
-  _emval_invoke_i64__deps: ['_emval_invoke'],
-  _emval_invoke_i64: '=__emval_invoke',
 
   _emval_typeof__deps: ['$Emval'],
   _emval_typeof: (handle) => {

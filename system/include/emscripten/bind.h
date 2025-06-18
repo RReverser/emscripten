@@ -22,7 +22,6 @@
 #include <optional>
 #endif
 
-#include <emscripten/em_asm.h>
 #include <emscripten/val.h>
 #include <emscripten/wire.h>
 
@@ -556,38 +555,6 @@ struct FunctorInvoker<ReturnPolicy, FunctorType, void, Args...> {
             internal::BindingType<Args>::fromWireType(args)...);
     }
 };
-
-} // end namespace internal
-
-////////////////////////////////////////////////////////////////////////////////
-// SignatureCode, SignatureString
-////////////////////////////////////////////////////////////////////////////////
-
-namespace internal {
-
-// TODO: this is a historical default, but we should probably use 'p' instead,
-// and only enable it for smart_ptr_trait<> descendants.
-template<typename T, typename = decltype(__em_asm_sig<int>::value)>
-struct SignatureCode : __em_asm_sig<int> {};
-
-template<typename T>
-struct SignatureCode<T, decltype(__em_asm_sig<T>::value)> : __em_asm_sig<T> {};
-
-template<typename T>
-struct SignatureCode<T&> : SignatureCode<T*> {};
-
-template<>
-struct SignatureCode<void> {
-    static constexpr char value = 'v';
-};
-
-template<typename... Args>
-constexpr const char Signature[] = { SignatureCode<Args>::value..., 0 };
-
-template<typename Return, typename... Args>
-constexpr const char* getSignature(Return (*)(Args...)) {
-    return Signature<Return, Args...>;
-}
 
 } // end namespace internal
 
