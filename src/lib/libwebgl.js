@@ -333,7 +333,7 @@ for (/**@suppress{duplicate}*/var i = 0; i <= {{{ GL_POOL_TEMP_BUFFERS_SIZE }}};
     // glGetError() to fetch it. As per GLES2 spec, only the first error is
     // remembered, and subsequent errors are discarded until the user has
     // cleared the stored error by a call to glGetError().
-    recordError: (errorCode) => {
+    recordError(errorCode) {
 #if GL_TRACK_ERRORS
       if (!GL.lastError) {
         GL.lastError = errorCode;
@@ -342,7 +342,7 @@ for (/**@suppress{duplicate}*/var i = 0; i <= {{{ GL_POOL_TEMP_BUFFERS_SIZE }}};
     },
     // Get a new ID for a texture/buffer/etc., while keeping the table dense and
     // fast. Creation is fairly rare so it is worth optimizing lookups later.
-    getNewId: (table) => {
+    getNewId(table) {
       var ret = GL.counter++;
       for (var i = table.length; i < ret; i++) {
         table[i] = null;
@@ -407,7 +407,7 @@ for (/**@suppress{duplicate}*/var i = 0; i <= {{{ GL_POOL_TEMP_BUFFERS_SIZE }}};
     // Then log2ceilLookup[x] returns ceil(log2(x)).
     log2ceilLookup: (i) => 32 - Math.clz32(i === 0 ? 0 : i - 1),
 
-    generateTempBuffers: (quads, context) => {
+    generateTempBuffers(quads, context) {
       var largestIndex = GL.log2ceilLookup(GL.MAX_TEMP_BUFFER_SIZE);
       context.tempVertexBufferCounters1 = [];
       context.tempVertexBufferCounters2 = [];
@@ -458,7 +458,7 @@ for (/**@suppress{duplicate}*/var i = 0; i <= {{{ GL_POOL_TEMP_BUFFERS_SIZE }}};
       }
     },
 
-    getTempVertexBuffer: (sizeBytes) => {
+    getTempVertexBuffer(sizeBytes) {
       var idx = GL.log2ceilLookup(sizeBytes);
       var ringbuffer = GL.currentContext.tempVertexBuffers1[idx];
       var nextFreeBufferIndex = GL.currentContext.tempVertexBufferCounters1[idx];
@@ -475,7 +475,7 @@ for (/**@suppress{duplicate}*/var i = 0; i <= {{{ GL_POOL_TEMP_BUFFERS_SIZE }}};
       return ringbuffer[nextFreeBufferIndex];
     },
 
-    getTempIndexBuffer: (sizeBytes) => {
+    getTempIndexBuffer(sizeBytes) {
       var idx = GL.log2ceilLookup(sizeBytes);
       var ibo = GL.currentContext.tempIndexBuffers[idx];
       if (ibo) {
@@ -493,7 +493,7 @@ for (/**@suppress{duplicate}*/var i = 0; i <= {{{ GL_POOL_TEMP_BUFFERS_SIZE }}};
     // doublebuffered temp VB memory pointers, so that every second frame
     // utilizes different set of temp buffers. The aim is to keep the set of
     // buffers being rendered, and the set of buffers being updated disjoint.
-    newRenderingFrameStarted: () => {
+    newRenderingFrameStarted() {
       if (!GL.currentContext) {
         return;
       }
@@ -510,7 +510,7 @@ for (/**@suppress{duplicate}*/var i = 0; i <= {{{ GL_POOL_TEMP_BUFFERS_SIZE }}};
     },
 #endif
 
-    getSource: (shader, count, string, length) => {
+    getSource(shader, count, string, length) {
       var source = '';
       for (var i = 0; i < count; ++i) {
         var len = length ? {{{ makeGetValue('length', 'i*' + POINTER_SIZE, '*') }}} : undefined;
@@ -538,13 +538,13 @@ for (/**@suppress{duplicate}*/var i = 0; i <= {{{ GL_POOL_TEMP_BUFFERS_SIZE }}};
 
 #if GL_FFP_ONLY
     enabledClientAttribIndices: [],
-    enableVertexAttribArray: (index) => {
+    enableVertexAttribArray(index) {
       if (!GL.enabledClientAttribIndices[index]) {
         GL.enabledClientAttribIndices[index] = true;
         GLctx.enableVertexAttribArray(index);
       }
     },
-    disableVertexAttribArray: (index) => {
+    disableVertexAttribArray(index) {
       if (GL.enabledClientAttribIndices[index]) {
         GL.enabledClientAttribIndices[index] = false;
         GLctx.disableVertexAttribArray(index);
@@ -553,7 +553,7 @@ for (/**@suppress{duplicate}*/var i = 0; i <= {{{ GL_POOL_TEMP_BUFFERS_SIZE }}};
 #endif
 
 #if FULL_ES2
-    calcBufLength: (size, type, stride, count) => {
+    calcBufLength(size, type, stride, count) {
       if (stride > 0) {
         return count * stride;  // XXXvlad this is not exactly correct I don't think
       }
@@ -563,7 +563,7 @@ for (/**@suppress{duplicate}*/var i = 0; i <= {{{ GL_POOL_TEMP_BUFFERS_SIZE }}};
 
     usedTempBuffers: [],
 
-    preDrawHandleClientVertexAttribBindings: (count) => {
+    preDrawHandleClientVertexAttribBindings(count) {
       GL.resetBufferBinding = false;
 
       // TODO: initial pass to detect ranges we need to upload, might not need
@@ -587,7 +587,7 @@ for (/**@suppress{duplicate}*/var i = 0; i <= {{{ GL_POOL_TEMP_BUFFERS_SIZE }}};
       }
     },
 
-    postDrawHandleClientVertexAttribBindings: () => {
+    postDrawHandleClientVertexAttribBindings() {
       if (GL.resetBufferBinding) {
         GLctx.bindBuffer(0x8892 /*GL_ARRAY_BUFFER*/, GL.buffers[GLctx.currentArrayBufferBinding]);
       }
@@ -595,7 +595,7 @@ for (/**@suppress{duplicate}*/var i = 0; i <= {{{ GL_POOL_TEMP_BUFFERS_SIZE }}};
 #endif
 
 #if GL_ASSERTIONS
-    validateGLObjectID: (objectHandleArray, objectID, callerFunctionName, objectReadableType) => {
+    validateGLObjectID(objectHandleArray, objectID, callerFunctionName, objectReadableType) {
       if (objectID != 0) {
         if (objectHandleArray[objectID] === null) {
           err(`${callerFunctionName} called with an already deleted ${objectReadableType} ID ${objectID}!`);
@@ -605,7 +605,7 @@ for (/**@suppress{duplicate}*/var i = 0; i <= {{{ GL_POOL_TEMP_BUFFERS_SIZE }}};
       }
     },
     // Validates that user obeys GL spec #6.4: http://www.khronos.org/registry/webgl/specs/latest/1.0/#6.4
-    validateVertexAttribPointer: (dimension, dataType, stride, offset) => {
+    validateVertexAttribPointer(dimension, dataType, stride, offset) {
       var sizeBytes = 1;
       switch (dataType) {
         case 0x1400 /* GL_BYTE */:
@@ -658,7 +658,7 @@ for (/**@suppress{duplicate}*/var i = 0; i <= {{{ GL_POOL_TEMP_BUFFERS_SIZE }}};
 #endif
 
 #if TRACE_WEBGL_CALLS
-    hookWebGLFunction: (f, glCtx) => {
+    hookWebGLFunction(f, glCtx) {
       var orig = glCtx[f];
       var contextHandle = glCtx.canvas.GLctxObject.handle;
       glCtx[f] = function(...args) {
@@ -680,7 +680,7 @@ for (/**@suppress{duplicate}*/var i = 0; i <= {{{ GL_POOL_TEMP_BUFFERS_SIZE }}};
       };
     },
 
-    hookWebGL: function(glCtx) {
+    hookWebGL(glCtx) {
       glCtx ??= this.detectWebGLContext();
       if (!glCtx) return;
       if (!((typeof WebGLRenderingContext != 'undefined' && glCtx instanceof WebGLRenderingContext)
@@ -699,7 +699,7 @@ for (/**@suppress{duplicate}*/var i = 0; i <= {{{ GL_POOL_TEMP_BUFFERS_SIZE }}};
     },
 #endif
     // Returns the context handle to the new context.
-    createContext: (/** @type {HTMLCanvasElement} */ canvas, webGLContextAttributes) => {
+    createContext(/** @type {HTMLCanvasElement} */ canvas, webGLContextAttributes) {
 #if OFFSCREEN_FRAMEBUFFER
       // In proxied operation mode, rAF()/setTimeout() functions do not delimit
       // frame boundaries, so can't have WebGL implementation try to detect when
@@ -844,7 +844,7 @@ for (/**@suppress{duplicate}*/var i = 0; i <= {{{ GL_POOL_TEMP_BUFFERS_SIZE }}};
     },
 
 #if OFFSCREEN_FRAMEBUFFER
-    enableOffscreenFramebufferAttributes: (webGLContextAttributes) => {
+    enableOffscreenFramebufferAttributes(webGLContextAttributes) {
       webGLContextAttributes.renderViaOffscreenBackBuffer = true;
       webGLContextAttributes.preserveDrawingBuffer = true;
     },
@@ -854,7 +854,7 @@ for (/**@suppress{duplicate}*/var i = 0; i <= {{{ GL_POOL_TEMP_BUFFERS_SIZE }}};
     // implicit swap behavior. Therefore in such modes, create an offscreen
     // render target surface to which rendering is performed to, and finally
     // flipped to the main screen.
-    createOffscreenFramebuffer: (context) => {
+    createOffscreenFramebuffer(context) {
       var gl = context.GLctx;
 
       // Create FBO
@@ -949,7 +949,7 @@ for (/**@suppress{duplicate}*/var i = 0; i <= {{{ GL_POOL_TEMP_BUFFERS_SIZE }}};
       }
     },
 
-    resizeOffscreenFramebuffer: (context) => {
+    resizeOffscreenFramebuffer(context) {
       var gl = context.GLctx;
 
       // Resize color buffer
@@ -970,7 +970,7 @@ for (/**@suppress{duplicate}*/var i = 0; i <= {{{ GL_POOL_TEMP_BUFFERS_SIZE }}};
     },
 
     // Renders the contents of the offscreen render target onto the visible screen.
-    blitOffscreenFramebuffer: (context) => {
+    blitOffscreenFramebuffer(context) {
       var gl = context.GLctx;
 
       var prevScissorTest = gl.getParameter(0xC11 /*GL_SCISSOR_TEST*/);
@@ -1090,7 +1090,7 @@ for (/**@suppress{duplicate}*/var i = 0; i <= {{{ GL_POOL_TEMP_BUFFERS_SIZE }}};
     },
 #endif
 
-    registerContext: (ctx, webGLContextAttributes) => {
+    registerContext(ctx, webGLContextAttributes) {
 #if PTHREADS
       // with pthreads a context is a location in memory with some synchronized
       // data between threads
@@ -1157,7 +1157,7 @@ for (/**@suppress{duplicate}*/var i = 0; i <= {{{ GL_POOL_TEMP_BUFFERS_SIZE }}};
       return handle;
     },
 
-    makeContextCurrent: (contextHandle) => {
+    makeContextCurrent(contextHandle) {
 #if GL_DEBUG
       if (contextHandle && !GL.contexts[contextHandle]) {
 #if PTHREADS
@@ -1175,11 +1175,9 @@ for (/**@suppress{duplicate}*/var i = 0; i <= {{{ GL_POOL_TEMP_BUFFERS_SIZE }}};
       return !(contextHandle && !GLctx);
     },
 
-    getContext: (contextHandle) => {
-      return GL.contexts[contextHandle];
-    },
+    getContext: (contextHandle) => GL.contexts[contextHandle],
 
-    deleteContext: (contextHandle) => {
+    deleteContext(contextHandle) {
       if (GL.currentContext === GL.contexts[contextHandle]) {
         GL.currentContext = null;
       }
@@ -1205,7 +1203,7 @@ for (/**@suppress{duplicate}*/var i = 0; i <= {{{ GL_POOL_TEMP_BUFFERS_SIZE }}};
     // In GLES2, all extensions are enabled by default without additional
     // operations. Init all extensions we need to give to GLES2 user code here,
     // so that GLES2 code can operate without changing behavior.
-    initExtensions: (context) => {
+    initExtensions(context) {
       // If this function is called without a specific context object, init the
       // extensions of the currently active context.
       context ||= GL.currentContext;
@@ -3884,7 +3882,7 @@ for (/**@suppress{duplicate}*/var i = 0; i <= {{{ GL_POOL_TEMP_BUFFERS_SIZE }}};
       GLctx.bufferSubData(0x8893 /*GL_ELEMENT_ARRAY_BUFFER*/,
                           0,
                           HEAPU8.subarray(indices, indices + size));
-      
+
       // Calculating vertex count if shader's attribute data is on client side
       if (count > 0) {
         for (var i = 0; i < GL.currentContext.maxVertexAttribs; ++i) {

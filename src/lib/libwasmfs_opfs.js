@@ -70,7 +70,7 @@ addToLibrary({
 
   _wasmfs_opfs_init_root_directory__deps: ['$wasmfsOPFSDirectoryHandles', '$wasmfsOPFSProxyFinish'],
   _wasmfs_opfs_init_root_directory__async: {{{ !PTHREADS }}},
-  _wasmfs_opfs_init_root_directory: async function(ctx) {
+  _wasmfs_opfs_init_root_directory: async (ctx) => {
     // allocated.length starts off as 1 since 0 is a reserved handle
     if (wasmfsOPFSDirectoryHandles.allocated.length == 1) {
       // Closure compiler errors on this as it does not recognize the OPFS
@@ -90,7 +90,7 @@ addToLibrary({
   $wasmfsOPFSGetOrCreateFile__deps: ['$wasmfsOPFSDirectoryHandles',
                                      '$wasmfsOPFSFileHandles'],
   $wasmfsOPFSGetOrCreateFile__async: {{{ !PTHREADS }}},
-  $wasmfsOPFSGetOrCreateFile: async function(parent, name, create) {
+  $wasmfsOPFSGetOrCreateFile: async (parent, name, create) => {
     let parentHandle = wasmfsOPFSDirectoryHandles.get(parent);
     let fileHandle;
     try {
@@ -115,7 +115,7 @@ addToLibrary({
   // code corresponding to the error.
   $wasmfsOPFSGetOrCreateDir__deps: ['$wasmfsOPFSDirectoryHandles'],
   $wasmfsOPFSGetOrCreateDir__async: {{{ !PTHREADS }}},
-  $wasmfsOPFSGetOrCreateDir: async function(parent, name, create) {
+  $wasmfsOPFSGetOrCreateDir: async (parent, name, create) => {
     let parentHandle = wasmfsOPFSDirectoryHandles.get(parent);
     let childHandle;
     try {
@@ -160,7 +160,7 @@ addToLibrary({
     '_wasmfs_opfs_record_entry',
   ],
   _wasmfs_opfs_get_entries__async: {{{ !PTHREADS }}},
-  _wasmfs_opfs_get_entries: async function(ctx, dirID, entriesPtr, errPtr) {
+  _wasmfs_opfs_get_entries: async (ctx, dirID, entriesPtr, errPtr) => {
     let dirHandle = wasmfsOPFSDirectoryHandles.get(dirID);
 
     // TODO: Use 'for await' once Acorn supports that.
@@ -185,7 +185,7 @@ addToLibrary({
 
   _wasmfs_opfs_insert_file__deps: ['$wasmfsOPFSGetOrCreateFile', '$wasmfsOPFSProxyFinish'],
   _wasmfs_opfs_insert_file__async: {{{ !PTHREADS }}},
-  _wasmfs_opfs_insert_file: async function(ctx, parent, namePtr, childIDPtr) {
+  _wasmfs_opfs_insert_file: async (ctx, parent, namePtr, childIDPtr) => {
     let name = UTF8ToString(namePtr);
     let childID = await wasmfsOPFSGetOrCreateFile(parent, name, true);
     {{{ makeSetValue('childIDPtr', 0, 'childID', 'i32') }}};
@@ -194,8 +194,7 @@ addToLibrary({
 
   _wasmfs_opfs_insert_directory__deps: ['$wasmfsOPFSGetOrCreateDir', '$wasmfsOPFSProxyFinish'],
   _wasmfs_opfs_insert_directory__async: {{{ !PTHREADS }}},
-  _wasmfs_opfs_insert_directory:
-      async function(ctx, parent, namePtr, childIDPtr) {
+  _wasmfs_opfs_insert_directory: async (ctx, parent, namePtr, childIDPtr) => {
     let name = UTF8ToString(namePtr);
     let childID = await wasmfsOPFSGetOrCreateDir(parent, name, true);
     {{{ makeSetValue('childIDPtr', 0, 'childID', 'i32') }}};
@@ -332,7 +331,7 @@ addToLibrary({
   _wasmfs_opfs_read_access__i53abi: true,
   _wasmfs_opfs_read_access__deps: ['$wasmfsOPFSAccessHandles'],
   _wasmfs_opfs_read_access__async: {{{ !PTHREADS }}},
-  _wasmfs_opfs_read_access: {{{ asyncIf(!PTHREADS) }}}function(accessID, bufPtr, len, pos) {
+  _wasmfs_opfs_read_access: {{{ asyncIf(!PTHREADS) }}}(accessID, bufPtr, len, pos) => {
     let accessHandle = wasmfsOPFSAccessHandles.get(accessID);
     let data = HEAPU8.subarray(bufPtr, bufPtr + len);
     try {
@@ -382,7 +381,7 @@ addToLibrary({
   _wasmfs_opfs_write_access__i53abi: true,
   _wasmfs_opfs_write_access__deps: ['$wasmfsOPFSAccessHandles'],
   _wasmfs_opfs_write_access__async: {{{ !PTHREADS }}},
-  _wasmfs_opfs_write_access: {{{ asyncIf(!PTHREADS) }}}function(accessID, bufPtr, len, pos) {
+  _wasmfs_opfs_write_access: {{{ asyncIf(!PTHREADS) }}}(accessID, bufPtr, len, pos) => {
     let accessHandle = wasmfsOPFSAccessHandles.get(accessID);
     let data = HEAPU8.subarray(bufPtr, bufPtr + len);
     try {

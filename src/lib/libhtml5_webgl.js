@@ -528,7 +528,7 @@ var LibraryHtml5WebGL = {
     writeGLArray(GLctx.getParameter(param), dst, dstLength, dstType),
 
   emscripten_webgl_get_parameter_d__proxy: 'sync_on_current_webgl_context_thread',
-  emscripten_webgl_get_parameter_d: (param) => GLctx.getParameter(param),
+  emscripten_webgl_get_parameter_d: 'GLctx.getParameter',
 
   emscripten_webgl_get_parameter_o__proxy: 'sync_on_current_webgl_context_thread',
   emscripten_webgl_get_parameter_o: (param) => {

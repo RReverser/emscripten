@@ -46,7 +46,7 @@ var IDBStore = {
       IDBStore.dbs[name] = db;
       callback(null, db);
     };
-    req.onerror = function(event) {
+    req.onerror = (event) => {
       callback(event.target.error || 'unknown error');
       event.preventDefault();
     };

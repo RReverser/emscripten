@@ -29,7 +29,7 @@ addToLibrary({
   $stackAlloc__deps: ['_emscripten_stack_alloc'],
   $stackAlloc: (sz) => __emscripten_stack_alloc(sz),
   $getTempRet0__deps: ['_emscripten_tempret_get'],
-  $getTempRet0: (val) => __emscripten_tempret_get(),
+  $getTempRet0: () => __emscripten_tempret_get(),
   $setTempRet0__deps: ['_emscripten_tempret_set'],
   $setTempRet0: (val) => __emscripten_tempret_set(val),
 
@@ -140,7 +140,7 @@ addToLibrary({
   // We have a separate JS version `getHeapMax()` which can be called directly
   // avoiding any wrapper added for wasm64.
   emscripten_get_heap_max__deps: ['$getHeapMax'],
-  emscripten_get_heap_max: () => getHeapMax(),
+  emscripten_get_heap_max: 'getHeapMax',
 
   $getHeapMax: () =>
 #if ALLOW_MEMORY_GROWTH
@@ -1310,9 +1310,9 @@ addToLibrary({
     return me.buffer;
   },
 
-  emscripten_random: () => Math.random(),
+  emscripten_random: 'Math.random',
 
-  emscripten_date_now: () => Date.now(),
+  emscripten_date_now: 'Date.now',
 
   emscripten_performance_now: () => {{{ getPerformanceNow() }}}(),
 
@@ -1550,18 +1550,12 @@ addToLibrary({
   },
 
   emscripten_asm_const_int__deps: ['$runEmAsmFunction'],
-  emscripten_asm_const_int: (code, sigPtr, argbuf) => {
-    return runEmAsmFunction(code, sigPtr, argbuf);
-  },
+  emscripten_asm_const_int: 'runEmAsmFunction',
   emscripten_asm_const_double__deps: ['$runEmAsmFunction'],
-  emscripten_asm_const_double: (code, sigPtr, argbuf) => {
-    return runEmAsmFunction(code, sigPtr, argbuf);
-  },
+  emscripten_asm_const_double: 'runEmAsmFunction',
 
   emscripten_asm_const_ptr__deps: ['$runEmAsmFunction'],
-  emscripten_asm_const_ptr: (code, sigPtr, argbuf) => {
-    return runEmAsmFunction(code, sigPtr, argbuf);
-  },
+  emscripten_asm_const_ptr: 'runEmAsmFunction',
 
   $runMainThreadEmAsm__deps: ['$readEmAsmArgs',
 #if PTHREADS
@@ -1630,7 +1624,7 @@ addToLibrary({
   // Note that "smart" radix handling is employed for input string:
   // "0314" is parsed as octal, and "0x1234" is parsed as base-16.
   $jstoi_q__docs: '/** @suppress {checkTypes} */',
-  $jstoi_q: (str) => parseInt(str),
+  $jstoi_q: 'parseInt',
 
 #if LINK_AS_CXX
   // libunwind
@@ -2399,11 +2393,11 @@ function wrapSyscallFunction(x, library, isWasi) {
   // not be called in practice, and do not need that code.
   if (!SYSCALLS_REQUIRE_FILESYSTEM && t.includes('FS.')) {
     library[x + '__deps'] = [];
-    t = modifyJSFunction(t, (args, body) => {
-      return `(${args}) => {\n` +
-             (ASSERTIONS ? "abort('it should not be possible to operate on streams when !SYSCALLS_REQUIRE_FILESYSTEM');\n" : '') +
-             '}';
-    });
+    t = modifyJSFunction(t, (args, body) =>
+      `(${args}) => {\n` +
+      (ASSERTIONS ? "abort('it should not be possible to operate on streams when !SYSCALLS_REQUIRE_FILESYSTEM');\n" : '') +
+      '}'
+    );
   }
 
   var isVariadic = !isWasi && t.includes(', varargs');

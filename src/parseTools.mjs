@@ -818,7 +818,7 @@ export function modifyJSFunction(text, func) {
     rest = text.slice(match[0].length);
   } else {
     // Match an arrow function
-    let match = text.match(/^\s*(var (\w+) = )?(async\s+)?\(([^)]*)\)\s+=>\s+/);
+    let match = text.match(/^\s*(var\s*(\w+)\s*=\s*)?(async\s+)?\(([^)]*)\)\s*=>\s*/);
     if (match) {
       async_ = match[3] || '';
       args = match[4];
@@ -834,6 +834,10 @@ export function modifyJSFunction(text, func) {
       args = match[2];
       rest = text.slice(match[0].length);
     }
+  }
+  if (text.includes('must have a positive integer typeid pointer')) {
+    console.warn({text,match});
+    abort(text);
   }
   let body = rest;
   if (!oneliner) {

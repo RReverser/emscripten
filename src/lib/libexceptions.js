@@ -340,7 +340,7 @@ var LibraryExceptions = {
   $decrementExceptionRefcount: (ptr) => ___cxa_decrement_exception_refcount(ptr),
 
   $getExceptionMessage__deps: ['$getExceptionMessageCommon'],
-  $getExceptionMessage: (ptr) => getExceptionMessageCommon(ptr),
+  $getExceptionMessage: 'getExceptionMessageCommon',
 
 #endif
 };

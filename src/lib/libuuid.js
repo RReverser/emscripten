@@ -59,7 +59,7 @@ addToLibrary({
     if (inp.length === 36) {
       var i = 0;
       var uuid = new Array(16);
-      inp.toLowerCase().replace(/[0-9a-f]{2}/g, function(byte) {
+      inp.toLowerCase().replace(/[0-9a-f]{2}/g, (byte) => {
         if (i < 16) {
           uuid[i++] = parseInt(byte, 16);
         }
@@ -80,7 +80,7 @@ addToLibrary({
   uuid_unparse: (uu, out, upper) => {
     // void uuid_unparse(const uuid_t uu, char *out);
     var i = 0;
-    var uuid = 'xxxx-xx-xx-xx-xxxxxx'.replace(/[x]/g, function(c) {
+    var uuid = 'xxxx-xx-xx-xx-xxxxxx'.replace(/[x]/g, (c) => {
       var r = upper ? ({{{ makeGetValue('uu', 'i', 'u8') }}}).toString(16).toUpperCase() :
                       ({{{ makeGetValue('uu', 'i', 'u8') }}}).toString(16);
       r = (r.length === 1) ? '0' + r : r; // Zero pad single digit hex values
@@ -110,4 +110,3 @@ addToLibrary({
   // int uuid_variant(const uuid_t uu);
   uuid_variant: (uu) => {{{ cDefs.UUID_VARIANT_DCE }}},
 });
-

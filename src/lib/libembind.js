@@ -17,7 +17,7 @@ var LibraryEmbind = {
   $EmValType__deps: ['_emval_decref', '$Emval', '$readPointer'],
   $EmValType: `{
     name: 'emscripten::val',
-    fromWireType: (handle) => {
+    fromWireType(handle) {
       var rv = Emval.toValue(handle);
       __emval_decref(handle);
       return rv;
@@ -196,9 +196,7 @@ var LibraryEmbind = {
 
   $registerType__deps: ['$sharedRegisterType'],
   $registerType__docs: '/** @param {Object=} options */',
-  $registerType: function(rawType, registeredInstance, options = {}) {
-    return sharedRegisterType(rawType, registeredInstance, options);
-  },
+  $registerType: 'sharedRegisterType',
 
   _embind_register_void__deps: ['$AsciiToString', '$registerType'],
   _embind_register_void: (rawType, name) => {
@@ -218,15 +216,9 @@ var LibraryEmbind = {
     name = AsciiToString(name);
     registerType(rawType, {
       name,
-      fromWireType: function(wt) {
-        // ambiguous emscripten ABI: sometimes return values are
-        // true or false, and sometimes integers (0 or 1)
-        return !!wt;
-      },
-      toWireType: function(destructors, o) {
-        return o ? trueValue : falseValue;
-      },
-      readValueFromPointer: function(pointer) {
+      fromWireType: (wt) => !!wt,
+      toWireType: (destructors, o) => o ? trueValue : falseValue,
+      readValueFromPointer(pointer) {
         return this.fromWireType(HEAPU8[pointer]);
       },
       destructorFunction: null, // This type does not need a destructor
@@ -321,7 +313,7 @@ var LibraryEmbind = {
     registerType(primitiveType, {
       name,
       fromWireType: fromWireType,
-      toWireType: (destructors, value) => {
+      toWireType(destructors, value) {
 #if ASSERTIONS
         if (typeof value != "number" && typeof value != "boolean") {
           throw new TypeError(`Cannot convert "${embindRepr(value)}" to ${name}`);
@@ -371,7 +363,7 @@ var LibraryEmbind = {
     registerType(primitiveType, {
       name,
       fromWireType: fromWireType,
-      toWireType: (destructors, value) => {
+      toWireType(destructors, value) {
         if (typeof value == "number") {
           value = BigInt(value);
         }
@@ -403,7 +395,7 @@ var LibraryEmbind = {
     registerType(rawType, {
       name,
       fromWireType: (value) => value,
-      toWireType: (destructors, value) => {
+      toWireType(destructors, value) {
 #if ASSERTIONS
         if (typeof value != "number" && typeof value != "boolean") {
           throw new TypeError(`Cannot convert ${embindRepr(value)} to ${this.name}`);
@@ -526,7 +518,7 @@ var LibraryEmbind = {
     }
     registerType(rawType, {
       name,
-      fromWireType: (value) => {
+      fromWireType(value) {
         // Code mostly taken from _embind_register_std_string fromWireType
         var length = {{{ makeGetValue('value', 0, '*') }}};
         var str = decodeString(value + {{{ POINTER_SIZE }}}, length * charSize, true);
@@ -535,7 +527,7 @@ var LibraryEmbind = {
 
         return str;
       },
-      toWireType: (destructors, value) => {
+      toWireType(destructors, value) {
         if (!(typeof value == 'string')) {
           throwBindingError(`Cannot pass non-string to C++ string type ${name}`);
         }
@@ -827,9 +819,11 @@ var LibraryEmbind = {
 
     rawInvoker = embind__requireFunction(signature, rawInvoker, isAsync);
 
-    exposePublicSymbol(name, function() {
-      throwUnboundTypeError(`Cannot call ${name} due to unbound types`, argTypes);
-    }, argCount - 1);
+    exposePublicSymbol(
+      name,
+      () => throwUnboundTypeError(`Cannot call ${name} due to unbound types`, argTypes),
+      argCount - 1
+    );
 
     whenDependentTypesAreResolved([], argTypes, (argTypes) => {
       var invokerArgsArray = [argTypes[0] /* return value */, null /* no class 'this'*/].concat(argTypes.slice(1) /* actual params */);
@@ -911,7 +905,7 @@ var LibraryEmbind = {
 
       return [{
         name: reg.name,
-        fromWireType: (ptr) => {
+        fromWireType(ptr) {
           var rv = new Array(elementsLength);
           for (var i = 0; i < elementsLength; ++i) {
             rv[i] = elements[i].read(ptr);
@@ -919,7 +913,7 @@ var LibraryEmbind = {
           rawDestructor(ptr);
           return rv;
         },
-        toWireType: (destructors, o) => {
+        toWireType(destructors, o) {
           if (elementsLength !== o.length) {
             throw new TypeError(`Incorrect number of tuple elements for ${reg.name}: expected=${elementsLength}, actual=${o.length}`);
           }
@@ -1006,7 +1000,7 @@ var LibraryEmbind = {
         var setterContext = field.setterContext;
         fields[fieldName] = {
           read: (ptr) => getterReturnType.fromWireType(getter(getterContext, ptr)),
-          write: (ptr, o) => {
+          write(ptr, o) {
             var destructors = [];
             setter(setterContext, ptr, setterArgumentType.toWireType(destructors, o));
             runDestructors(destructors);
@@ -1017,7 +1011,7 @@ var LibraryEmbind = {
 
       return [{
         name: reg.name,
-        fromWireType: (ptr) => {
+        fromWireType(ptr) {
           var rv = {};
           for (var i in fields) {
             rv[i] = fields[i].read(ptr);
@@ -1025,7 +1019,7 @@ var LibraryEmbind = {
           rawDestructor(ptr);
           return rv;
         },
-        toWireType: (destructors, o) => {
+        toWireType(destructors, o) {
           // todo: Here we have an opportunity for -O3 level "unsafe" optimizations:
           // assume all fields are present without checking.
           for (var fieldName in fields) {
@@ -1636,10 +1630,11 @@ var LibraryEmbind = {
     rawDestructor = embind__requireFunction(destructorSignature, rawDestructor);
     var legalFunctionName = makeLegalFunctionName(name);
 
-    exposePublicSymbol(legalFunctionName, function() {
+    exposePublicSymbol(
+      legalFunctionName,
       // this code cannot run if baseClassRawType is zero
-      throwUnboundTypeError(`Cannot construct ${name} due to unbound types`, [baseClassRawType]);
-    });
+      () => throwUnboundTypeError(`Cannot construct ${name} due to unbound types`, [baseClassRawType])
+    );
 
     whenDependentTypesAreResolved(
       [rawType, rawPointerType, rawConstPointerType],
@@ -2098,11 +2093,11 @@ var LibraryEmbind = {
     var baseClassPrototype = baseClass.instancePrototype;
     var baseConstructor = registeredClass.baseClass.constructor;
     var ctor = createNamedFunction(constructorName, function(...args) {
-      registeredClass.baseClass.pureVirtualFunctions.forEach(function(name) {
+      registeredClass.baseClass.pureVirtualFunctions.forEach((name) => {
         if (this[name] === baseClassPrototype[name]) {
           throw new PureVirtualError(`Pure virtual function ${name} must be implemented in JavaScript`);
         }
-      }.bind(this));
+      });
 
       Object.defineProperty(this, '__parent', {
         value: wrapperPrototype
@@ -2208,9 +2203,7 @@ var LibraryEmbind = {
     registerType(rawType, {
       name,
       constructor: ctor,
-      fromWireType: function(c) {
-        return this.constructor.values[c];
-      },
+      fromWireType: (c) => ctor.values[c],
       toWireType: (destructors, c) => c.value,
       readValueFromPointer: enumReadValueFromPointer(name, size, isSigned),
       destructorFunction: null,

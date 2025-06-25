@@ -88,13 +88,13 @@ function LE_HEAP_UPDATE() {
     const res = order(Atomics.exchange(heap, offset, order(value)));
     return heap.unsigned ? heap.unsigned(res) : res;
   },
-  $LE_ATOMICS_ISLOCKFREE: (size) => Atomics.isLockFree(size),
+  $LE_ATOMICS_ISLOCKFREE: 'Atomics.isLockFree',
   $LE_ATOMICS_LOAD: (heap, offset) => {
     const order = LE_ATOMICS_NATIVE_BYTE_ORDER[heap.BYTES_PER_ELEMENT - 1];
     const res = order(Atomics.load(heap, offset));
     return heap.unsigned ? heap.unsigned(res) : res;
   },
-  $LE_ATOMICS_NOTIFY: (heap, offset, count) => Atomics.notify(heap, offset, count),
+  $LE_ATOMICS_NOTIFY: 'Atomics.notify',
   $LE_ATOMICS_OR: (heap, offset, value) => {
     const order = LE_ATOMICS_NATIVE_BYTE_ORDER[heap.BYTES_PER_ELEMENT - 1];
     const res = order(Atomics.or(heap, offset, order(value)));

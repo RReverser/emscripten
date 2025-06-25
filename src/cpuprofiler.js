@@ -180,7 +180,7 @@ var emscriptenCpuProfiler = {
       frametimesOutsideMainLoop: [],
       drawColor,
       traceable,
-      accumulatedFrameTimeInsideMainLoop: function(startX, numSamples) {
+      accumulatedFrameTimeInsideMainLoop(startX, numSamples) {
         var total = 0;
         numSamples = Math.min(numSamples, this.frametimesInsideMainLoop.length);
         for (var i = 0; i < numSamples; ++i) {
@@ -189,7 +189,7 @@ var emscriptenCpuProfiler = {
         }
         return total;
       },
-      accumulatedFrameTimeOutsideMainLoop: function(startX, numSamples) {
+      accumulatedFrameTimeOutsideMainLoop(startX, numSamples) {
         var total = 0;
         numSamples = Math.min(numSamples, this.frametimesInsideMainLoop.length);
         for (var i = 0; i < numSamples; ++i) {

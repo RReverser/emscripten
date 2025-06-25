@@ -35,15 +35,13 @@ function e(a) {
     }(a);
 }
 
-(function(a, q) {
-    return {
-        then: function(u) {
-            u({
-                instance: new e(q)
-            });
-        }
-    };
-})(d.wasm, {
+((a, q) => ({
+    then(u) {
+        u({
+            instance: new e(q)
+        });
+    }
+}))(d.wasm, {
     a: {
         a: a => {
             var q = console, u = q.log;

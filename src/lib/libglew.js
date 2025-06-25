@@ -122,9 +122,9 @@ var LibraryGLEW = {
 
   glewGetExtension: (name) => GLEW.extensionIsSupported(UTF8ToString(name)),
 
-  glewGetErrorString: (error) => GLEW.errorString(error),
+  glewGetErrorString: 'GLEW.errorString',
 
-  glewGetString: (name) => GLEW.versionString(name),
+  glewGetString: 'GLEW.versionString',
 
 };
 

@@ -150,7 +150,7 @@ var LibraryPThread = {
     },
 #endif
 
-    terminateAllThreads: () => {
+    terminateAllThreads() {
 #if ASSERTIONS
       assert(!ENVIRONMENT_IS_PTHREAD, 'Internal Error! terminateAllThreads() can only ever be called from main application thread!');
 #endif
@@ -173,7 +173,7 @@ var LibraryPThread = {
       PThread.runningWorkers = [];
       PThread.pthreads = {};
     },
-    returnWorkerToPool: (worker) => {
+    returnWorkerToPool(worker) {
       // We don't want to run main thread queued calls here, since we are doing
       // some operations that leave the worker queue in an invalid state until
       // we are completely done (it would be bad if free() ends up calling a

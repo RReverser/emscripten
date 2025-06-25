@@ -165,8 +165,8 @@ addToLibrary({
 
     // libc methods
 
-    mkdir: (path, mode) => FS_mkdir(path, mode),
-    mkdirTree: (path, mode) => FS_mkdirTree(path, mode),
+    mkdir: FS_mkdir,
+    mkdirTree: FS_mkdirTree,
     rmdir: (path) => FS.handleError(
       withStackSave(() => __wasmfs_rmdir(stringToUTF8OnStack(path)))
     ),
@@ -176,9 +176,9 @@ addToLibrary({
       var fd = FS.handleError(__wasmfs_open(buffer, flags, mode));
       return { fd : fd };
     }),
-    create: (path, mode) => FS_create(path, mode),
+    create: FS_create,
     close: (stream) => FS.handleError(-__wasmfs_close(stream.fd)),
-    unlink: (path) => FS_unlink(path),
+    unlink: FS_unlink,
     chdir: (path) => withStackSave(() => __wasmfs_chdir(stringToUTF8OnStack(path))),
     read(stream, buffer, offset, length, position) {
       var seeking = typeof position != 'undefined';
@@ -216,13 +216,13 @@ addToLibrary({
       _free(dataBuffer);
       return FS.handleError(bytesRead);
     },
-    writeFile: (path, data) => FS_writeFile(path, data),
-    mmap: (stream, length, offset, prot, flags) => {
+    writeFile: FS_writeFile,
+    mmap(stream, length, offset, prot, flags) {
       var buf = FS.handleError(__wasmfs_mmap(length, prot, flags, stream.fd, {{{ splitI64('offset') }}}));
       return { ptr: buf, allocated: true };
     },
     // offset is passed to msync to maintain backwards compatibility with the legacy JS API but is not used by WasmFS.
-    msync: (stream, bufferPtr, offset, length, mmapFlags) => {
+    msync(stream, bufferPtr, offset, length, mmapFlags) {
       assert(offset === 0);
       // TODO: assert that stream has the fd corresponding to the mapped buffer (bufferPtr).
       return FS.handleError(__wasmfs_msync(bufferPtr, length, mmapFlags));
@@ -324,7 +324,7 @@ addToLibrary({
       __wasmfs_readdir_finish(state);
       return entries;
     }),
-    mount: (type, opts, mountpoint) => {
+    mount(type, opts, mountpoint) {
 #if ASSERTIONS
       if (typeof type == 'string') {
         // The filesystem was not included, and instead we have an error
@@ -339,7 +339,7 @@ addToLibrary({
       FS.handleError(withStackSave(() => _wasmfs_unmount(stringToUTF8OnStack(mountpoint))))
     ),
     // TODO: lookup
-    mknod: (path, mode, dev) => FS_mknod(path, mode, dev),
+    mknod: FS_mknod,
     makedev: (ma, mi) => ((ma) << 8 | (mi)),
     registerDevice(dev, ops) {
       var backendPointer = _wasmfs_create_jsimpl_backend();
@@ -347,16 +347,16 @@ addToLibrary({
         userRead: ops.read,
         userWrite: ops.write,
 
-        allocFile: (file) => {
+        allocFile(file) {
           wasmFSDeviceStreams[file] = {}
         },
-        freeFile: (file) => {
+        freeFile(file) {
           wasmFSDeviceStreams[file] = undefined;
         },
-        getSize: (file) => {},
+        getSize(file) {},
         // Devices cannot be resized.
         setSize: (file, size) => 0,
-        read: (file, buffer, length, offset) => {
+        read(file, buffer, length, offset) {
           var bufferArray = HEAP8.subarray(buffer, buffer + length);
           try {
             var bytesRead = definedOps.userRead(wasmFSDeviceStreams[file], bufferArray, 0, length, offset);
@@ -366,7 +366,7 @@ addToLibrary({
           HEAP8.set(bufferArray, buffer);
           return bytesRead;
         },
-        write: (file, buffer, length, offset) => {
+        write(file, buffer, length, offset) {
           var bufferArray = HEAP8.subarray(buffer, buffer + length);
           try {
             var bytesWritten = definedOps.userWrite(wasmFSDeviceStreams[file], bufferArray, 0, length, offset);

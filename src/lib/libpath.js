@@ -9,11 +9,11 @@ addToLibrary({
     isAbs: (path) => path.charAt(0) === '/',
     // split a filename into [root, dir, basename, ext], unix version
     // 'root' is just a slash, or nothing.
-    splitPath: (filename) => {
+    splitPath(filename) {
       var splitPathRe = /^(\/?|)([\s\S]*?)((?:\.{1,2}|[^\/]+?|)(\.[^.\/]*|))(?:[\/]*)$/;
       return splitPathRe.exec(filename).slice(1);
     },
-    normalizeArray: (parts, allowAboveRoot) => {
+    normalizeArray(parts, allowAboveRoot) {
       // if the path tries to go above the root, `up` ends up > 0
       var up = 0;
       for (var i = parts.length - 1; i >= 0; i--) {
@@ -36,7 +36,7 @@ addToLibrary({
       }
       return parts;
     },
-    normalize: (path) => {
+    normalize(path) {
       var isAbsolute = PATH.isAbs(path),
           trailingSlash = path.slice(-1) === '/';
       // Normalize the path
@@ -49,7 +49,7 @@ addToLibrary({
       }
       return (isAbsolute ? '/' : '') + path;
     },
-    dirname: (path) => {
+    dirname(path) {
       var result = PATH.splitPath(path),
           root = result[0],
           dir = result[1];
@@ -81,7 +81,7 @@ addToLibrary({
 #endif
   ],
   $PATH_FS: {
-    resolve: (...args) => {
+    resolve(...args) {
       var resolvedPath = '',
         resolvedAbsolute = false;
       for (var i = args.length - 1; i >= -1 && !resolvedAbsolute; i--) {
@@ -100,7 +100,7 @@ addToLibrary({
       resolvedPath = PATH.normalizeArray(resolvedPath.split('/').filter((p) => !!p), !resolvedAbsolute).join('/');
       return ((resolvedAbsolute ? '/' : '') + resolvedPath) || '.';
     },
-    relative: (from, to) => {
+    relative(from, to) {
       from = PATH_FS.resolve(from).slice(1);
       to = PATH_FS.resolve(to).slice(1);
       function trim(arr) {

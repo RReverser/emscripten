@@ -84,7 +84,7 @@ var LibraryOpenAL = {
     // -- Mixing Logic
     // ------------------------------------------------------
 
-    scheduleContextAudio: (ctx) => {
+    scheduleContextAudio(ctx) {
       // If we are animating using the requestAnimationFrame method, then the main loop does not run when in the background.
       // To give a perfect glitch-free audio stop when switching from foreground to background, we need to avoid updating
       // audio altogether when in the background, so detect that case and kill audio buffer streaming if so.
@@ -103,7 +103,7 @@ var LibraryOpenAL = {
     // represents the queue of buffers scheduled for physical playback. These two queues are
     // distinct because of the differing semantics of OpenAL and web audio. Some changes
     // to OpenAL parameters, such as pitch, may require the web audio queue to be flushed and rescheduled.
-    scheduleSourceAudio: (src, lookahead) => {
+    scheduleSourceAudio(src, lookahead) {
       // See comment on scheduleContextAudio above.
       if (MainLoop.timingMode === {{{ cDefs.EM_TIMING_RAF }}} && document['visibilityState'] != 'visible') {
         return;
@@ -211,7 +211,7 @@ var LibraryOpenAL = {
     },
 
     // Advance the state of a source forward to the current time
-    updateSourceTime: (src) => {
+    updateSourceTime(src) {
       var currentTime = src.context.audioCtx.currentTime;
       if (src.state !== {{{ cDefs.AL_PLAYING }}}) {
         return currentTime;
@@ -316,7 +316,7 @@ var LibraryOpenAL = {
       return currentTime;
     },
 
-    cancelPendingSourceAudio: (src) => {
+    cancelPendingSourceAudio(src) {
       AL.updateSourceTime(src);
 
       for (var i = 1; i < src.audioQueue.length; i++) {
@@ -329,14 +329,14 @@ var LibraryOpenAL = {
       }
     },
 
-    stopSourceAudio: (src) => {
+    stopSourceAudio(src) {
       for (var i = 0; i < src.audioQueue.length; i++) {
         src.audioQueue[i].stop();
       }
       src.audioQueue.length = 0;
     },
 
-    setSourceState: (src, state) => {
+    setSourceState(src, state) {
       if (state === {{{ cDefs.AL_PLAYING }}}) {
         if (src.state === {{{ cDefs.AL_PLAYING }}} || src.state == {{{ cDefs.AL_STOPPED }}}) {
           src.bufsProcessed = 0;
@@ -391,7 +391,7 @@ var LibraryOpenAL = {
       }
     },
 
-    initSourcePanner: (src) => {
+    initSourcePanner(src) {
       if (src.type === 0x1030 /* AL_UNDETERMINED */) {
         return;
       }
@@ -429,13 +429,13 @@ var LibraryOpenAL = {
       }
     },
 
-    updateContextGlobal: (ctx) => {
+    updateContextGlobal(ctx) {
       for (var i in ctx.sources) {
         AL.updateSourceGlobal(ctx.sources[i]);
       }
     },
 
-    updateSourceGlobal: (src) => {
+    updateSourceGlobal(src) {
       var panner = src.panner;
       if (!panner) {
         return;
@@ -469,7 +469,7 @@ var LibraryOpenAL = {
       }
     },
 
-    updateListenerSpace: (ctx) => {
+    updateListenerSpace(ctx) {
       var listener = ctx.audioCtx.listener;
       if (listener.positionX) {
         listener.positionX.value = ctx.listener.position[0];
@@ -503,7 +503,7 @@ var LibraryOpenAL = {
       }
     },
 
-    updateSourceSpace: (src) => {
+    updateSourceSpace(src) {
       if (!src.panner) {
         return;
       }
@@ -667,7 +667,7 @@ var LibraryOpenAL = {
       }
     },
 
-    updateSourceRate: (src) => {
+    updateSourceRate(src) {
       if (src.state === {{{ cDefs.AL_PLAYING }}}) {
         // clear scheduled buffers
         AL.cancelPendingSourceAudio(src);
@@ -694,7 +694,7 @@ var LibraryOpenAL = {
       }
     },
 
-    sourceDuration: (src) => {
+    sourceDuration(src) {
       var length = 0.0;
       for (var i = 0; i < src.bufQueue.length; i++) {
         var audioBuf = src.bufQueue[i].audioBuf;
@@ -703,7 +703,7 @@ var LibraryOpenAL = {
       return length;
     },
 
-    sourceTell: (src) => {
+    sourceTell(src) {
       AL.updateSourceTime(src);
 
       var offset = 0.0;
@@ -717,7 +717,7 @@ var LibraryOpenAL = {
       return offset;
     },
 
-    sourceSeek: (src, offset) => {
+    sourceSeek(src, offset) {
       var playing = src.state == {{{ cDefs.AL_PLAYING }}};
       if (playing) {
         AL.setSourceState(src, {{{ cDefs.AL_INITIAL }}});
@@ -742,7 +742,7 @@ var LibraryOpenAL = {
     // -- Accessor Helpers
     // ------------------------------------------------------
 
-    getGlobalParam: (funcname, param) => {
+    getGlobalParam(funcname, param) {
       if (!AL.currentCtx) {
 #if OPENAL_DEBUG
         dbg(`${funcname}() called without a valid context`);
@@ -766,7 +766,7 @@ var LibraryOpenAL = {
       }
     },
 
-    setGlobalParam: (funcname, param, value) => {
+    setGlobalParam(funcname, param, value) {
       if (!AL.currentCtx) {
 #if OPENAL_DEBUG
         dbg(`${funcname}() called without a valid context`);
@@ -828,7 +828,7 @@ var LibraryOpenAL = {
       }
     },
 
-    getListenerParam: (funcname, param) => {
+    getListenerParam(funcname, param) {
       if (!AL.currentCtx) {
 #if OPENAL_DEBUG
         dbg(`${funcname}() called without a valid context`);
@@ -854,7 +854,7 @@ var LibraryOpenAL = {
       }
     },
 
-    setListenerParam: (funcname, param, value) => {
+    setListenerParam(funcname, param, value) {
       if (!AL.currentCtx) {
 #if OPENAL_DEBUG
         dbg(`${funcname}() called without a valid context`);
@@ -938,7 +938,7 @@ var LibraryOpenAL = {
       }
     },
 
-    getBufferParam: (funcname, bufferId, param) => {
+    getBufferParam(funcname, bufferId, param) {
       if (!AL.currentCtx) {
 #if OPENAL_DEBUG
         dbg(`${funcname}() called without a valid context`);
@@ -980,7 +980,7 @@ var LibraryOpenAL = {
       }
     },
 
-    setBufferParam: (funcname, bufferId, param, value) => {
+    setBufferParam(funcname, bufferId, param, value) {
       if (!AL.currentCtx) {
 #if OPENAL_DEBUG
         dbg(`${funcname}() called without a valid context`);
@@ -1045,7 +1045,7 @@ var LibraryOpenAL = {
       }
     },
 
-    getSourceParam: (funcname, sourceId, param) => {
+    getSourceParam(funcname, sourceId, param) {
       if (!AL.currentCtx) {
 #if OPENAL_DEBUG
         dbg(`${funcname}() called without a valid context`);
@@ -1156,7 +1156,7 @@ var LibraryOpenAL = {
       }
     },
 
-    setSourceParam: (funcname, sourceId, param, value) => {
+    setSourceParam(funcname, sourceId, param, value) {
       if (!AL.currentCtx) {
 #if OPENAL_DEBUG
         dbg(`${funcname}() called without a valid context`);
@@ -1560,7 +1560,7 @@ var LibraryOpenAL = {
     // Treat NULL and <invalid> separately because careless
     // people might assume that most alcCapture functions
     // accept NULL as a 'use the default' device.
-    requireValidCaptureDevice: (deviceId, funcname) => {
+    requireValidCaptureDevice(deviceId, funcname) {
       if (deviceId === 0) {
 #if OPENAL_DEBUG
         dbg(`${funcname}() on a NULL device is an error`);

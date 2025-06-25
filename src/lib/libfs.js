@@ -1838,7 +1838,7 @@ FS.staticInit();`;
       // Add a function that defers querying the file size until it is asked the first time.
       Object.defineProperties(node, {
         usedBytes: {
-          get: function() { return this.contents.length; }
+          get() { return this.contents.length; }
         }
       });
       // override each stream op with one that tries to force load the lazy file first
@@ -1918,7 +1918,7 @@ FS.staticInit();`;
    *                       default if not set.
    */`,
    $FS_mkdirTree__deps: ['$FS'],
-   $FS_mkdirTree: (path, mode) => FS.mkdirTree(path, mode),
+   $FS_mkdirTree: 'FS.mkdirTree',
 };
 
 // Add library aliases for all the FS.<symbol> as FS_<symbol>.

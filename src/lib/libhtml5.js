@@ -145,7 +145,7 @@ var LibraryHTML5 = {
     // Removes all event handlers on the given DOM element of the given type.
     // Pass in eventTypeString == undefined/null to remove all event handlers
     // regardless of the type.
-    removeAllHandlersOnTarget: (target, eventTypeString) => {
+    removeAllHandlersOnTarget(target, eventTypeString) {
       for (var i = 0; i < JSEvents.eventHandlers.length; ++i) {
         if (JSEvents.eventHandlers[i].target == target &&
           (!eventTypeString || eventTypeString == JSEvents.eventHandlers[i].eventTypeString)) {
@@ -170,7 +170,7 @@ var LibraryHTML5 = {
       }
       if (eventHandler.callbackfunc) {
 #if HTML5_SUPPORT_DEFERRING_USER_SENSITIVE_REQUESTS
-        eventHandler.eventListenerFunc = function(event) {
+        eventHandler.eventListenerFunc = (event) => {
           // Increment nesting count for the event handler.
           ++JSEvents.inEventHandler;
           JSEvents.currentEventHandler = eventHandler;
@@ -2243,7 +2243,7 @@ var LibraryHTML5 = {
 
   $setCanvasElementSizeMainThread__proxy: 'sync',
   $setCanvasElementSizeMainThread__deps: ['$setCanvasElementSizeCallingThread'],
-  $setCanvasElementSizeMainThread: (target, width, height) => setCanvasElementSizeCallingThread(target, width, height),
+  $setCanvasElementSizeMainThread: 'setCanvasElementSizeCallingThread',
 
   emscripten_set_canvas_element_size__deps: ['$setCanvasElementSizeCallingThread', '$setCanvasElementSizeMainThread', '$findCanvasEventTarget'],
   emscripten_set_canvas_element_size: (target, width, height) => {
@@ -2325,7 +2325,7 @@ var LibraryHTML5 = {
 
   $getCanvasSizeMainThread__proxy: 'sync',
   $getCanvasSizeMainThread__deps: ['$getCanvasSizeCallingThread'],
-  $getCanvasSizeMainThread: (target, width, height) => getCanvasSizeCallingThread(target, width, height),
+  $getCanvasSizeMainThread: 'getCanvasSizeCallingThread',
 
   emscripten_get_canvas_element_size__deps: ['$getCanvasSizeCallingThread', '$getCanvasSizeMainThread', '$findCanvasEventTarget'],
   emscripten_get_canvas_element_size: (target, width, height) => {
@@ -2393,12 +2393,12 @@ var LibraryHTML5 = {
   },
 
   emscripten_html5_remove_all_event_listeners__deps: ['$JSEvents'],
-  emscripten_html5_remove_all_event_listeners: () => JSEvents.removeAllEventListeners(),
+  emscripten_html5_remove_all_event_listeners: 'JSEvents.removeAllEventListeners',
 
   emscripten_request_animation_frame: (cb, userData) =>
     requestAnimationFrame((timeStamp) => {{{ makeDynCall('idp', 'cb') }}}(timeStamp, userData)),
 
-  emscripten_cancel_animation_frame: (id) => cancelAnimationFrame(id),
+  emscripten_cancel_animation_frame: 'cancelAnimationFrame',
 
   emscripten_request_animation_frame_loop: (cb, userData) => {
     function tick(timeStamp) {

@@ -48,7 +48,7 @@ var LibraryTracing = {
     EVENT_TASK_SUSPEND: 'task-suspend',
     EVENT_USER_NAME: 'user-name',
 
-    init: () => {
+    init() {
       Module['emscripten_trace_configure'] = traceConfigure;
       Module['emscripten_trace_configure_for_google_wtf'] = _emscripten_trace_configure_for_google_wtf;
       Module['emscripten_trace_enter_context'] = traceEnterContext;
@@ -85,13 +85,13 @@ var LibraryTracing = {
       EmscriptenTrace.post([EmscriptenTrace.EVENT_SESSION_NAME, now.toISOString()]);
     },
 
-    configureForTest: () => {
+    configureForTest() {
       EmscriptenTrace.postEnabled = true;
       EmscriptenTrace.testingEnabled = true;
       EmscriptenTrace.now = () => 0.0;
     },
 
-    configureForGoogleWTF: () => {
+    configureForGoogleWTF() {
       if (window?.['wtf']) {
         EmscriptenTrace.googleWTFEnabled = true;
       } else {
@@ -99,7 +99,7 @@ var LibraryTracing = {
       }
     },
 
-    post: (entry) => {
+    post(entry) {
       if (EmscriptenTrace.postEnabled && EmscriptenTrace.collectorEnabled) {
         EmscriptenTrace.worker.postMessage({ 'cmd': 'post',
                                              'entry': entry });
@@ -108,7 +108,7 @@ var LibraryTracing = {
       }
     },
 
-    googleWTFEnterScope: (name) => {
+    googleWTFEnterScope(name) {
       var scopeEvent = EmscriptenTrace.googleWTFData['cachedScopes'][name];
       if (!scopeEvent) {
         scopeEvent = window['wtf'].trace.events.createScope(name);
@@ -118,7 +118,7 @@ var LibraryTracing = {
       EmscriptenTrace.googleWTFData['scopeStack'].push(scope);
     },
 
-    googleWTFExitScope: () => {
+    googleWTFExitScope() {
       var scope = EmscriptenTrace.googleWTFData['scopeStack'].pop();
       window['wtf'].trace.leaveScope(scope);
     }

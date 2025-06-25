@@ -18,9 +18,7 @@ var LibraryDylink = {
     // also uses string keys.
     var wasmPlugin = {
       'promiseChainEnd': Promise.resolve(),
-      'canHandle': (name) => {
-        return !Module['noWasmDecoding'] && name.endsWith('.so')
-      },
+      'canHandle': (name) => !Module['noWasmDecoding'] && name.endsWith('.so'),
       'handle': (byteArray, name, onload, onerror) => {
         // loadWebAssemblyModule can not load modules out-of-order, so rather
         // than just running the promises in parallel, this makes a chain of
@@ -1204,7 +1202,7 @@ var LibraryDylink = {
   },
 
   // void* dlopen(const char* filename, int flags);
-  $dlopenInternal__deps: ['$dlSetError', '$PATH'],
+  $dlopenInternal__deps: ['$dlSetError', '$PATH', '$loadDynamicLibrary'],
   $dlopenInternal: (handle, jsflags) => {
     // void *dlopen(const char *file, int mode);
     // http://pubs.opengroup.org/onlinepubs/009695399/functions/dlopen.html

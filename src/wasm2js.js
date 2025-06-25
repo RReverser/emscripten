@@ -31,22 +31,20 @@ var WebAssembly = {
   Table: /** @constructor */ function(opts) {
     var ret = new Array(opts['initial']);
 #if ALLOW_TABLE_GROWTH
-    ret.grow = function(by) {
+    ret.grow = (by) => {
       ret.push(null);
     };
 #else
 #if ASSERTIONS // without assertions we'll throw on calling the missing function
-    ret.grow = function(by) {
+    ret.grow = (by) => {
       abort('Unable to grow wasm table. Build with ALLOW_TABLE_GROWTH.')
     };
 #endif // ASSERTIONS
 #endif // ALLOW_TABLE_GROWTH
-    ret.set = function(i, func) {
+    ret.set = (i, func) => {
       ret[i] = func;
     };
-    ret.get = function(i) {
-      return ret[i];
-    };
+    ret.get = (i) => ret[i];
     return ret;
   },
 #endif
@@ -64,23 +62,21 @@ var WebAssembly = {
     this.exports = Module['__wasm2jsInstantiate__'](info);
   },
 
-  instantiate: /** @suppress{checkTypes} */ function(binary, info) {
-    return {
-      then: function(ok) {
-        var module = new WebAssembly.Module(binary);
-        ok({
+  instantiate: /** @suppress{checkTypes} */ (binary, info) => ({
+    then(ok) {
+      var module = new WebAssembly.Module(binary);
+      ok({
 #if SHARED_MEMORY
-          'module': module,
+        'module': module,
 #endif
-          'instance': new WebAssembly.Instance(module, info)
-        });
+        'instance': new WebAssembly.Instance(module, info)
+      });
 #if ASSERTIONS || WASM == 2 // see postamble_minimal.js which uses .catch
-        // Emulate a simple WebAssembly.instantiate(..).then(()=>{}).catch(()=>{}) syntax.
-        return { catch: function() {} };
+      // Emulate a simple WebAssembly.instantiate(..).then(()=>{}).catch(()=>{}) syntax.
+      return { catch() {} };
 #endif
-      }
-    };
-  },
+    }
+  }),
 
   RuntimeError: Error,
 

@@ -1,16 +1,14 @@
 {{{
   // Helper functions for code generation
 const html5_gpu = {
-  makeImportExport: (snake_case, CamelCase) => {
-    return `
+  makeImportExport: (snake_case, CamelCase) => `
 LibraryHTML5WebGPU.emscripten_webgpu_import_${snake_case}__deps = ['$WebGPU', '$JsValStore'];
 LibraryHTML5WebGPU.emscripten_webgpu_import_${snake_case} = (handle) =>
   WebGPU.mgr${CamelCase}.create(JsValStore.get(handle));
 
 LibraryHTML5WebGPU.emscripten_webgpu_export_${snake_case}__deps = ['$WebGPU', '$JsValStore'];
 LibraryHTML5WebGPU.emscripten_webgpu_export_${snake_case} = (handle) =>
-  JsValStore.add(WebGPU.mgr${CamelCase}.get(handle));`
-  },
+  JsValStore.add(WebGPU.mgr${CamelCase}.get(handle));`,
 };
 }}}
 
@@ -45,7 +43,7 @@ var LibraryHTML5WebGPU = {
   },
 
   emscripten_webgpu_release_js_handle__deps: ['$JsValStore'],
-  emscripten_webgpu_release_js_handle: (id) => JsValStore.remove(id),
+  emscripten_webgpu_release_js_handle: 'JsValStore.remove',
 
   emscripten_webgpu_get_device__deps: ['$WebGPU'],
   emscripten_webgpu_get_device: () => {

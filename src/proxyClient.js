@@ -42,18 +42,18 @@ if (typeof Module == 'undefined') {
   console.warn('no Module object defined - cannot proxy canvas rendering and input events, etc.');
   Module = {
     canvas: {
-      addEventListener: () => {},
+      addEventListener() {},
       getBoundingClientRect: () => ({ bottom: 0, height: 0, left: 0, right: 0, top: 0, width: 0 }),
     },
   };
 }
 
 if (!Module.hasOwnProperty('print')) {
-  Module['print'] = (x) => console.log(x);
+  Module['print'] = console.log;
 }
 
 if (!Module.hasOwnProperty('printErr')) {
-  Module['printErr'] = (x) => console.error(x);
+  Module['printErr'] = console.error;
 }
 
 // utils

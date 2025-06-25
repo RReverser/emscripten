@@ -11,9 +11,9 @@ var Module = moduleArg;
 var Module;
 // if (!Module)` is crucial for Closure Compiler here as it will
 // otherwise replace every `Module` occurrence with the object below
-if (!Module) /** @suppress{checkTypes}*/Module = 
+if (!Module) /** @suppress{checkTypes}*/Module =
 #if AUDIO_WORKLET
-  globalThis.{{{ EXPORT_NAME }}} || 
+  globalThis.{{{ EXPORT_NAME }}} ||
 #endif
   {"__EMSCRIPTEN_PRIVATE_MODULE_EXPORT_NAME_SUBSTITUTION__":1};
 
@@ -108,8 +108,8 @@ if (ENVIRONMENT_IS_NODE) {
 var out = defaultPrint;
 var err = defaultPrintErr;
 #else
-var out = (...args) => console.log(...args);
-var err = (...args) => console.error(...args);
+var out = console.log;
+var err = console.error;
 #endif
 
 // Override this function in a --pre-js file to get a signal for when
@@ -204,4 +204,3 @@ if (ENVIRONMENT_IS_SHELL) {
 #endif
 
 #endif // !SINGLE_FILE
-

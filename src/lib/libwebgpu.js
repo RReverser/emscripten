@@ -28,39 +28,29 @@
 {{{
   // Helper functions for code generation
   const gpu = {
-    makeInitManager: function(type) {
-      return `WebGPU.mgr${type} = new Manager();`;
-    },
+    makeInitManager: (type) => `WebGPU.mgr${type} = new Manager();`,
 
-    makeReferenceRelease: function(type) {
-      return `
+    makeReferenceRelease: (type) => `
 wgpu${type}Reference: (id) => WebGPU.mgr${type}.reference(id),
-wgpu${type}Release: (id) => WebGPU.mgr${type}.release(id),`;
-    },
+wgpu${type}Release: (id) => WebGPU.mgr${type}.release(id),`,
 
-    convertSentinelToUndefined: function(name) {
-      return `if (${name} == -1) ${name} = undefined;`;
-    },
+    convertSentinelToUndefined: (name) => `if (${name} == -1) ${name} = undefined;`,
 
-    makeGetBool: function(struct, offset) {
-      return `!!(${makeGetValue(struct, offset, 'u32')})`;
-    },
-    makeGetU32: function(struct, offset) {
-      return makeGetValue(struct, offset, 'u32');
-    },
-    makeGetU64: function(struct, offset) {
+    makeGetBool: (struct, offset) => `!!(${makeGetValue(struct, offset, 'u32')})`,
+    makeGetU32: (struct, offset) => makeGetValue(struct, offset, 'u32'),
+    makeGetU64(struct, offset) {
       var l = makeGetValue(struct, offset, 'u32');
       var h = makeGetValue(`(${struct} + 4)`, offset, 'u32')
       return `${h} * 0x100000000 + ${l}`
     },
-    makeCheck: function(str) {
+    makeCheck(str) {
       if (!ASSERTIONS) return '';
       return `assert(${str});`;
     },
-    makeCheckDefined: function(name) {
+    makeCheckDefined(name) {
       return this.makeCheck(`typeof ${name} != "undefined"`);
     },
-    makeCheckDescriptor: function(descriptor) {
+    makeCheckDescriptor(descriptor) {
       // Assert descriptor is non-null, then that its nextInChain is null.
       // For descriptors that aren't the first in the chain (e.g
       // ShaderModuleSPIRVDescriptor), there is no .nextInChain pointer, but
@@ -190,14 +180,14 @@ var LibraryWebGPU = {
   $WebGPU__postset: 'WebGPU.initManagers();',
   $WebGPU__deps: ['$stackSave', '$stackRestore', '$stringToUTF8OnStack'],
   $WebGPU: {
-    errorCallback: (callback, type, message, userdata) => {
+    errorCallback(callback, type, message, userdata) {
       var sp = stackSave();
       var messagePtr = stringToUTF8OnStack(message);
       {{{ makeDynCall('vipp', 'callback') }}}(type, messagePtr, userdata);
       stackRestore(sp);
     },
 
-    initManagers: () => {
+    initManagers() {
 #if ASSERTIONS
       assert(!WebGPU.mgrDevice, 'initManagers already called');
 #endif
@@ -266,7 +256,7 @@ var LibraryWebGPU = {
       {{{ gpu.makeInitManager('RenderBundle') }}}
     },
 
-    makeColor: (ptr) => {
+    makeColor(ptr) {
       return {
         "r": {{{ makeGetValue('ptr', 0, 'double') }}},
         "g": {{{ makeGetValue('ptr', 8, 'double') }}},
@@ -275,7 +265,7 @@ var LibraryWebGPU = {
       };
     },
 
-    makeExtent3D: (ptr) => {
+    makeExtent3D(ptr) {
       return {
         "width": {{{ gpu.makeGetU32('ptr', C_STRUCTS.WGPUExtent3D.width) }}},
         "height": {{{ gpu.makeGetU32('ptr', C_STRUCTS.WGPUExtent3D.height) }}},
@@ -283,7 +273,7 @@ var LibraryWebGPU = {
       };
     },
 
-    makeOrigin3D: (ptr) => {
+    makeOrigin3D(ptr) {
       return {
         "x": {{{ gpu.makeGetU32('ptr', C_STRUCTS.WGPUOrigin3D.x) }}},
         "y": {{{ gpu.makeGetU32('ptr', C_STRUCTS.WGPUOrigin3D.y) }}},
@@ -291,7 +281,7 @@ var LibraryWebGPU = {
       };
     },
 
-    makeImageCopyTexture: (ptr) => {
+    makeImageCopyTexture(ptr) {
       {{{ gpu.makeCheckDescriptor('ptr') }}}
       return {
         "texture": WebGPU.mgrTexture.get(
@@ -302,7 +292,7 @@ var LibraryWebGPU = {
       };
     },
 
-    makeTextureDataLayout: (ptr) => {
+    makeTextureDataLayout(ptr) {
       {{{ gpu.makeCheckDescriptor('ptr') }}}
       var bytesPerRow = {{{ gpu.makeGetU32('ptr', C_STRUCTS.WGPUTextureDataLayout.bytesPerRow) }}};
       var rowsPerImage = {{{ gpu.makeGetU32('ptr', C_STRUCTS.WGPUTextureDataLayout.rowsPerImage) }}};
@@ -313,7 +303,7 @@ var LibraryWebGPU = {
       };
     },
 
-    makeImageCopyBuffer: (ptr) => {
+    makeImageCopyBuffer(ptr) {
       {{{ gpu.makeCheckDescriptor('ptr') }}}
       var layoutPtr = ptr + {{{ C_STRUCTS.WGPUImageCopyBuffer.layout }}};
       var bufferCopyView = WebGPU.makeTextureDataLayout(layoutPtr);
@@ -322,7 +312,7 @@ var LibraryWebGPU = {
       return bufferCopyView;
     },
 
-    makePipelineConstants: (constantCount, constantsPtr) => {
+    makePipelineConstants(constantCount, constantsPtr) {
       if (!constantCount) return;
       var constants = {};
       for (var i = 0; i < constantCount; ++i) {
@@ -333,12 +323,12 @@ var LibraryWebGPU = {
       return constants;
     },
 
-    makePipelineLayout: (layoutPtr) => {
+    makePipelineLayout(layoutPtr) {
       if (!layoutPtr) return 'auto';
       return WebGPU.mgrPipelineLayout.get(layoutPtr);
     },
 
-    makeProgrammableStageDescriptor: (ptr) => {
+    makeProgrammableStageDescriptor(ptr) {
       if (!ptr) return undefined;
       {{{ gpu.makeCheckDescriptor('ptr') }}}
       var desc = {
@@ -353,7 +343,7 @@ var LibraryWebGPU = {
       return desc;
     },
 
-    fillLimitStruct: (limits, supportedLimitsOutPtr) => {
+    fillLimitStruct(limits, supportedLimitsOutPtr) {
       var limitsOutPtr = supportedLimitsOutPtr + {{{ C_STRUCTS.WGPUSupportedLimits.limits }}};
 
       function setLimitValueU32(name, limitOffset) {
@@ -364,7 +354,7 @@ var LibraryWebGPU = {
         var limitValue = limits[name];
         {{{ makeSetValue('limitsOutPtr', 'limitOffset', 'limitValue', 'i64') }}};
       }
-  
+
       setLimitValueU32('maxTextureDimension1D', {{{ C_STRUCTS.WGPULimits.maxTextureDimension1D }}});
       setLimitValueU32('maxTextureDimension2D', {{{ C_STRUCTS.WGPULimits.maxTextureDimension2D }}});
       setLimitValueU32('maxTextureDimension3D', {{{ C_STRUCTS.WGPULimits.maxTextureDimension3D }}});
@@ -381,10 +371,10 @@ var LibraryWebGPU = {
       setLimitValueU32('maxUniformBuffersPerShaderStage', {{{ C_STRUCTS.WGPULimits.maxUniformBuffersPerShaderStage }}});
       setLimitValueU32('minUniformBufferOffsetAlignment', {{{ C_STRUCTS.WGPULimits.minUniformBufferOffsetAlignment }}});
       setLimitValueU32('minStorageBufferOffsetAlignment', {{{ C_STRUCTS.WGPULimits.minStorageBufferOffsetAlignment }}});
-  
+
       setLimitValueU64('maxUniformBufferBindingSize', {{{ C_STRUCTS.WGPULimits.maxUniformBufferBindingSize }}});
       setLimitValueU64('maxStorageBufferBindingSize', {{{ C_STRUCTS.WGPULimits.maxStorageBufferBindingSize }}});
-  
+
       setLimitValueU32('maxVertexBuffers', {{{ C_STRUCTS.WGPULimits.maxVertexBuffers }}});
       setLimitValueU64('maxBufferSize', {{{ C_STRUCTS.WGPULimits.maxBufferSize }}});
       setLimitValueU32('maxVertexAttributes', {{{ C_STRUCTS.WGPULimits.maxVertexAttributes }}});
@@ -1323,7 +1313,7 @@ var LibraryWebGPU = {
       // https://github.com/webgpu-native/webgpu-headers/issues/212#issuecomment-1682801259
       var nextInChainPtr = {{{ makeGetValue('rsPtr', C_STRUCTS.WGPUPrimitiveState.nextInChain, '*') }}};
       var sType = nextInChainPtr ? {{{ gpu.makeGetU32('nextInChainPtr', C_STRUCTS.WGPUChainedStruct.sType) }}} : 0;
-      
+
       return {
         "topology": WebGPU.PrimitiveTopology[
           {{{ gpu.makeGetU32('rsPtr', C_STRUCTS.WGPUPrimitiveState.topology) }}}],
@@ -2732,7 +2722,7 @@ var LibraryWebGPU = {
         }
         {{{ makeDynCall('vippp', 'callback') }}}({{{ gpu.RequestDeviceStatus.Success }}}, deviceId, 0, userdata);
       });
-    }, function(ex) {
+    }, (ex) => {
       {{{ runtimeKeepalivePop() }}}
       callUserCallback(() => {
         var sp = stackSave();
@@ -2810,7 +2800,7 @@ var LibraryWebGPU = {
       var texture = WebGPU.mgrTexture.create(context.getCurrentTexture());
       {{{ makeSetValue('surfaceTexturePtr', C_STRUCTS.WGPUSurfaceTexture.texture, 'texture', '*') }}};
       {{{ makeSetValue('surfaceTexturePtr', C_STRUCTS.WGPUSurfaceTexture.suboptimal, '0', 'i32') }}};
-      {{{ makeSetValue('surfaceTexturePtr', C_STRUCTS.WGPUSurfaceTexture.status, 
+      {{{ makeSetValue('surfaceTexturePtr', C_STRUCTS.WGPUSurfaceTexture.status,
         gpu.SurfaceGetCurrentTextureStatus.Success, 'i32') }}};
     } catch (ex) {
 #if ASSERTIONS

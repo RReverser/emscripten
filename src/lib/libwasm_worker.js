@@ -292,9 +292,7 @@ if (ENVIRONMENT_IS_WASM_WORKER
     return navigator['hardwareConcurrency'];
   },
 
-  emscripten_atomics_is_lock_free: (width) => {
-    return Atomics.isLockFree(width);
-  },
+  emscripten_atomics_is_lock_free: Atomics.isLockFree,
 
   emscripten_lock_async_acquire__deps: ['$polyfillWaitAsync'],
   emscripten_lock_async_acquire: (lock, asyncWaitFinished, userData, maxWaitMilliseconds) => {

@@ -42,7 +42,7 @@ function WebGLWorker() {
   this.DEPTH_BUFFER_BIT               = 0x00000100;
   this.STENCIL_BUFFER_BIT             = 0x00000400;
   this.COLOR_BUFFER_BIT               = 0x00004000;
-  
+
   /* BeginMode */
   this.POINTS                         = 0x0000;
   this.LINES                          = 0x0001;
@@ -51,7 +51,7 @@ function WebGLWorker() {
   this.TRIANGLES                      = 0x0004;
   this.TRIANGLE_STRIP                 = 0x0005;
   this.TRIANGLE_FAN                   = 0x0006;
-  
+
   /* AlphaFunction (not supported in ES20) */
   /*      NEVER */
   /*      LESS */
@@ -61,7 +61,7 @@ function WebGLWorker() {
   /*      NOTEQUAL */
   /*      GEQUAL */
   /*      ALWAYS */
-  
+
   /* BlendingFactorDest */
   this.ZERO                           = 0;
   this.ONE                            = 1;
@@ -71,7 +71,7 @@ function WebGLWorker() {
   this.ONE_MINUS_SRC_ALPHA            = 0x0303;
   this.DST_ALPHA                      = 0x0304;
   this.ONE_MINUS_DST_ALPHA            = 0x0305;
-  
+
   /* BlendingFactorSrc */
   /*      ZERO */
   /*      ONE */
@@ -82,17 +82,17 @@ function WebGLWorker() {
   /*      ONE_MINUS_SRC_ALPHA */
   /*      DST_ALPHA */
   /*      ONE_MINUS_DST_ALPHA */
-  
+
   /* BlendEquationSeparate */
   this.FUNC_ADD                       = 0x8006;
   this.BLEND_EQUATION                 = 0x8009;
   this.BLEND_EQUATION_RGB             = 0x8009;   /* same as BLEND_EQUATION */
   this.BLEND_EQUATION_ALPHA           = 0x883D;
-  
+
   /* BlendSubtract */
   this.FUNC_SUBTRACT                  = 0x800A;
   this.FUNC_REVERSE_SUBTRACT          = 0x800B;
-  
+
   /* Separate Blend Functions */
   this.BLEND_DST_RGB                  = 0x80C8;
   this.BLEND_SRC_RGB                  = 0x80C9;
@@ -103,27 +103,27 @@ function WebGLWorker() {
   this.CONSTANT_ALPHA                 = 0x8003;
   this.ONE_MINUS_CONSTANT_ALPHA       = 0x8004;
   this.BLEND_COLOR                    = 0x8005;
-  
+
   /* Buffer Objects */
   this.ARRAY_BUFFER                   = 0x8892;
   this.ELEMENT_ARRAY_BUFFER           = 0x8893;
   this.ARRAY_BUFFER_BINDING           = 0x8894;
   this.ELEMENT_ARRAY_BUFFER_BINDING   = 0x8895;
-  
+
   this.STREAM_DRAW                    = 0x88E0;
   this.STATIC_DRAW                    = 0x88E4;
   this.DYNAMIC_DRAW                   = 0x88E8;
-  
+
   this.BUFFER_SIZE                    = 0x8764;
   this.BUFFER_USAGE                   = 0x8765;
-  
+
   this.CURRENT_VERTEX_ATTRIB          = 0x8626;
-  
+
   /* CullFaceMode */
   this.FRONT                          = 0x0404;
   this.BACK                           = 0x0405;
   this.FRONT_AND_BACK                 = 0x0408;
-  
+
   /* DepthFunction */
   /*      NEVER */
   /*      LESS */
@@ -133,7 +133,7 @@ function WebGLWorker() {
   /*      NOTEQUAL */
   /*      GEQUAL */
   /*      ALWAYS */
-  
+
   /* EnableCap */
   /* TEXTURE_2D */
   this.CULL_FACE                      = 0x0B44;
@@ -145,18 +145,18 @@ function WebGLWorker() {
   this.POLYGON_OFFSET_FILL            = 0x8037;
   this.SAMPLE_ALPHA_TO_COVERAGE       = 0x809E;
   this.SAMPLE_COVERAGE                = 0x80A0;
-  
+
   /* ErrorCode */
   this.NO_ERROR                       = 0;
   this.INVALID_ENUM                   = 0x0500;
   this.INVALID_VALUE                  = 0x0501;
   this.INVALID_OPERATION              = 0x0502;
   this.OUT_OF_MEMORY                  = 0x0505;
-  
+
   /* FrontFaceDirection */
   this.CW                             = 0x0900;
   this.CCW                            = 0x0901;
-  
+
   /* GetPName */
   this.LINE_WIDTH                     = 0x0B21;
   this.ALIASED_POINT_SIZE_RANGE       = 0x846D;
@@ -206,23 +206,23 @@ function WebGLWorker() {
   this.SAMPLES                        = 0x80A9;
   this.SAMPLE_COVERAGE_VALUE          = 0x80AA;
   this.SAMPLE_COVERAGE_INVERT         = 0x80AB;
-  
+
   /* GetTextureParameter */
   /*      TEXTURE_MAG_FILTER */
   /*      TEXTURE_MIN_FILTER */
   /*      TEXTURE_WRAP_S */
   /*      TEXTURE_WRAP_T */
-  
+
   this.COMPRESSED_TEXTURE_FORMATS     = 0x86A3;
-  
+
   /* HintMode */
   this.DONT_CARE                      = 0x1100;
   this.FASTEST                        = 0x1101;
   this.NICEST                         = 0x1102;
-  
+
   /* HintTarget */
   this.GENERATE_MIPMAP_HINT            = 0x8192;
-  
+
   /* DataType */
   this.BYTE                           = 0x1400;
   this.UNSIGNED_BYTE                  = 0x1401;
@@ -231,7 +231,7 @@ function WebGLWorker() {
   this.INT                            = 0x1404;
   this.UNSIGNED_INT                   = 0x1405;
   this.FLOAT                          = 0x1406;
-  
+
   /* PixelFormat */
   this.DEPTH_COMPONENT                = 0x1902;
   this.ALPHA                          = 0x1906;
@@ -239,13 +239,13 @@ function WebGLWorker() {
   this.RGBA                           = 0x1908;
   this.LUMINANCE                      = 0x1909;
   this.LUMINANCE_ALPHA                = 0x190A;
-  
+
   /* PixelType */
   /*      UNSIGNED_BYTE */
   this.UNSIGNED_SHORT_4_4_4_4         = 0x8033;
   this.UNSIGNED_SHORT_5_5_5_1         = 0x8034;
   this.UNSIGNED_SHORT_5_6_5           = 0x8363;
-  
+
   /* Shaders */
   this.FRAGMENT_SHADER                  = 0x8B30;
   this.VERTEX_SHADER                    = 0x8B31;
@@ -265,7 +265,7 @@ function WebGLWorker() {
   this.ACTIVE_ATTRIBUTES                = 0x8B89;
   this.SHADING_LANGUAGE_VERSION         = 0x8B8C;
   this.CURRENT_PROGRAM                  = 0x8B8D;
-  
+
   /* StencilFunction */
   this.NEVER                          = 0x0200;
   this.LESS                           = 0x0201;
@@ -275,7 +275,7 @@ function WebGLWorker() {
   this.NOTEQUAL                       = 0x0205;
   this.GEQUAL                         = 0x0206;
   this.ALWAYS                         = 0x0207;
-  
+
   /* StencilOp */
   /*      ZERO */
   this.KEEP                           = 0x1E00;
@@ -285,16 +285,16 @@ function WebGLWorker() {
   this.INVERT                         = 0x150A;
   this.INCR_WRAP                      = 0x8507;
   this.DECR_WRAP                      = 0x8508;
-  
+
   /* StringName */
   this.VENDOR                         = 0x1F00;
   this.RENDERER                       = 0x1F01;
   this.VERSION                        = 0x1F02;
-  
+
   /* TextureMagFilter */
   this.NEAREST                        = 0x2600;
   this.LINEAR                         = 0x2601;
-  
+
   /* TextureMinFilter */
   /*      NEAREST */
   /*      LINEAR */
@@ -302,17 +302,17 @@ function WebGLWorker() {
   this.LINEAR_MIPMAP_NEAREST          = 0x2701;
   this.NEAREST_MIPMAP_LINEAR          = 0x2702;
   this.LINEAR_MIPMAP_LINEAR           = 0x2703;
-  
+
   /* TextureParameterName */
   this.TEXTURE_MAG_FILTER             = 0x2800;
   this.TEXTURE_MIN_FILTER             = 0x2801;
   this.TEXTURE_WRAP_S                 = 0x2802;
   this.TEXTURE_WRAP_T                 = 0x2803;
-  
+
   /* TextureTarget */
   this.TEXTURE_2D                     = 0x0DE1;
   this.TEXTURE                        = 0x1702;
-  
+
   this.TEXTURE_CUBE_MAP               = 0x8513;
   this.TEXTURE_BINDING_CUBE_MAP       = 0x8514;
   this.TEXTURE_CUBE_MAP_POSITIVE_X    = 0x8515;
@@ -322,7 +322,7 @@ function WebGLWorker() {
   this.TEXTURE_CUBE_MAP_POSITIVE_Z    = 0x8519;
   this.TEXTURE_CUBE_MAP_NEGATIVE_Z    = 0x851A;
   this.MAX_CUBE_MAP_TEXTURE_SIZE      = 0x851C;
-  
+
   /* TextureUnit */
   this.TEXTURE0                       = 0x84C0;
   this.TEXTURE1                       = 0x84C1;
@@ -357,12 +357,12 @@ function WebGLWorker() {
   this.TEXTURE30                      = 0x84DE;
   this.TEXTURE31                      = 0x84DF;
   this.ACTIVE_TEXTURE                 = 0x84E0;
-  
+
   /* TextureWrapMode */
   this.REPEAT                         = 0x2901;
   this.CLAMP_TO_EDGE                  = 0x812F;
   this.MIRRORED_REPEAT                = 0x8370;
-  
+
   /* Uniform Types */
   this.FLOAT_VEC2                     = 0x8B50;
   this.FLOAT_VEC3                     = 0x8B51;
@@ -380,7 +380,7 @@ function WebGLWorker() {
   this.SAMPLER_2D                     = 0x8B5E;
   this.SAMPLER_3D                     = 0x8B5F;
   this.SAMPLER_CUBE                   = 0x8B60;
-  
+
   /* Vertex Arrays */
   this.VERTEX_ATTRIB_ARRAY_ENABLED        = 0x8622;
   this.VERTEX_ATTRIB_ARRAY_SIZE           = 0x8623;
@@ -389,14 +389,14 @@ function WebGLWorker() {
   this.VERTEX_ATTRIB_ARRAY_NORMALIZED     = 0x886A;
   this.VERTEX_ATTRIB_ARRAY_POINTER        = 0x8645;
   this.VERTEX_ATTRIB_ARRAY_BUFFER_BINDING = 0x889F;
-  
+
   /* Read Format */
   this.IMPLEMENTATION_COLOR_READ_TYPE   = 0x8B9A;
   this.IMPLEMENTATION_COLOR_READ_FORMAT = 0x8B9B;
 
   /* Shader Source */
   this.COMPILE_STATUS                 = 0x8B81;
-  
+
   /* Shader Precision-Specified Types */
   this.LOW_FLOAT                      = 0x8DF0;
   this.MEDIUM_FLOAT                   = 0x8DF1;
@@ -404,11 +404,11 @@ function WebGLWorker() {
   this.LOW_INT                        = 0x8DF3;
   this.MEDIUM_INT                     = 0x8DF4;
   this.HIGH_INT                       = 0x8DF5;
-  
+
   /* Framebuffer Object. */
   this.FRAMEBUFFER                    = 0x8D40;
   this.RENDERBUFFER                   = 0x8D41;
-  
+
   this.RGBA4                          = 0x8056;
   this.RGB5_A1                        = 0x8057;
   this.RGB565                         = 0x8D62;
@@ -416,7 +416,7 @@ function WebGLWorker() {
   this.STENCIL_INDEX                  = 0x1901;
   this.STENCIL_INDEX8                 = 0x8D48;
   this.DEPTH_STENCIL                  = 0x84F9;
-  
+
   this.RENDERBUFFER_WIDTH             = 0x8D42;
   this.RENDERBUFFER_HEIGHT            = 0x8D43;
   this.RENDERBUFFER_INTERNAL_FORMAT   = 0x8D44;
@@ -426,32 +426,32 @@ function WebGLWorker() {
   this.RENDERBUFFER_ALPHA_SIZE        = 0x8D53;
   this.RENDERBUFFER_DEPTH_SIZE        = 0x8D54;
   this.RENDERBUFFER_STENCIL_SIZE      = 0x8D55;
-  
+
   this.FRAMEBUFFER_ATTACHMENT_OBJECT_TYPE           = 0x8CD0;
   this.FRAMEBUFFER_ATTACHMENT_OBJECT_NAME           = 0x8CD1;
   this.FRAMEBUFFER_ATTACHMENT_TEXTURE_LEVEL         = 0x8CD2;
   this.FRAMEBUFFER_ATTACHMENT_TEXTURE_CUBE_MAP_FACE = 0x8CD3;
-  
+
   this.COLOR_ATTACHMENT0              = 0x8CE0;
   this.DEPTH_ATTACHMENT               = 0x8D00;
   this.STENCIL_ATTACHMENT             = 0x8D20;
   this.DEPTH_STENCIL_ATTACHMENT       = 0x821A;
-  
+
   this.NONE                           = 0;
-  
+
   this.FRAMEBUFFER_COMPLETE                      = 0x8CD5;
   this.FRAMEBUFFER_INCOMPLETE_ATTACHMENT         = 0x8CD6;
   this.FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT = 0x8CD7;
   this.FRAMEBUFFER_INCOMPLETE_DIMENSIONS         = 0x8CD9;
   this.FRAMEBUFFER_UNSUPPORTED                   = 0x8CDD;
-  
+
   this.ACTIVE_TEXTURE                 = 0x84E0;
   this.FRAMEBUFFER_BINDING            = 0x8CA6;
   this.RENDERBUFFER_BINDING           = 0x8CA7;
   this.MAX_RENDERBUFFER_SIZE          = 0x84E8;
-  
+
   this.INVALID_FRAMEBUFFER_OPERATION  = 0x0506;
-  
+
   /* WebGL-specific enums */
   this.UNPACK_FLIP_Y_WEBGL            = 0x9240;
   this.UNPACK_PREMULTIPLY_ALPHA_WEBGL = 0x9241;
@@ -496,7 +496,7 @@ function WebGLWorker() {
 
   // Helpers
 
-  this.onmessage = function(msg) {
+  this.onmessage = (msg) => {
     //dump('worker GL got ' + JSON.stringify(msg) + '\n');
     switch (msg.op) {
       case 'setPrefetched': {
@@ -616,9 +616,7 @@ function WebGLWorker() {
           MAX_COLOR_ATTACHMENTS_WEBGL : 0x8CDF,
           MAX_DRAW_BUFFERS_WEBGL      : 0x8824,
 
-          drawBuffersWEBGL: function(buffers) {
-            that.drawBuffersWEBGL(buffers);
-          }
+          drawBuffersWEBGL: (buffers) => that.drawBuffersWEBGL(buffers)
         };
       }
       case 'OES_standard_derivatives': {
@@ -633,66 +631,63 @@ function WebGLWorker() {
   this.getShaderPrecisionFormat = function(shaderType, precisionType) {
     return this.prefetchedPrecisions[shaderType][precisionType];
   };
-  this.enable = function(cap) {
+  this.enable = (cap) => {
     commandBuffer.push(2, cap);
     bindings.enabledState[cap] = true;
   };
-  this.isEnabled = function(cap) {
-    return bindings.enabledState[cap];
-  };
-  this.disable = function(cap) {
+  this.isEnabled = (cap) => bindings.enabledState[cap];
+  this.disable = (cap) => {
     commandBuffer.push(3, cap);
     bindings.enabledState[cap] = false;
   };
-  this.clear = function(mask) {
+  this.clear = (mask) => {
     commandBuffer.push(4, mask);
   };
-  this.clearColor = function(r, g, b, a) {
+  this.clearColor = (r, g, b, a) => {
     commandBuffer.push(5, r, g, b, a);
   };
-  this.createShader = function(type) {
+  this.createShader = (type) => {
     var id = nextId++;
     commandBuffer.push(6, type, id);
     return { id, what: 'shader', type };
   };
-  this.deleteShader = function(shader) {
+  this.deleteShader = (shader) => {
     if (!shader) return;
     commandBuffer.push(7, shader.id);
   };
-  this.shaderSource = function(shader, source) {
+  this.shaderSource = (shader, source) => {
     shader.source = source;
     commandBuffer.push(8, shader.id, source);
   };
-  this.compileShader = function(shader) {
+  this.compileShader = (shader) => {
     commandBuffer.push(9, shader.id);
   };
-  this.getShaderInfoLog = function(shader) {
-    return ''; // optimistic assumption of success; no proxying
-  };
-  this.createProgram = function() {
+  // optimistic assumption of success; no proxying
+  this.getShaderInfoLog = (shader) => '';
+  this.createProgram = () => {
     var id = nextId++;
     commandBuffer.push(10, id);
     return new WebGLProgram(id);
   };
-  this.deleteProgram = function(program) {
+  this.deleteProgram = (program) => {
     if (!program) return;
     commandBuffer.push(11, program.id);
   };
-  this.attachShader = function(program, shader) {
+  this.attachShader = (program, shader) => {
     program.shaders.push(shader);
     commandBuffer.push(12, program.id, shader.id);
   };
-  this.bindAttribLocation = function(program, index, name) {
+  this.bindAttribLocation = (program, index, name) => {
     program.nextAttributes[name] = { what: 'attribute', name, size: -1, location: index, type: '?' }; // fill in size, type later
     program.nextAttributeVec[index] = name;
     commandBuffer.push(13, program.id, index, name);
   };
-  this.getAttribLocation = function(program, name) {
+  this.getAttribLocation = (program, name) => {
     // all existing attribs are cached locally
     if (name in program.attributes) return program.attributes[name].location;
     return -1;
   };
-  this.linkProgram = function(program) {
+  this.linkProgram = (program) => {
     // parse shader sources
     function getTypeId(text) {
       switch (text) {
@@ -785,17 +780,17 @@ function WebGLWorker() {
       default: throw 'bad getProgramParameter ' + revname(name);
     }
   };
-  this.getActiveAttrib = function(program, index) {
+  this.getActiveAttrib = (program, index) => {
     var name = program.attributeVec[index];
     if (!name) return null;
     return program.attributes[name];
   };
-  this.getActiveUniform = function(program, index) {
+  this.getActiveUniform = (program, index) => {
     var name = program.uniformVec[index];
     if (!name) return null;
     return program.uniforms[name];
   };
-  this.getUniformLocation = function(program, name) {
+  this.getUniformLocation = (program, name) => {
     var fullname = name;
     var index = -1;
     var open = name.indexOf('[');
@@ -809,46 +804,45 @@ function WebGLWorker() {
     commandBuffer.push(16, program.id, fullname, id);
     return { what: 'location', uniform: program.uniforms[name], id, index };
   };
-  this.getProgramInfoLog = function(shader) {
-    return ''; // optimistic assumption of success; no proxying
-  };
-  this.useProgram = function(program) {
+  // optimistic assumption of success; no proxying
+  this.getProgramInfoLog = (shader) => '';
+  this.useProgram = (program) => {
     commandBuffer.push(17, program ? program.id : 0);
     bindings.program = program;
   };
-  this.uniform1i = function(location, data) {
+  this.uniform1i = (location, data) => {
     if (!location) return;
     commandBuffer.push(18, location.id, data);
   };
-  this.uniform1f = function(location, data) {
+  this.uniform1f = (location, data) => {
     if (!location) return;
     commandBuffer.push(19, location.id, data);
   };
-  this.uniform3fv = function(location, data) {
+  this.uniform3fv = (location, data) => {
     if (!location) return;
     commandBuffer.push(20, location.id, new Float32Array(data));
   };
-  this.uniform4f = function(location, x, y, z, w) {
+  this.uniform4f = (location, x, y, z, w) => {
     if (!location) return;
     commandBuffer.push(21, location.id, new Float32Array([x, y, z, w]));
   };
-  this.uniform4fv = function(location, data) {
+  this.uniform4fv = (location, data) => {
     if (!location) return;
     commandBuffer.push(21, location.id, new Float32Array(data));
   };
-  this.uniformMatrix4fv = function(location, transpose, data) {
+  this.uniformMatrix4fv = (location, transpose, data) => {
     if (!location) return;
     commandBuffer.push(22, location.id, transpose, new Float32Array(data));
   };
-  this.vertexAttrib4fv = function(index, values) {
+  this.vertexAttrib4fv = (index, values) => {
     commandBuffer.push(23, index, new Float32Array(values));
   };
-  this.createBuffer = function() {
+  this.createBuffer = () => {
     var id = nextId++;
     commandBuffer.push(24, id);
     return new WebGLBuffer(id);
   };
-  this.deleteBuffer = function(buffer) {
+  this.deleteBuffer = (buffer) => {
     if (!buffer) return;
     commandBuffer.push(25, buffer.id);
   };
@@ -871,28 +865,28 @@ function WebGLWorker() {
     if (something.slice) return something.slice(0); // ArrayBuffer or js array
     return new something.constructor(something); // typed array
   }
-  this.bufferData = function(target, something, usage) {
+  this.bufferData = (target, something, usage) => {
     commandBuffer.push(27, target, duplicate(something), usage);
   };
-  this.bufferSubData = function(target, offset, something) {
+  this.bufferSubData = (target, offset, something) => {
     commandBuffer.push(28, target, offset, duplicate(something));
   };
-  this.viewport = function(x, y, w, h) {
+  this.viewport = (x, y, w, h) => {
     commandBuffer.push(29, x, y, w, h);
   };
-  this.vertexAttribPointer = function(index, size, type, normalized, stride, offset) {
+  this.vertexAttribPointer = (index, size, type, normalized, stride, offset) => {
     commandBuffer.push(30, index, size, type, normalized, stride, offset);
   };
-  this.enableVertexAttribArray = function(index) {
+  this.enableVertexAttribArray = (index) => {
     commandBuffer.push(31, index);
   };
-  this.disableVertexAttribArray = function(index) {
+  this.disableVertexAttribArray = (index) => {
     commandBuffer.push(32, index);
   };
-  this.drawArrays = function(mode, first, count) {
+  this.drawArrays = (mode, first, count) => {
     commandBuffer.push(33, mode, first, count);
   };
-  this.drawElements = function(mode, count, type, offset) {
+  this.drawElements = (mode, count, type, offset) => {
     commandBuffer.push(34, mode, count, type, offset);
   };
   this.getError = function() {
@@ -900,20 +894,18 @@ function WebGLWorker() {
     commandBuffer.push(35);
     return this.NO_ERROR;
   };
-  this.createTexture = function() {
+  this.createTexture = () => {
     var id = nextId++;
     commandBuffer.push(36, id);
     return new WebGLTexture(id);
   };
-  this.deleteTexture = function(texture) {
+  this.deleteTexture = (texture) => {
     if (!texture) return;
     commandBuffer.push(37, texture.id);
     texture.id = 0;
   };
-  this.isTexture = function(texture) {
-    return texture && texture.what === 'texture' && texture.id > 0 && texture.binding;
-  };
-  this.bindTexture = function(target, texture) {
+  this.isTexture = (texture) => texture && texture.what === 'texture' && texture.id > 0 && texture.binding;
+  this.bindTexture = (target, texture) => {
     switch (target) {
       case that.TEXTURE_2D: {
         bindings.texture2D = texture;
@@ -923,7 +915,7 @@ function WebGLWorker() {
     if (texture) texture.binding = target;
     commandBuffer.push(38, target, texture ? texture.id : 0);
   };
-  this.texParameteri = function(target, pname, param) {
+  this.texParameteri = (target, pname, param) => {
     commandBuffer.push(39, target, pname, param);
   };
   this.texImage2D = function(target, level, internalformat, width, height, border, format, type, pixels) {
@@ -942,10 +934,10 @@ function WebGLWorker() {
     }
     commandBuffer.push(40, target, level, internalformat, width, height, border, format, type, duplicate(pixels));
   };
-  this.compressedTexImage2D = function(target, level, internalformat, width, height, border, pixels) {
+  this.compressedTexImage2D = (target, level, internalformat, width, height, border, pixels) => {
     commandBuffer.push(41, target, level, internalformat, width, height, border, duplicate(pixels));
   };
-  this.activeTexture = function(texture) {
+  this.activeTexture = (texture) => {
     commandBuffer.push(42, texture);
     bindings.activeTexture = texture;
   };
@@ -960,103 +952,104 @@ function WebGLWorker() {
       default: throw 'unsupported getShaderParameter ' + pname;
     }
   };
-  this.clearDepth = function(depth) {
+  this.clearDepth = (depth) => {
     commandBuffer.push(44, depth);
   };
-  this.depthFunc = function(depth) {
+  this.depthFunc = (depth) => {
     commandBuffer.push(45, depth);
   };
-  this.frontFace = function(depth) {
+  this.frontFace = (depth) => {
     commandBuffer.push(46, depth);
   };
-  this.cullFace = function(depth) {
+  this.cullFace = (depth) => {
     commandBuffer.push(47, depth);
   };
-  this.readPixels = function(depth) {
+  this.readPixels = (depth) => {
     abort('readPixels is impossible, we are async GL');
   };
-  this.pixelStorei = function(pname, param) {
+  this.pixelStorei = (pname, param) => {
     commandBuffer.push(48, pname, param);
   };
-  this.depthMask = function(flag) {
+  this.depthMask = (flag) => {
     commandBuffer.push(49, flag);
   };
-  this.depthRange = function(near, far) {
+  this.depthRange = (near, far) => {
     commandBuffer.push(50, near, far);
   };
-  this.blendFunc = function(sfactor, dfactor) {
+  this.blendFunc = (sfactor, dfactor) => {
     commandBuffer.push(51, sfactor, dfactor);
     bindings.blendSrcRGB = bindings.blendSrcAlpha = sfactor;
     bindings.blendDstRGB = bindings.blendDstAlpha = dfactor;
   };
-  this.scissor = function(x, y, width, height) {
+  this.scissor = (x, y, width, height) => {
     commandBuffer.push(52, x, y, width, height);
   };
-  this.colorMask = function(red, green, blue, alpha) {
+  this.colorMask = (red, green, blue, alpha) => {
     commandBuffer.push(53, red, green, blue, alpha);
   };
-  this.lineWidth = function(width) {
+  this.lineWidth = (width) => {
     commandBuffer.push(54, width);
   };
-  this.createFramebuffer = function() {
+  this.createFramebuffer = () => {
     var id = nextId++;
     commandBuffer.push(55, id);
     return new WebGLFramebuffer(id);
   };
-  this.deleteFramebuffer = function(framebuffer) {
+  this.deleteFramebuffer = (framebuffer) => {
     if (!framebuffer) return;
     commandBuffer.push(56, framebuffer.id);
   };
-  this.bindFramebuffer = function(target, framebuffer) {
+  this.bindFramebuffer = (target, framebuffer) => {
     commandBuffer.push(57, target, framebuffer ? framebuffer.id : 0);
     bindings.framebuffer = framebuffer;
   };
-  this.framebufferTexture2D = function(target, attachment, textarget, texture, level) {
+  this.framebufferTexture2D = (target, attachment, textarget, texture, level) => {
     commandBuffer.push(58, target, attachment, textarget, texture ? texture.id : 0, level);
   };
   this.checkFramebufferStatus = function(target) {
     return this.FRAMEBUFFER_COMPLETE; // XXX totally wrong
   };
-  this.createRenderbuffer = function() {
+  this.createRenderbuffer = () => {
     var id = nextId++;
     commandBuffer.push(59, id);
     return new WebGLRenderbuffer(id);
   };
-  this.deleteRenderbuffer = function(renderbuffer) {
+  this.deleteRenderbuffer = (renderbuffer) => {
     if (!renderbuffer) return;
     commandBuffer.push(60, renderbuffer.id);
   };
-  this.bindRenderbuffer = function(target, renderbuffer) {
+  this.bindRenderbuffer = (target, renderbuffer) => {
     commandBuffer.push(61, target, renderbuffer ? renderbuffer.id : 0);
   };
-  this.renderbufferStorage = function(target, internalformat, width, height) {
+  this.renderbufferStorage = (target, internalformat, width, height) => {
     commandBuffer.push(62, target, internalformat, width, height);
   };
-  this.framebufferRenderbuffer = function(target, attachment, renderbuffertarget, renderbuffer) {
+  this.framebufferRenderbuffer = (target, attachment, renderbuffertarget, renderbuffer) => {
     commandBuffer.push(63, target, attachment, renderbuffertarget, renderbuffer ? renderbuffer.id : 0);
   };
-  this.debugPrint = function(text) { // useful to interleave debug output properly with client GL commands
+  this.debugPrint = (text) => {
+    // useful to interleave debug output properly with client GL commands
     commandBuffer.push(64, text);
   };
   this.hint = function(target, mode) {
     commandBuffer.push(65, target, mode);
     if (target == this.GENERATE_MIPMAP_HINT) bindings.generateMipmapHint = mode;
   };
-  this.blendEquation = function(mode) {
+  this.blendEquation = (mode) => {
     commandBuffer.push(66, mode);
     bindings.blendEquationRGB = bindings.blendEquationAlpha = mode;
   };
-  this.generateMipmap = function(target) {
+  this.generateMipmap = (target) => {
     commandBuffer.push(67, target);
   };
-  this.uniformMatrix3fv = function(location, transpose, data) {
+  this.uniformMatrix3fv = (location, transpose, data) => {
     if (!location) return;
     commandBuffer.push(68, location.id, transpose, new Float32Array(data));
   };
-  this.stencilMask = function(mask) {
+  this.stencilMask = (mask) => {
     commandBuffer.push(69, mask);
   };
-  this.clearStencil = function(s) {
+  this.clearStencil = (s) => {
     commandBuffer.push(70, s);
   };
   this.texSubImage2D = function(target, level, xoffset, yoffset, width, height, format, type, pixels) {
@@ -1076,51 +1069,50 @@ function WebGLWorker() {
     }
     commandBuffer.push(71, target, level, xoffset, yoffset, width, height, format, type, duplicate(pixels));
   };
-  this.uniform3f = function(location, x, y, z) {
+  this.uniform3f = (location, x, y, z) => {
     if (!location) return;
     commandBuffer.push(72, location.id, x, y, z);
   };
-  this.blendFuncSeparate = function(srcRGB, dstRGB, srcAlpha, dstAlpha) {
+  this.blendFuncSeparate = (srcRGB, dstRGB, srcAlpha, dstAlpha) => {
     commandBuffer.push(73, srcRGB, dstRGB, srcAlpha, dstAlpha);
     bindings.blendSrcRGB = srcRGB;
     bindings.blendSrcAlpha = srcAlpha;
     bindings.blendDstRGB = dstRGB;
     bindings.blendDstAlpha = dstAlpha;
   }
-  this.uniform2fv = function(location, data) {
+
+  this.uniform2fv = (location, data) => {
     if (!location) return;
     commandBuffer.push(74, location.id, new Float32Array(data));
   };
-  this.texParameterf = function(target, pname, param) {
+  this.texParameterf = (target, pname, param) => {
     commandBuffer.push(75, target, pname, param);
   };
-  this.isContextLost = function() {
+  this.isContextLost = () => {
     // optimisticaly return that everything is ok; client will abort on an actual context loss. we assume an error-free async workflow
     commandBuffer.push(76);
     return false;
   };
-  this.isProgram = function(program) {
-    return program && program.what === 'program';
-  };
-  this.blendEquationSeparate = function(rgb, alpha) {
+  this.isProgram = (program) => program && program.what === 'program';
+  this.blendEquationSeparate = (rgb, alpha) => {
     commandBuffer.push(77, rgb, alpha);
     bindings.blendEquationRGB = rgb;
     bindings.blendEquationAlpha = alpha;
   };
-  this.stencilFuncSeparate = function(face, func, ref, mask) {
+  this.stencilFuncSeparate = (face, func, ref, mask) => {
     commandBuffer.push(78, face, func, ref, mask);
   };
-  this.stencilOpSeparate = function(face, fail, zfail, zpass) {
+  this.stencilOpSeparate = (face, fail, zfail, zpass) => {
     commandBuffer.push(79, face, fail, zfail, zpass);
   };
-  this.drawBuffersWEBGL = function(buffers) {
+  this.drawBuffersWEBGL = (buffers) => {
     commandBuffer.push(80, buffers);
   };
-  this.uniform1iv = function(location, data) {
+  this.uniform1iv = (location, data) => {
     if (!location) return;
     commandBuffer.push(81, location.id, new Int32Array(data));
   };
-  this.uniform1fv = function(location, data) {
+  this.uniform1fv = (location, data) => {
     if (!location) return;
     commandBuffer.push(82, location.id, new Float32Array(data));
   };
@@ -1174,4 +1166,3 @@ function WebGLWorker() {
 WebGLWorker.prototype.prefetchedParameters = {};
 WebGLWorker.prototype.prefetchedExtensions = {};
 WebGLWorker.prototype.prefetchedPrecisions = {};
-

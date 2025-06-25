@@ -9315,7 +9315,7 @@ int main() {
       os.remove('minify.map')
     sent.sort()
 
-    self.run_process(build_cmd + ['--profiling-funcs', '--closure=1'])
+    self.run_process(build_cmd + ['-g2'])
 
     js_size = os.path.getsize('a.out.js')
     gz_size = get_file_gzipped_size('a.out.js')
@@ -11866,7 +11866,8 @@ int main () {
                                '-sSTRICT',
                                '--output-eol', 'linux',
                                '-Oz',
-                               '--closure=1',
+                               '-g2',
+                              #  '--closure=1',
                                '-DNDEBUG',
                                '-ffast-math']
 

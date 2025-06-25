@@ -36,7 +36,7 @@ addToLibrary({
   // Supported preprocessor directives: #if, #ifdef, #ifndef, #else, #elif, #endif, #define and #undef.
   // predefs: Specifies a dictionary of { 'key1': function(arg0, arg1) {...}, 'key2': ... } of predefined preprocessing variables
   $preprocess_c_code__deps: ['$find_closing_parens_index'],
-  $preprocess_c_code: function(code, defs = {}) {
+  $preprocess_c_code: (code, defs = {}) => {
     var i = 0, // iterator over the input string
       len = code.length, // cache input length
       out = '', // generates the preprocessed output string
@@ -179,7 +179,7 @@ addToLibrary({
             // Special case: the unary operator ! needs to evaluate right-to-left.
             i = tokens.lastIndexOf('!');
             var innerExpr = buildExprTree(tokens.slice(i+1, i+2));
-            tokens.splice(i, 2, function() { return !innerExpr(); })
+            tokens.splice(i, 2, () => !innerExpr());
             return tokens;
           }
 
@@ -188,18 +188,18 @@ addToLibrary({
             var left = buildExprTree(tokens.slice(0, i));
             var right = buildExprTree(tokens.slice(i+1));
             switch(tokens[i]) {
-              case '&&': return [function() { return left() && right(); }];
-              case '||': return [function() { return left() || right(); }];
-              case '==': return [function() { return left() == right(); }];
-              case '!=': return [function() { return left() != right(); }];
-              case '<' : return [function() { return left() <  right(); }];
-              case '<=': return [function() { return left() <= right(); }];
-              case '>' : return [function() { return left() >  right(); }];
-              case '>=': return [function() { return left() >= right(); }];
-              case  '+': return [function() { return left()  + right(); }];
-              case  '-': return [function() { return left()  - right(); }];
-              case  '*': return [function() { return left()  * right(); }];
-              case  '/': return [function() { return Math.floor(left() / right()); }];
+              case '&&': return [() => left() && right()];
+              case '||': return [() => left() || right()];
+              case '==': return [() => left() == right()];
+              case '!=': return [() => left() != right()];
+              case '<' : return [() => left() <  right()];
+              case '<=': return [() => left() <= right()];
+              case '>' : return [() => left() >  right()];
+              case '>=': return [() => left() >= right()];
+              case  '+': return [() => left()  + right()];
+              case  '-': return [() => left()  - right()];
+              case  '*': return [() => left()  * right()];
+              case  '/': return [() => Math.floor(left() / right())];
             }
           }
           // else a number:
@@ -208,7 +208,7 @@ addToLibrary({
           assert(operatorAndPriority == -1);
 #endif
           var num = Number(tokens[i]);
-          return [function() { return num; }]
+          return [() => num];
         })(tokens);
       }
       return tokens[0];

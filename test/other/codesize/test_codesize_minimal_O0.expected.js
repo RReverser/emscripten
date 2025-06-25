@@ -895,7 +895,6 @@ Module['FS_createPreloadedFile'] = FS.createPreloadedFile;
   'readSockaddr',
   'writeSockaddr',
   'readEmAsmArgs',
-  'jstoi_q',
   'getExecutableName',
   'autoResumeAudioContext',
   'getDynCaller',
@@ -1021,7 +1020,6 @@ Module['FS_createPreloadedFile'] = FS.createPreloadedFile;
   'FS_modeStringToFlags',
   'FS_getMode',
   'FS_stdin_getChar',
-  'FS_mkdirTree',
   '_setNetworkCallback',
 ];
 missingLibrarySymbols.forEach(missingLibrarySymbol)
@@ -1061,6 +1059,7 @@ missingLibrarySymbols.forEach(missingLibrarySymbol)
   'timers',
   'warnOnce',
   'readEmAsmArgsArray',
+  'jstoi_q',
   'wasmTable',
   'noExitRuntime',
   'freeTableIndexes',
@@ -1102,6 +1101,7 @@ missingLibrarySymbols.forEach(missingLibrarySymbol)
   'FS_createDevice',
   'FS_readFile',
   'FS',
+  'FS_mkdirTree',
   'FS_root',
   'FS_mounts',
   'FS_devices',

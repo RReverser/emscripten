@@ -30,7 +30,7 @@ var LibraryGLUT = {
     windowHeight: 0,
     requestedAnimationFrame: false,
 
-    saveModifiers: (event) => {
+    saveModifiers(event) {
       GLUT.modifiers = 0;
       if (event['shiftKey'])
         GLUT.modifiers += 1; /* GLUT_ACTIVE_SHIFT */
@@ -40,7 +40,7 @@ var LibraryGLUT = {
         GLUT.modifiers += 4; /* GLUT_ACTIVE_ALT */
     },
 
-    onMousemove: (event) => {
+    onMousemove(event) {
       /* Send motion event only if the motion changed, prevents
        * spamming our app with uncessary callback call. It does happen in
        * Chrome on Windows.
@@ -63,7 +63,7 @@ var LibraryGLUT = {
       }
     },
 
-    getSpecialKey: (keycode) => {
+    getSpecialKey(keycode) {
         var key = null;
         switch (keycode) {
           case 8:  key = 120 /* backspace */; break;
@@ -118,7 +118,7 @@ var LibraryGLUT = {
         return key;
     },
 
-    getASCIIKey: (event) => {
+    getASCIIKey(event) {
       if (event['ctrlKey'] || event['altKey'] || event['metaKey']) return null;
 
       var keycode = event['keyCode'];
@@ -160,7 +160,7 @@ var LibraryGLUT = {
       return null;
     },
 
-    onKeydown: (event) => {
+    onKeydown(event) {
       if (GLUT.specialFunc || GLUT.keyboardFunc) {
         var key = GLUT.getSpecialKey(event['keyCode']);
         if (key !== null) {
@@ -180,7 +180,7 @@ var LibraryGLUT = {
       }
     },
 
-    onKeyup: (event) => {
+    onKeyup(event) {
       if (GLUT.specialUpFunc || GLUT.keyboardUpFunc) {
         var key = GLUT.getSpecialKey(event['keyCode']);
         if (key !== null) {
@@ -200,7 +200,7 @@ var LibraryGLUT = {
       }
     },
 
-    touchHandler: (event) => {
+    touchHandler(event) {
       if (event.target != Browser.getCanvas()) {
         return;
       }
@@ -226,7 +226,7 @@ var LibraryGLUT = {
       event.preventDefault();
     },
 
-    onMouseButtonDown: (event) => {
+    onMouseButtonDown(event) {
       Browser.calculateMouseEvent(event);
 
       GLUT.buttons |= (1 << event['button']);
@@ -241,7 +241,7 @@ var LibraryGLUT = {
       }
     },
 
-    onMouseButtonUp: (event) => {
+    onMouseButtonUp(event) {
       Browser.calculateMouseEvent(event);
 
       GLUT.buttons &= ~(1 << event['button']);
@@ -253,7 +253,7 @@ var LibraryGLUT = {
       }
     },
 
-    onMouseWheel: (event) => {
+    onMouseWheel(event) {
       Browser.calculateMouseEvent(event);
 
       // cross-browser wheel delta
@@ -276,7 +276,7 @@ var LibraryGLUT = {
 
     // TODO add fullscreen API ala:
     // http://johndyer.name/native-fullscreen-javascript-api-plus-jquery-plugin/
-    onFullscreenEventChange: (event) => {
+    onFullscreenEventChange(event) {
       var width;
       var height;
       if (document["fullscreen"] || document["fullScreen"] || document["mozFullScreen"] || document["webkitIsFullScreen"]) {

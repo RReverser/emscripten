@@ -332,13 +332,13 @@ WebGLClient.prefetch = () => {
   var parameters = {};
   ['MAX_VERTEX_ATTRIBS', 'MAX_TEXTURE_IMAGE_UNITS', 'MAX_TEXTURE_SIZE', 'MAX_CUBE_MAP_TEXTURE_SIZE', 'MAX_VERTEX_UNIFORM_VECTORS', 'MAX_FRAGMENT_UNIFORM_VECTORS',
    'MAX_VARYING_VECTORS', 'MAX_COMBINED_TEXTURE_IMAGE_UNITS', 'MAX_VERTEX_TEXTURE_IMAGE_UNITS', 'VENDOR', 'RENDERER', 'VERSION', 'SHADING_LANGUAGE_VERSION',
-   'COMPRESSED_TEXTURE_FORMATS', 'RED_BITS', 'GREEN_BITS', 'BLUE_BITS', 'ALPHA_BITS', 'DEPTH_BITS', 'STENCIL_BITS', 'MAX_RENDERBUFFER_SIZE'].forEach(function(name) {
+   'COMPRESSED_TEXTURE_FORMATS', 'RED_BITS', 'GREEN_BITS', 'BLUE_BITS', 'ALPHA_BITS', 'DEPTH_BITS', 'STENCIL_BITS', 'MAX_RENDERBUFFER_SIZE'].forEach((name) => {
     var id = ctx[name];
     parameters[id] = ctx.getParameter(id);
   });
   // Try to enable some extensions, so we can access their parameters
   [{ extName: 'EXT_texture_filter_anisotropic', paramName: 'MAX_TEXTURE_MAX_ANISOTROPY_EXT' },
-   { extName: 'WEBGL_draw_buffers', paramName: 'MAX_COLOR_ATTACHMENTS_WEBGL' }].forEach(function(pair) {
+   { extName: 'WEBGL_draw_buffers', paramName: 'MAX_COLOR_ATTACHMENTS_WEBGL' }].forEach((pair) => {
     var ext = ctx.getExtension(pair.extName);
     if (ext) {
       var id = ext[pair.paramName];
@@ -347,10 +347,10 @@ WebGLClient.prefetch = () => {
   });
   // Fetch shader precisions
   var precisions = {};
-  ['FRAGMENT_SHADER', 'VERTEX_SHADER'].forEach(function(shaderType) {
+  ['FRAGMENT_SHADER', 'VERTEX_SHADER'].forEach((shaderType) => {
     shaderType = ctx[shaderType];
     precisions[shaderType] = {};
-    ['LOW_FLOAT', 'MEDIUM_FLOAT', 'HIGH_FLOAT', 'LOW_INT', 'MEDIUM_INT', 'HIGH_INT'].forEach(function(precisionType) {
+    ['LOW_FLOAT', 'MEDIUM_FLOAT', 'HIGH_FLOAT', 'LOW_INT', 'MEDIUM_INT', 'HIGH_INT'].forEach((precisionType) => {
       precisionType = ctx[precisionType];
       var info = ctx.getShaderPrecisionFormat(shaderType, precisionType);
       precisions[shaderType][precisionType] = info ? { rangeMin: info.rangeMin, rangeMax: info.rangeMax, precision: info.precision } : info;
@@ -359,4 +359,3 @@ WebGLClient.prefetch = () => {
 
   worker.postMessage({ target: 'gl', op: 'setPrefetched', parameters, extensions: ctx.getSupportedExtensions(), precisions, preMain: true });
 };
-

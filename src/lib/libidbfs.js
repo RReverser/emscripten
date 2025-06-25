@@ -12,7 +12,7 @@ addToLibrary({
   },
   $IDBFS: {
     dbs: {},
-    indexedDB: () => {
+    indexedDB() {
       if (typeof indexedDB != 'undefined') return indexedDB;
       var ret = null;
       if (typeof window == 'object') ret = window.indexedDB || window.mozIndexedDB || window.webkitIndexedDB || window.msIndexedDB;
@@ -25,7 +25,7 @@ addToLibrary({
     DB_STORE_NAME: 'FILE_DATA',
 
     // Queues a new VFS -> IDBFS synchronization operation
-    queuePersist: (mount) => {
+    queuePersist(mount) {
       function onPersistComplete() {
         if (mount.idbPersistState === 'again') startPersist(); // If a new sync request has appeared in between, kick off a new sync
         else mount.idbPersistState = 0; // Otherwise reset sync state back to idle to wait for a new sync later
@@ -51,7 +51,7 @@ addToLibrary({
       }
     },
 
-    mount: (mount) => {
+    mount(mount) {
       // reuse core MEMFS functionality
       var mnt = MEMFS.mount(mount);
       // If the automatic IDBFS persistence option has been selected, then automatically persist
@@ -100,7 +100,7 @@ addToLibrary({
       return mnt;
     },
 
-    syncfs: (mount, populate, callback) => {
+    syncfs(mount, populate, callback) {
       IDBFS.getLocalSet(mount, (err, local) => {
         if (err) return callback(err);
 
@@ -114,11 +114,11 @@ addToLibrary({
         });
       });
     },
-    quit: () => {
+    quit() {
       Object.values(IDBFS.dbs).forEach((value) => value.close());
       IDBFS.dbs = {};
     },
-    getDB: (name, callback) => {
+    getDB(name, callback) {
       // check the cache first
       var db = IDBFS.dbs[name];
       if (db) {
@@ -162,7 +162,7 @@ addToLibrary({
         e.preventDefault();
       };
     },
-    getLocalSet: (mount, callback) => {
+    getLocalSet(mount, callback) {
       var entries = {};
 
       function isRealDir(p) {
@@ -193,7 +193,7 @@ addToLibrary({
 
       return callback(null, { type: 'local', entries: entries });
     },
-    getRemoteSet: (mount, callback) => {
+    getRemoteSet(mount, callback) {
       var entries = {};
 
       IDBFS.getDB(mount.mountpoint, (err, db) => {
@@ -225,7 +225,7 @@ addToLibrary({
         }
       });
     },
-    loadLocalEntry: (path, callback) => {
+    loadLocalEntry(path, callback) {
       var stat, node;
 
       try {
@@ -247,7 +247,7 @@ addToLibrary({
         return callback(new Error('node type not supported'));
       }
     },
-    storeLocalEntry: (path, entry, callback) => {
+    storeLocalEntry(path, entry, callback) {
       try {
         if (FS.isDir(entry['mode'])) {
           FS.mkdirTree(path, entry['mode']);
@@ -265,7 +265,7 @@ addToLibrary({
 
       callback(null);
     },
-    removeLocalEntry: (path, callback) => {
+    removeLocalEntry(path, callback) {
       try {
         var stat = FS.stat(path);
 
@@ -280,7 +280,7 @@ addToLibrary({
 
       callback(null);
     },
-    loadRemoteEntry: (store, path, callback) => {
+    loadRemoteEntry(store, path, callback) {
       var req = store.get(path);
       req.onsuccess = (event) => callback(null, event.target.result);
       req.onerror = (e) => {
@@ -288,7 +288,7 @@ addToLibrary({
         e.preventDefault();
       };
     },
-    storeRemoteEntry: (store, path, entry, callback) => {
+    storeRemoteEntry(store, path, entry, callback) {
       try {
         var req = store.put(entry, path);
       } catch (e) {
@@ -301,7 +301,7 @@ addToLibrary({
         e.preventDefault();
       };
     },
-    removeRemoteEntry: (store, path, callback) => {
+    removeRemoteEntry(store, path, callback) {
       var req = store.delete(path);
       req.onsuccess = (event) => callback();
       req.onerror = (e) => {
@@ -309,7 +309,7 @@ addToLibrary({
         e.preventDefault();
       };
     },
-    reconcile: (src, dst, callback) => {
+    reconcile(src, dst, callback) {
       var total = 0;
 
       var create = [];

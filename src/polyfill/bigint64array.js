@@ -47,7 +47,7 @@ if (typeof globalThis.BigInt64Array === "undefined") {
             var new_buf = array.subarray(min * 2, max * 2);
             return createBigInt64Array(new_buf);
           },
-          [Symbol.iterator]: function* () {
+          *[Symbol.iterator]() {
             for (var i = 0; i < array.length / 2; i++) {
               yield partsToBigInt(array[2 * i], array[2 * i + 1]);
             }
@@ -57,7 +57,7 @@ if (typeof globalThis.BigInt64Array === "undefined") {
           byteLength: array.byteLength,
           byteOffset: array.byteOffset,
           length: array.length / 2,
-          copyWithin: function (target, start, end) {
+          copyWithin(target, start, end) {
             array.copyWithin(target * 2, start * 2, end * 2);
             return proxy;
           },

@@ -27,7 +27,7 @@ addToLibrary({
   $PATH_FS__deps: ['$FS', '$nodePath'],
   $PATH_FS__docs: '/** @type{{resolve: function(...*)}} */',
   $PATH_FS: {
-    resolve: (...paths) => {
+    resolve(...paths) {
       paths.unshift(FS.cwd());
       return nodePath.posix.resolve(...paths);
     },

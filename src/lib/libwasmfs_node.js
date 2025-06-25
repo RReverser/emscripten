@@ -125,36 +125,28 @@ addToLibrary({
   },
 
   _wasmfs_node_insert_file__deps: ['$wasmfsTry'],
-  _wasmfs_node_insert_file: (path_p, mode) => {
-    return wasmfsTry(() => {
-      fs.closeSync(fs.openSync(UTF8ToString(path_p), 'ax', mode));
-      // implicitly return 0
-    });
-  },
+  _wasmfs_node_insert_file: (path_p, mode) => wasmfsTry(() => {
+    fs.closeSync(fs.openSync(UTF8ToString(path_p), 'ax', mode));
+    // implicitly return 0
+  }),
 
   _wasmfs_node_insert_directory__deps: ['$wasmfsTry'],
-  _wasmfs_node_insert_directory: (path_p, mode) => {
-    return wasmfsTry(() => {
-      fs.mkdirSync(UTF8ToString(path_p), mode)
-      // implicitly return 0
-    });
-  },
+  _wasmfs_node_insert_directory: (path_p, mode) => wasmfsTry(() => {
+    fs.mkdirSync(UTF8ToString(path_p), mode);
+    // implicitly return 0
+  }),
 
   _wasmfs_node_unlink__deps: ['$wasmfsTry'],
-  _wasmfs_node_unlink: (path_p) => {
-    return wasmfsTry(() => {
-      fs.unlinkSync(UTF8ToString(path_p))
-      // implicitly return 0
-    });
-  },
+  _wasmfs_node_unlink: (path_p) => wasmfsTry(() => {
+    fs.unlinkSync(UTF8ToString(path_p));
+    // implicitly return 0
+  }),
 
   _wasmfs_node_rmdir__deps: ['$wasmfsTry'],
-  _wasmfs_node_rmdir: (path_p) => {
-    return wasmfsTry(() => {
-      fs.rmdirSync(UTF8ToString(path_p))
-      // implicitly return 0
-    });
-  },
+  _wasmfs_node_rmdir: (path_p) => wasmfsTry(() => {
+    fs.rmdirSync(UTF8ToString(path_p));
+    // implicitly return 0
+  }),
 
   _wasmfs_node_truncate__i53abi: true,
   _wasmfs_node_truncate__deps : ['$wasmfsTry'],
@@ -171,46 +163,34 @@ addToLibrary({
   },
 
   _wasmfs_node_open__deps: ['$wasmfsTry'],
-  _wasmfs_node_open: (path_p, mode_p) => {
-    return wasmfsTry(() => fs.openSync(UTF8ToString(path_p), UTF8ToString(mode_p)));
-  },
+  _wasmfs_node_open: (path_p, mode_p) => wasmfsTry(() => fs.openSync(UTF8ToString(path_p), UTF8ToString(mode_p))),
 
   _wasmfs_node_rename__deps: ['$wasmfsTry'],
-  _wasmfs_node_rename: (from_path_p, to_path_p) => {
-    return wasmfsTry(() => fs.renameSync(UTF8ToString(from_path_p), UTF8ToString(to_path_p)));
-  },
+  _wasmfs_node_rename: (from_path_p, to_path_p) => wasmfsTry(() => fs.renameSync(UTF8ToString(from_path_p), UTF8ToString(to_path_p))),
 
   _wasmfs_node_symlink__deps: ['$wasmfsTry'],
-  _wasmfs_node_symlink: (target_path_p, linkpath_path_p) => {
-    return wasmfsTry(() => fs.symlinkSync(UTF8ToString(target_path_p), UTF8ToString(linkpath_path_p)));
-  },
+  _wasmfs_node_symlink: (target_path_p, linkpath_path_p) => wasmfsTry(() => fs.symlinkSync(UTF8ToString(target_path_p), UTF8ToString(linkpath_path_p))),
 
   _wasmfs_node_readlink__deps: ['$wasmfsTry'],
-  _wasmfs_node_readlink: (path_p, target_p, bufsize) => {
-    return wasmfsTry(() => {
-      var target = fs.readlinkSync(UTF8ToString(path_p));
-      return stringToUTF8(target, target_p, bufsize);
-    });
-  },
+  _wasmfs_node_readlink: (path_p, target_p, bufsize) => wasmfsTry(() => {
+    var target = fs.readlinkSync(UTF8ToString(path_p));
+    return stringToUTF8(target, target_p, bufsize);
+  }),
 
   _wasmfs_node_close__deps: [],
-  _wasmfs_node_close: (fd) => {
-    return wasmfsTry(() => {
-      fs.closeSync(fd);
-      // implicitly return 0
-    });
-  },
+  _wasmfs_node_close: (fd) => wasmfsTry(() => {
+    fs.closeSync(fd);
+    // implicitly return 0
+  }),
 
   _wasmfs_node_read__deps: ['$wasmfsTry'],
-  _wasmfs_node_read: (fd, buf_p, len, pos, nread_p) => {
-    return wasmfsTry(() => {
-      // TODO: Cache open file descriptors to guarantee that opened files will
-      // still exist when we try to access them.
-      let nread = fs.readSync(fd, new Int8Array(HEAPU8.buffer, buf_p, len), 0, len, pos);
-      {{{ makeSetValue('nread_p', 0, 'nread', 'i32') }}};
-      // implicitly return 0
-    });
-  },
+  _wasmfs_node_read: (fd, buf_p, len, pos, nread_p) => wasmfsTry(() => {
+    // TODO: Cache open file descriptors to guarantee that opened files will
+    // still exist when we try to access them.
+    let nread = fs.readSync(fd, new Int8Array(HEAPU8.buffer, buf_p, len), 0, len, pos);
+    {{{ makeSetValue('nread_p', 0, 'nread', 'i32') }}};
+    // implicitly return 0
+  }),
 
   _wasmfs_node_write__deps : ['$wasmfsTry'],
   _wasmfs_node_write : (fd, buf_p, len, pos, nwritten_p) => {

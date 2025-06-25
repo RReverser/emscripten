@@ -13,17 +13,11 @@ addToLibrary({
 
   receivesAndReturnsAnInteger__proxy: 'sync',
   receivesAndReturnsAnInteger__sig: 'ii',
-  receivesAndReturnsAnInteger: function(i) {
-    return i + 42;
-  },
+  receivesAndReturnsAnInteger: (i) => i + 42,
 
-  isThisInWorker: function() {
-    return typeof ENVIRONMENT_IS_WORKER !== 'undefined' && ENVIRONMENT_IS_WORKER;
-  },
+  isThisInWorker: () => typeof ENVIRONMENT_IS_WORKER !== 'undefined' && ENVIRONMENT_IS_WORKER,
 
   isThisInWorkerOnMainThread__proxy: 'sync',
   isThisInWorkerOnMainThread__sig: 'i',
-  isThisInWorkerOnMainThread: function() {
-    return typeof ENVIRONMENT_IS_WORKER !== 'undefined' && ENVIRONMENT_IS_WORKER;
-  }
+  isThisInWorkerOnMainThread: () => typeof ENVIRONMENT_IS_WORKER !== 'undefined' && ENVIRONMENT_IS_WORKER
 });

@@ -1751,7 +1751,7 @@ var LibrarySDL = {
 #else
   SDL_Delay__deps: ['emscripten_sleep'],
   SDL_Delay__async: true,
-  SDL_Delay: (delay) => _emscripten_sleep(delay),
+  SDL_Delay: '_emscripten_sleep',
 #endif
 
   SDL_WM_SetCaption__proxy: 'sync',
@@ -2023,7 +2023,7 @@ var LibrarySDL = {
   SDL_GetTicks: () => (Date.now() - SDL.startTime)|0,
 
   SDL_PollEvent__proxy: 'sync',
-  SDL_PollEvent: (ptr) => SDL.pollEvent(ptr),
+  SDL_PollEvent: 'SDL.pollEvent',
 
   SDL_PushEvent__proxy: 'sync',
   SDL_PushEvent: (ptr) => {
@@ -3229,7 +3229,7 @@ var LibrarySDL = {
   // SDL gfx
 
   $SDL_gfx: {
-    drawRectangle: (surf, x1, y1, x2, y2, action, cssColor) => {
+    drawRectangle(surf, x1, y1, x2, y2, action, cssColor) {
       x1 = x1 << 16 >> 16;
       y1 = y1 << 16 >> 16;
       x2 = x2 << 16 >> 16;
@@ -3246,7 +3246,7 @@ var LibrarySDL = {
       surfData.ctx[action + 'Rect'](x, y, w, h);
       surfData.ctx.restore();
     },
-    drawLine: (surf, x1, y1, x2, y2, cssColor) => {
+    drawLine(surf, x1, y1, x2, y2, cssColor) {
       x1 = x1 << 16 >> 16;
       y1 = y1 << 16 >> 16;
       x2 = x2 << 16 >> 16;
@@ -3262,7 +3262,7 @@ var LibrarySDL = {
       surfData.ctx.restore();
     },
     // See http://stackoverflow.com/questions/2172798/how-to-draw-an-oval-in-html5-canvas
-    drawEllipse: (surf, x, y, rx, ry, action, cssColor) => {
+    drawEllipse(surf, x, y, rx, ry, action, cssColor) {
       x = x << 16 >> 16;
       y = y << 16 >> 16;
       rx = rx << 16 >> 16;
@@ -3492,7 +3492,7 @@ var LibrarySDL = {
   },
 
   SDL_JoystickUpdate__proxy: 'sync',
-  SDL_JoystickUpdate: () => SDL.queryJoysticks(),
+  SDL_JoystickUpdate: 'SDL.queryJoysticks',
 
   SDL_JoystickEventState__proxy: 'sync',
   SDL_JoystickEventState: (state) => {

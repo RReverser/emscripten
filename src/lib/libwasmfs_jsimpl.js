@@ -67,7 +67,7 @@ addToLibrary({
   // we then connect to the calling C++.
 
   _wasmfs_jsimpl_async_alloc_file__deps: ['emscripten_proxy_finish'],
-  _wasmfs_jsimpl_async_alloc_file: async function(ctx, backend, file) {
+  _wasmfs_jsimpl_async_alloc_file: async (ctx, backend, file) => {
 #if ASSERTIONS
     assert(wasmFS$backends[backend]);
 #endif
@@ -76,7 +76,7 @@ addToLibrary({
   },
 
   _wasmfs_jsimpl_async_free_file__deps: ['emscripten_proxy_finish'],
-  _wasmfs_jsimpl_async_free_file: async function(ctx, backend, file) {
+  _wasmfs_jsimpl_async_free_file: async (ctx, backend, file) => {
 #if ASSERTIONS
     assert(wasmFS$backends[backend]);
 #endif
@@ -86,7 +86,7 @@ addToLibrary({
 
   _wasmfs_jsimpl_async_write__i53abi: true,
   _wasmfs_jsimpl_async_write__deps: ['emscripten_proxy_finish'],
-  _wasmfs_jsimpl_async_write: async function(ctx, backend, file, buffer, length, offset, result_p) {
+  _wasmfs_jsimpl_async_write: async (ctx, backend, file, buffer, length, offset, result_p) => {
 #if ASSERTIONS
     assert(wasmFS$backends[backend]);
 #endif
@@ -97,7 +97,7 @@ addToLibrary({
 
   _wasmfs_jsimpl_async_read__i53abi: true,
   _wasmfs_jsimpl_async_read__deps: ['emscripten_proxy_finish'],
-  _wasmfs_jsimpl_async_read: async function(ctx, backend, file, buffer, length, offset, result_p) {
+  _wasmfs_jsimpl_async_read: async (ctx, backend, file, buffer, length, offset, result_p) => {
 #if ASSERTIONS
     assert(wasmFS$backends[backend]);
 #endif
@@ -107,7 +107,7 @@ addToLibrary({
   },
 
   _wasmfs_jsimpl_async_get_size__deps: ['emscripten_proxy_finish'],
-  _wasmfs_jsimpl_async_get_size: async function(ctx, backend, file, size_p) {
+  _wasmfs_jsimpl_async_get_size: async (ctx, backend, file, size_p) => {
 #if ASSERTIONS
     assert(wasmFS$backends[backend]);
 #endif

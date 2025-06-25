@@ -1,9 +1,4 @@
 addToLibrary({
-  floaty: function(x, y, z) {
-    return -x + y;
-  },
-  floatyAlone: function(x, y, z) {
-    return x - y;
-  }
+  floaty: (x, y, z) => -x + y,
+  floatyAlone: (x, y, z) => x - y
 });
-

@@ -26,9 +26,7 @@ var LibraryEmVal = {
   $emval_symbols: {}, // address -> string
 
   $count_emval_handles__deps: ['$emval_freelist', '$emval_handles'],
-  $count_emval_handles: () => {
-    return emval_handles.length / 2 - {{{ EMVAL_RESERVED_HANDLES }}} - emval_freelist.length;
-  },
+  $count_emval_handles: () => emval_handles.length / 2 - {{{ EMVAL_RESERVED_HANDLES }}} - emval_freelist.length,
 
   _emval_register_symbol__deps: ['$emval_symbols', '$AsciiToString'],
   _emval_register_symbol: (address) => {
@@ -46,7 +44,7 @@ var LibraryEmVal = {
 
   $Emval__deps: ['$emval_freelist', '$emval_handles', '$throwBindingError'],
   $Emval: {
-    toValue: (handle) => {
+    toValue(handle) {
       if (!handle) {
           throwBindingError(`Cannot use deleted val. handle = ${handle}`);
       }
@@ -57,7 +55,7 @@ var LibraryEmVal = {
       return emval_handles[handle];
     },
 
-    toHandle: (value) => {
+    toHandle(value) {
       switch (value) {
         case undefined: return 2;
         case null: return 4;
@@ -155,9 +153,7 @@ var LibraryEmVal = {
     if (typeof globalThis == 'object') {
       return globalThis;
     }
-    return (function(){
-      return Function;
-    })()('return this')();
+    return Function('return this')();
   },
 #endif
   _emval_get_global__deps: ['$Emval', '$getStringOrSymbol', '$emval_get_global'],
@@ -404,12 +400,11 @@ var LibraryEmVal = {
 #if ASYNCIFY
   _emval_await__deps: ['$Emval', '$Asyncify'],
   _emval_await__async: true,
-  _emval_await: (promise) => {
-    return Asyncify.handleAsync(async () => {
-      var value = await Emval.toValue(promise);
-      return Emval.toHandle(value);
-    });
-  },
+  _emval_await: (promise) => Asyncify.handleAsync(async () => {
+    var value = await Emval.toValue(promise);
+    return Emval.toHandle(value);
+  })
+  ,
 #endif
 
   _emval_iter_begin__deps: ['$Emval'],
@@ -433,12 +428,10 @@ var LibraryEmVal = {
   },
 
   _emval_coro_make_promise__deps: ['$Emval'],
-  _emval_coro_make_promise: (resolveHandlePtr, rejectHandlePtr) => {
-    return Emval.toHandle(new Promise((resolve, reject) => {
-      {{{ makeSetValue('resolveHandlePtr', '0', 'Emval.toHandle(resolve)', '*') }}};
-      {{{ makeSetValue('rejectHandlePtr', '0', 'Emval.toHandle(reject)', '*') }}};
-    }));
-  },
+  _emval_coro_make_promise: (resolveHandlePtr, rejectHandlePtr) => Emval.toHandle(new Promise((resolve, reject) => {
+    {{{ makeSetValue('resolveHandlePtr', '0', 'Emval.toHandle(resolve)', '*') }}};
+    {{{ makeSetValue('rejectHandlePtr', '0', 'Emval.toHandle(reject)', '*') }}};
+  })),
 
   _emval_from_current_cxa_exception__deps: ['$Emval', '__cxa_rethrow'],
   _emval_from_current_cxa_exception: () => {

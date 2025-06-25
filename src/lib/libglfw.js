@@ -93,7 +93,7 @@ var LibraryGLFW = {
 #endif
   ],
   $GLFW: {
-    WindowFromId: (id) => {
+    WindowFromId(id) {
       if (id <= 0 || !GLFW.windows) return null;
       return GLFW.windows[id - 1];
     },
@@ -152,7 +152,7 @@ var LibraryGLFW = {
  ******************************************************************************/
 
     /* https://developer.mozilla.org/en/Document_Object_Model_%28DOM%29/KeyboardEvent and GLFW/glfw3.h */
-    DOMToGLFWKeyCode: (keycode) => {
+    DOMToGLFWKeyCode(keycode) {
       switch (keycode) {
         // these keycodes are only defined for GLFW3, assume they are the same for GLFW2
         case 0x20:return 32; // DOM_VK_SPACE -> GLFW_KEY_SPACE
@@ -357,7 +357,7 @@ var LibraryGLFW = {
       };
     },
 
-    getModBits: (win) => {
+    getModBits(win) {
       var mod = 0;
       if (win.keys[340]) mod |= 0x0001; // GLFW_MOD_SHIFT
       if (win.keys[341]) mod |= 0x0002; // GLFW_MOD_CONTROL
@@ -367,7 +367,7 @@ var LibraryGLFW = {
       return mod;
     },
 
-    onKeyPress: (event) => {
+    onKeyPress(event) {
       if (!GLFW.active || !GLFW.active.charFunc) return;
       if (event.ctrlKey || event.metaKey) return;
 
@@ -383,7 +383,7 @@ var LibraryGLFW = {
 #endif
     },
 
-    onKeyChanged: (keyCode, status) => {
+    onKeyChanged(keyCode, status) {
       if (!GLFW.active) return;
 
       var key = GLFW.DOMToGLFWKeyCode(keyCode);
@@ -406,15 +406,15 @@ var LibraryGLFW = {
       }
     },
 
-    onGamepadConnected: (event) => {
+    onGamepadConnected(event) {
       GLFW.refreshJoysticks();
     },
 
-    onGamepadDisconnected: (event) => {
+    onGamepadDisconnected(event) {
       GLFW.refreshJoysticks();
     },
 
-    onKeydown: (event) => {
+    onKeydown(event) {
       GLFW.onKeyChanged(event.keyCode, 1); // GLFW_PRESS or GLFW_REPEAT
 
       // This logic comes directly from the sdl implementation. We cannot
@@ -425,11 +425,11 @@ var LibraryGLFW = {
       }
     },
 
-    onKeyup: (event) => {
+    onKeyup(event) {
       GLFW.onKeyChanged(event.keyCode, 0); // GLFW_RELEASE
     },
 
-    onBlur: (event) => {
+    onBlur(event) {
       if (!GLFW.active) return;
 
       for (var i = 0; i < GLFW.active.domKeys.length; ++i) {
@@ -439,7 +439,7 @@ var LibraryGLFW = {
       }
     },
 
-    onMousemove: (event) => {
+    onMousemove(event) {
       if (!GLFW.active) return;
 
       if (event.type === 'touchmove') {
@@ -480,7 +480,7 @@ var LibraryGLFW = {
       }
     },
 
-    DOMToGLFWMouseButton: (event) => {
+    DOMToGLFWMouseButton(event) {
       // DOM and glfw have different button codes.
       // See http://www.w3schools.com/jsref/event_button.asp.
       var eventButton = event['button'];
@@ -494,7 +494,7 @@ var LibraryGLFW = {
       return eventButton;
     },
 
-    onMouseenter: (event) => {
+    onMouseenter(event) {
       if (!GLFW.active) return;
 
       if (event.target != Browser.getCanvas()) return;
@@ -506,7 +506,7 @@ var LibraryGLFW = {
 #endif
     },
 
-    onMouseleave: (event) => {
+    onMouseleave(event) {
       if (!GLFW.active) return;
 
       if (event.target != Browser.getCanvas()) return;
@@ -518,7 +518,7 @@ var LibraryGLFW = {
 #endif
     },
 
-    onMouseButtonChanged: (event, status) => {
+    onMouseButtonChanged(event, status) {
       if (!GLFW.active) return;
 
       if (event.target != Browser.getCanvas()) return;
@@ -587,17 +587,17 @@ var LibraryGLFW = {
       }
     },
 
-    onMouseButtonDown: (event) => {
+    onMouseButtonDown(event) {
       if (!GLFW.active) return;
       GLFW.onMouseButtonChanged(event, 1); // GLFW_PRESS
     },
 
-    onMouseButtonUp: (event) => {
+    onMouseButtonUp(event) {
       if (!GLFW.active) return;
       GLFW.onMouseButtonChanged(event, 0); // GLFW_RELEASE
     },
 
-    onMouseWheel: (event) => {
+    onMouseWheel(event) {
       // Note the minus sign that flips browser wheel direction (positive direction scrolls page down) to native wheel direction (positive direction is mouse wheel up)
       var delta = -Browser.getMouseWheelDelta(event);
       delta = (delta == 0) ? 0 : (delta > 0 ? Math.max(delta, 1) : Math.min(delta, -1)); // Quantize to integer so that minimum scroll is at least +/- 1.
@@ -625,7 +625,7 @@ var LibraryGLFW = {
     // width/height are the dimensions in screen coordinates the user interact with (ex: drawing, mouse coordinates...)
     // framebufferWidth/framebufferHeight are the dimensions in pixel coordinates used for rendering
     // in a HiDPI scenario framebufferWidth = devicePixelRatio * width
-    onCanvasResize: (width, height, framebufferWidth, framebufferHeight) => {
+    onCanvasResize(width, height, framebufferWidth, framebufferHeight) {
       if (!GLFW.active) return;
 
       var resizeNeeded = false;
@@ -670,7 +670,7 @@ var LibraryGLFW = {
       }
     },
 
-    onWindowSizeChanged: () => {
+    onWindowSizeChanged() {
       if (!GLFW.active) return;
 
       if (GLFW.active.windowSizeFunc) {
@@ -683,7 +683,7 @@ var LibraryGLFW = {
       }
     },
 
-    onFramebufferSizeChanged: () => {
+    onFramebufferSizeChanged() {
       if (!GLFW.active) return;
 
 #if USE_GLFW == 3
@@ -693,7 +693,7 @@ var LibraryGLFW = {
 #endif
     },
 
-    onWindowContentScaleChanged: (scale) => {
+    onWindowContentScaleChanged(scale) {
       GLFW.scale = scale;
       if (!GLFW.active) return;
 
@@ -708,7 +708,7 @@ var LibraryGLFW = {
 
     /* GLFW2 wrapping */
 
-    setWindowTitle: (winid, title) => {
+    setWindowTitle(winid, title) {
       var win = GLFW.WindowFromId(winid);
       if (!win) return;
 
@@ -718,7 +718,7 @@ var LibraryGLFW = {
       }
     },
 
-    setJoystickCallback: (cbfun) => {
+    setJoystickCallback(cbfun) {
       var prevcbfun = GLFW.joystickFunc;
       GLFW.joystickFunc = cbfun;
       GLFW.refreshJoysticks();
@@ -729,7 +729,7 @@ var LibraryGLFW = {
     lastGamepadState: [],
     lastGamepadStateFrame: null, // The integer value of MainLoop.currentFrameNumber of when the last gamepad state was produced.
 
-    refreshJoysticks: () => {
+    refreshJoysticks() {
       // Produce a new Gamepad API sample if we are ticking a new game frame, or if not using emscripten_set_main_loop() at all to drive animation.
       if (MainLoop.currentFrameNumber !== GLFW.lastGamepadStateFrame || !MainLoop.currentFrameNumber) {
         GLFW.lastGamepadState = navigator.getGamepads ? navigator.getGamepads() : (navigator.webkitGetGamepads || []);
@@ -782,7 +782,7 @@ var LibraryGLFW = {
       }
     },
 
-    setKeyCallback: (winid, cbfun) => {
+    setKeyCallback(winid, cbfun) {
       var win = GLFW.WindowFromId(winid);
       if (!win) return null;
       var prevcbfun = win.keyFunc;
@@ -790,7 +790,7 @@ var LibraryGLFW = {
       return prevcbfun;
     },
 
-    setCharCallback: (winid, cbfun) => {
+    setCharCallback(winid, cbfun) {
       var win = GLFW.WindowFromId(winid);
       if (!win) return null;
       var prevcbfun = win.charFunc;
@@ -798,7 +798,7 @@ var LibraryGLFW = {
       return prevcbfun;
     },
 
-    setMouseButtonCallback: (winid, cbfun) => {
+    setMouseButtonCallback(winid, cbfun) {
       var win = GLFW.WindowFromId(winid);
       if (!win) return null;
       var prevcbfun = win.mouseButtonFunc;
@@ -806,7 +806,7 @@ var LibraryGLFW = {
       return prevcbfun;
     },
 
-    setCursorPosCallback: (winid, cbfun) => {
+    setCursorPosCallback(winid, cbfun) {
       var win = GLFW.WindowFromId(winid);
       if (!win) return null;
       var prevcbfun = win.cursorPosFunc;
@@ -814,7 +814,7 @@ var LibraryGLFW = {
       return prevcbfun;
     },
 
-    setScrollCallback: (winid, cbfun) => {
+    setScrollCallback(winid, cbfun) {
       var win = GLFW.WindowFromId(winid);
       if (!win) return null;
       var prevcbfun = win.scrollFunc;
@@ -822,7 +822,7 @@ var LibraryGLFW = {
       return prevcbfun;
     },
 
-    setDropCallback: (winid, cbfun) => {
+    setDropCallback(winid, cbfun) {
       var win = GLFW.WindowFromId(winid);
       if (!win) return null;
       var prevcbfun = win.dropFunc;
@@ -830,7 +830,7 @@ var LibraryGLFW = {
       return prevcbfun;
     },
 
-    onDrop: (event) => {
+    onDrop(event) {
       if (!GLFW.active || !GLFW.active.dropFunc) return;
       if (!event.dataTransfer || !event.dataTransfer.files || event.dataTransfer.files.length == 0) return;
 
@@ -882,14 +882,14 @@ var LibraryGLFW = {
       return false;
     },
 
-    onDragover: (event) => {
+    onDragover(event) {
       if (!GLFW.active || !GLFW.active.dropFunc) return;
 
       event.preventDefault();
       return false;
     },
 
-    setWindowSizeCallback: (winid, cbfun) => {
+    setWindowSizeCallback(winid, cbfun) {
       var win = GLFW.WindowFromId(winid);
       if (!win) return null;
       var prevcbfun = win.windowSizeFunc;
@@ -907,7 +907,7 @@ var LibraryGLFW = {
       return prevcbfun;
     },
 
-    setWindowCloseCallback: (winid, cbfun) => {
+    setWindowCloseCallback(winid, cbfun) {
       var win = GLFW.WindowFromId(winid);
       if (!win) return null;
       var prevcbfun = win.windowCloseFunc;
@@ -915,7 +915,7 @@ var LibraryGLFW = {
       return prevcbfun;
     },
 
-    setWindowRefreshCallback: (winid, cbfun) => {
+    setWindowRefreshCallback(winid, cbfun) {
       var win = GLFW.WindowFromId(winid);
       if (!win) return null;
       var prevcbfun = win.windowRefreshFunc;
@@ -923,7 +923,7 @@ var LibraryGLFW = {
       return prevcbfun;
     },
 
-    onClickRequestPointerLock: (e) => {
+    onClickRequestPointerLock(e) {
       var canvas = Browser.getCanvas();
       if (!Browser.pointerLock && canvas.requestPointerLock) {
         canvas.requestPointerLock();
@@ -931,7 +931,7 @@ var LibraryGLFW = {
       }
     },
 
-    setInputMode: (winid, mode, value) => {
+    setInputMode(winid, mode, value) {
       var win = GLFW.WindowFromId(winid);
       if (!win) return;
 
@@ -985,32 +985,32 @@ var LibraryGLFW = {
       }
     },
 
-    getKey: (winid, key) => {
+    getKey(winid, key) {
       var win = GLFW.WindowFromId(winid);
       if (!win) return 0;
       return win.keys[key];
     },
 
-    getMouseButton: (winid, button) => {
+    getMouseButton(winid, button) {
       var win = GLFW.WindowFromId(winid);
       if (!win) return 0;
       return (win.buttons & (1 << button)) > 0;
     },
 
-    getCursorPos: (winid, x, y) => {
+    getCursorPos(winid, x, y) {
       {{{ makeSetValue('x', '0', 'Browser.mouseX', 'double') }}};
       {{{ makeSetValue('y', '0', 'Browser.mouseY', 'double') }}};
     },
 
-    getMousePos: (winid, x, y) => {
+    getMousePos(winid, x, y) {
       {{{ makeSetValue('x', '0', 'Browser.mouseX', 'i32') }}};
       {{{ makeSetValue('y', '0', 'Browser.mouseY', 'i32') }}};
     },
 
-    setCursorPos: (winid, x, y) => {
+    setCursorPos(winid, x, y) {
     },
 
-    getWindowPos: (winid, x, y) => {
+    getWindowPos(winid, x, y) {
       var wx = 0;
       var wy = 0;
 
@@ -1029,14 +1029,14 @@ var LibraryGLFW = {
       }
     },
 
-    setWindowPos: (winid, x, y) => {
+    setWindowPos(winid, x, y) {
       var win = GLFW.WindowFromId(winid);
       if (!win) return;
       win.x = x;
       win.y = y;
     },
 
-    getWindowSize: (winid, width, height) => {
+    getWindowSize(winid, width, height) {
       var ww = 0;
       var wh = 0;
 
@@ -1055,7 +1055,7 @@ var LibraryGLFW = {
       }
     },
 
-    setWindowSize: (winid, width, height) => {
+    setWindowSize(winid, width, height) {
       var win = GLFW.WindowFromId(winid);
       if (!win) return;
 
@@ -1064,11 +1064,11 @@ var LibraryGLFW = {
       }
     },
 
-    defaultWindowHints: () => {
+    defaultWindowHints() {
       GLFW.hints = {...GLFW.defaultHints};
     },
 
-    createWindow: (width, height, title, monitor, share) => {
+    createWindow(width, height, title, monitor, share) {
       var i, id;
       for (i = 0; i < GLFW.windows.length && GLFW.windows[i] !== null; i++) {
         // no-op
@@ -1131,7 +1131,7 @@ var LibraryGLFW = {
       return win.id;
     },
 
-    destroyWindow: (winid) => {
+    destroyWindow(winid) {
       var win = GLFW.WindowFromId(winid);
       if (!win) return;
 
@@ -1154,7 +1154,7 @@ var LibraryGLFW = {
       delete Module['ctx'];
     },
 
-    swapBuffers: (winid) => {
+    swapBuffers(winid) {
     },
 
     // Overrides Browser.requestFullscreen to notify listeners even if Browser.resizeCanvas is false
@@ -1296,7 +1296,7 @@ var LibraryGLFW = {
       return { x: adjustedX, y: adjustedY };
     },
 
-    setWindowAttrib: (winid, attrib, value) => {
+    setWindowAttrib(winid, attrib, value) {
       var win = GLFW.WindowFromId(winid);
       if (!win) return;
       const isHiDPIAware = GLFW.isHiDPIAware();
@@ -1340,7 +1340,7 @@ var LibraryGLFW = {
       GLFW.adjustCanvasDimensions();
     },
 
-    GLFW2ParamToGLFW3Param: (param) => {
+    GLFW2ParamToGLFW3Param(param) {
       var table = {
         0x00030001:0, // GLFW_MOUSE_CURSOR
         0x00030002:0, // GLFW_STICKY_KEYS
@@ -1587,7 +1587,7 @@ var LibraryGLFW = {
 
   glfwSetGammaRamp: (monitor, ramp) => { throw "glfwSetGammaRamp not implemented."; },
 
-  glfwDefaultWindowHints: () => GLFW.defaultWindowHints(),
+  glfwDefaultWindowHints: 'GLFW.defaultWindowHints',
 
   glfwWindowHint: (target, hint) => {
     GLFW.hints[target] = hint;
@@ -1599,9 +1599,9 @@ var LibraryGLFW = {
     // will only affect their specific platform.  Other platforms will ignore them.
   },
 
-  glfwCreateWindow: (width, height, title, monitor, share) => GLFW.createWindow(width, height, title, monitor, share),
+  glfwCreateWindow: 'GLFW.createWindow',
 
-  glfwDestroyWindow: (winid) => GLFW.destroyWindow(winid),
+  glfwDestroyWindow: 'GLFW.destroyWindow',
 
   glfwWindowShouldClose: (winid) => {
     var win = GLFW.WindowFromId(winid);
@@ -1615,15 +1615,15 @@ var LibraryGLFW = {
     win.shouldClose = value;
   },
 
-  glfwSetWindowTitle: (winid, title) => GLFW.setWindowTitle(winid, title),
+  glfwSetWindowTitle: 'GLFW.setWindowTitle',
 
-  glfwGetWindowPos: (winid, x, y) => GLFW.getWindowPos(winid, x, y),
+  glfwGetWindowPos: 'GLFW.getWindowPos',
 
-  glfwSetWindowPos: (winid, x, y) => GLFW.setWindowPos(winid, x, y),
+  glfwSetWindowPos: 'GLFW.setWindowPos',
 
-  glfwGetWindowSize: (winid, width, height) => GLFW.getWindowSize(winid, width, height),
+  glfwGetWindowSize: 'GLFW.getWindowSize',
 
-  glfwSetWindowSize: (winid, width, height) => GLFW.setWindowSize(winid, width, height),
+  glfwSetWindowSize: 'GLFW.setWindowSize',
 
   glfwGetFramebufferSize: (winid, width, height) => {
     var ww = 0;
@@ -1683,7 +1683,7 @@ var LibraryGLFW = {
     return win.attributes[attrib];
   },
 
-  glfwSetWindowAttrib: (winid, attrib, value) => GLFW.setWindowAttrib(winid, attrib, value),
+  glfwSetWindowAttrib: 'GLFW.setWindowAttrib',
 
   glfwSetWindowUserPointer: (winid, ptr) => {
     var win = GLFW.WindowFromId(winid);
@@ -1705,11 +1705,11 @@ var LibraryGLFW = {
     return prevcbfun;
   },
 
-  glfwSetWindowSizeCallback: (winid, cbfun) => GLFW.setWindowSizeCallback(winid, cbfun),
+  glfwSetWindowSizeCallback: 'GLFW.setWindowSizeCallback',
 
-  glfwSetWindowCloseCallback: (winid, cbfun) => GLFW.setWindowCloseCallback(winid, cbfun),
+  glfwSetWindowCloseCallback: 'GLFW.setWindowCloseCallback',
 
-  glfwSetWindowRefreshCallback: (winid, cbfun) => GLFW.setWindowRefreshCallback(winid, cbfun),
+  glfwSetWindowRefreshCallback: 'GLFW.setWindowRefreshCallback',
 
   glfwSetWindowFocusCallback: (winid, cbfun) => {
     var win = GLFW.WindowFromId(winid);
@@ -1798,28 +1798,28 @@ var LibraryGLFW = {
 
   glfwRawMouseMotionSupported: () => 0,
 
-  glfwGetKey: (winid, key) => GLFW.getKey(winid, key),
+  glfwGetKey: 'GLFW.getKey',
 
   glfwGetKeyName: (key, scancode) => { throw "glfwGetKeyName not implemented."; },
 
   glfwGetKeyScancode: (key) => { throw "glfwGetKeyScancode not implemented."; },
 
-  glfwGetMouseButton: (winid, button) => GLFW.getMouseButton(winid, button),
+  glfwGetMouseButton: 'GLFW.getMouseButton',
 
-  glfwGetCursorPos: (winid, x, y) => GLFW.getCursorPos(winid, x, y),
+  glfwGetCursorPos: 'GLFW.getCursorPos',
 
   // I believe it is not possible to move the mouse with javascript
-  glfwSetCursorPos: (winid, x, y) => GLFW.setCursorPos(winid, x, y),
+  glfwSetCursorPos: 'GLFW.setCursorPos',
 
-  glfwSetKeyCallback: (winid, cbfun) => GLFW.setKeyCallback(winid, cbfun),
+  glfwSetKeyCallback: 'GLFW.setKeyCallback',
 
-  glfwSetCharCallback: (winid, cbfun) => GLFW.setCharCallback(winid, cbfun),
+  glfwSetCharCallback: 'GLFW.setCharCallback',
 
   glfwSetCharModsCallback: (winid, cbfun) => { throw "glfwSetCharModsCallback not implemented."; },
 
-  glfwSetMouseButtonCallback: (winid, cbfun) => GLFW.setMouseButtonCallback(winid, cbfun),
+  glfwSetMouseButtonCallback: 'GLFW.setMouseButtonCallback',
 
-  glfwSetCursorPosCallback: (winid, cbfun) => GLFW.setCursorPosCallback(winid, cbfun),
+  glfwSetCursorPosCallback: 'GLFW.setCursorPosCallback',
 
   glfwSetCursorEnterCallback: (winid, cbfun) => {
     var win = GLFW.WindowFromId(winid);
@@ -1829,11 +1829,11 @@ var LibraryGLFW = {
     return prevcbfun;
   },
 
-  glfwSetScrollCallback: (winid, cbfun) => GLFW.setScrollCallback(winid, cbfun),
+  glfwSetScrollCallback: 'GLFW.setScrollCallback',
 
   glfwVulkanSupported: () => 0,
 
-  glfwSetDropCallback: (winid, cbfun) => GLFW.setDropCallback(winid, cbfun),
+  glfwSetDropCallback: 'GLFW.setDropCallback',
 
   glfwGetTimerValue: () => { throw "glfwGetTimerValue is not implemented."; },
 
@@ -1890,7 +1890,7 @@ var LibraryGLFW = {
 
   glfwJoystickIsGamepad: (jid) => { throw "glfwJoystickIsGamepad not implemented"; },
 
-  glfwSetJoystickCallback: (cbfun) => GLFW.setJoystickCallback(cbfun),
+  glfwSetJoystickCallback: 'GLFW.setJoystickCallback',
 
   glfwSetClipboardString: (win, string) => 0,
 
@@ -1900,7 +1900,7 @@ var LibraryGLFW = {
 
   glfwGetCurrentContext: () => GLFW.active ? GLFW.active.id : 0,
 
-  glfwSwapBuffers: (winid) => GLFW.swapBuffers(winid),
+  glfwSwapBuffers: 'GLFW.swapBuffers',
 
 #elif USE_GLFW == 2
   glfwOpenWindow: (width, height, redbits, greenbits, bluebits, alphabits, depthbits, stencilbits, mode) => {

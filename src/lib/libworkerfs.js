@@ -38,9 +38,9 @@ addToLibrary({
         return parts[parts.length-1];
       }
       // We also accept FileList here, by using Array.prototype
-      Array.prototype.forEach.call(mount.opts["files"] || [], function(file) {
+      for (var file of mount.opts["files"] || []) {
         WORKERFS.createNode(ensureParent(file.name), base(file.name), WORKERFS.FILE_MODE, 0, file, file.lastModifiedDate);
-      });
+      }
       (mount.opts["blobs"] || []).forEach((obj) => {
         WORKERFS.createNode(ensureParent(obj["name"]), base(obj["name"]), WORKERFS.FILE_MODE, 0, obj["data"]);
       });

@@ -9,14 +9,14 @@ addToLibrary({
   ],
   _wasmfs_create_js_file_backend_js: (backend) => {
     wasmFS$backends[backend] = {
-      allocFile: (file) => {
+      allocFile(file) {
         // Do nothing: we allocate the typed array lazily, see write()
       },
-      freeFile: (file) => {
+      freeFile(file) {
         // Release the memory, as it now has no references to it any more.
         wasmFS$JSMemoryFiles[file] = undefined;
       },
-      write: (file, buffer, length, offset) => {
+      write(file, buffer, length, offset) {
         try {
           if (!wasmFS$JSMemoryFiles[file]) {
             // Initialize typed array on first write operation.
@@ -35,7 +35,7 @@ addToLibrary({
           return -{{{ cDefs.EIO }}};
         }
       },
-      read: (file, buffer, length, offset) => {
+      read(file, buffer, length, offset) {
         var fileData = wasmFS$JSMemoryFiles[file];
         // We can't read past the end of the file's data.
         var dataAfterOffset = Math.max(0, fileData.length - offset);
@@ -45,7 +45,7 @@ addToLibrary({
         return length;
       },
       getSize: (file) => wasmFS$JSMemoryFiles[file]?.length || 0,
-      setSize: (file, size) => {
+      setSize(file, size) {
         // Allocate a new array of the proper size, and copy as much data as
         // possible.
         var old = wasmFS$JSMemoryFiles[file];

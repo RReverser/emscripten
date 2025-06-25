@@ -91,7 +91,7 @@ function Image() {
   EventListener.call(this);
   var src = '';
   Object.defineProperty(this, 'src', {
-    set: (value) => {
+    set(value) {
       src = value;
       assert(this.id);
       postMessage({ target: 'Image', method: 'src', src, id: this.id });
@@ -165,7 +165,7 @@ document.createElement = (what) => {
         }
         if (type === '2d') {
           return {
-            getImageData: (x, y, w, h) => {
+            getImageData(x, y, w, h) {
               assert(x == 0 && y == 0 && w == canvas.width && h == canvas.height);
               canvas.ensureData();
               return {
@@ -174,7 +174,7 @@ document.createElement = (what) => {
                 data: new Uint8Array(canvas.data.data) // TODO: can we avoid this copy?
               };
             },
-            putImageData: (image, x, y) => {
+            putImageData(image, x, y) {
               canvas.ensureData();
               assert(x == 0 && y == 0 && image.width == canvas.width && image.height == canvas.height);
               canvas.data.data.set(image.data); // TODO: can we avoid this copy?
@@ -182,7 +182,7 @@ document.createElement = (what) => {
                 postMessage({ target: 'canvas', op: 'render', image: canvas.data });
               }
             },
-            drawImage: (image, x, y, w, h, ox, oy, ow, oh) => {
+            drawImage(image, x, y, w, h, ox, oy, ow, oh) {
               assert (!x && !y && !ox && !oy);
               assert(w === ow && h === oh);
               assert(canvas.width === w || w === undefined);
@@ -214,7 +214,7 @@ document.createElement = (what) => {
       canvas.width_ ||= 0;
       canvas.height_ ||= 0;
       Object.defineProperty(canvas, 'width', {
-        set: (value) => {
+        set(value) {
           canvas.width_ = value;
           if (canvas === Module['canvas']) {
             postMessage({ target: 'canvas', op: 'resize', width: canvas.width_, height: canvas.height_ });
@@ -223,7 +223,7 @@ document.createElement = (what) => {
         get: () => canvas.width_
       });
       Object.defineProperty(canvas, 'height', {
-        set: (value) => {
+        set(value) {
           canvas.height_ = value;
           if (canvas === Module['canvas']) {
             postMessage({ target: 'canvas', op: 'resize', width: canvas.width_, height: canvas.height_ });
@@ -234,12 +234,12 @@ document.createElement = (what) => {
 
       var style = {
         parentCanvas: canvas,
-        removeProperty: () => {},
-        setProperty:  () => {},
+        removeProperty() {},
+        setProperty() {},
       };
 
       Object.defineProperty(style, 'cursor', {
-        set: (value) => {
+        set(value) {
           if (!style.cursor_ || style.cursor_ !== value) {
             style.cursor_ = value;
             if (style.parentCanvas === Module['canvas']) {
@@ -302,15 +302,13 @@ Audio.prototype.cloneNode = () => new Audio;
 
 function AudioContext() {
   warnOnce('faking WebAudio elements, no actual sound will play');
-  var makeNode = () => {
-    return {
-      connect: () => {},
-      disconnect: () => {},
-    }
-  };
+  var makeNode = () => ({
+    connect() {},
+    disconnect() {},
+  });
   this.listener = {
-    setPosition: () => {},
-    setOrientation: () => {},
+    setPosition() {},
+    setOrientation() {},
   };
   this.decodeAudioData = () => {}; // ignore callbacks
   this.createBuffer = makeNode;

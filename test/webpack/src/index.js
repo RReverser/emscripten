@@ -1,7 +1,7 @@
 var params = {
   print: (function() {
     var element = document.getElementById('output');
-    return function(text) {
+    return (text) => {
       console.log(text);
       element.innerHTML += text.replace('\n', '<br>', 'g') + '<br>';
     };

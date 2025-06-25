@@ -122,7 +122,7 @@ LibraryJSEventLoop = {
 #if AUDIO_WORKLET
   // Use a wrapper function here since simply aliasing `clearTimeout` would
   // cause the module to fail to load in the audio worklet context.
-  emscripten_clear_timeout: (id) => clearTimeout(id),
+  emscripten_clear_timeout: 'clearTimeout',
 #else
   emscripten_clear_timeout: 'clearTimeout',
 #endif
@@ -519,10 +519,10 @@ LibraryJSEventLoop = {
   },
 
   emscripten_pause_main_loop__deps: ['$MainLoop'],
-  emscripten_pause_main_loop: () => MainLoop.pause(),
+  emscripten_pause_main_loop: 'MainLoop.pause',
 
   emscripten_resume_main_loop__deps: ['$MainLoop'],
-  emscripten_resume_main_loop: () => MainLoop.resume(),
+  emscripten_resume_main_loop: 'MainLoop.resume',
 
   _emscripten_push_main_loop_blocker__deps: ['$MainLoop'],
   _emscripten_push_main_loop_blocker: (func, arg, name) => {

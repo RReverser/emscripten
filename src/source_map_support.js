@@ -43,7 +43,7 @@ class WasmSourceMap {
     }
 
     var offset = 0, src = 0, line = 1, col = 1, name = 0;
-    sourceMap.mappings.split(',').forEach(function (segment, index) {
+    sourceMap.mappings.split(',').forEach((segment, index) => {
       if (!segment) return;
       var data = decodeVLQ(segment);
       var info = {};
@@ -55,7 +55,7 @@ class WasmSourceMap {
       if (data.length >= 5) info.name = name += data[4];
       this.mapping[offset] = info;
       this.offsets.push(offset);
-    }, this);
+    });
     this.offsets.sort((a, b) => a - b);
   }
 

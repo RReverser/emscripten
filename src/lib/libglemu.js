@@ -862,7 +862,7 @@ var LibraryGLEmulation = {
   $GLImmediate__deps: ['$Browser', '$GL', '$GLEmulation'],
   $GLImmediate: {
     MapTreeLib: null,
-    spawnMapTreeLib: () => {
+    spawnMapTreeLib() {
       /**
        * A naive implementation of a map backed by an array, and accessed by
        * naive iteration along the array. (hashmap with only one bucket)
@@ -990,7 +990,7 @@ var LibraryGLEmulation = {
     },
 
     TexEnvJIT: null,
-    spawnTexEnvJIT: () => {
+    spawnTexEnvJIT() {
       // GL defs:
       var GL_TEXTURE0 = 0x84C0;
       var GL_TEXTURE_1D = 0xDE0;
@@ -1564,7 +1564,7 @@ var LibraryGLEmulation = {
 
       return {
         // Exports:
-        init: (gl, specifiedMaxTextureImageUnits) => {
+        init(gl, specifiedMaxTextureImageUnits) {
           var maxTexUnits = 0;
           if (specifiedMaxTextureImageUnits) {
             maxTexUnits = specifiedMaxTextureImageUnits;
@@ -1580,14 +1580,14 @@ var LibraryGLEmulation = {
           }
         },
 
-        setGLSLVars: (uTexUnitPrefix, vTexCoordPrefix, vPrimColor, uTexMatrixPrefix) => {
+        setGLSLVars(uTexUnitPrefix, vTexCoordPrefix, vPrimColor, uTexMatrixPrefix) {
           TEX_UNIT_UNIFORM_PREFIX   = uTexUnitPrefix;
           TEX_COORD_VARYING_PREFIX  = vTexCoordPrefix;
           PRIM_COLOR_VARYING        = vPrimColor;
           TEX_MATRIX_UNIFORM_PREFIX = uTexMatrixPrefix;
         },
 
-        genAllPassLines: (resultDest, indentSize = 0) => {
+        genAllPassLines(resultDest, indentSize = 0) {
           s_requiredTexUnitsForPass.length = 0; // Clear the list.
           var lines = [];
           var lastPassVar = PRIM_COLOR_VARYING;
@@ -1618,13 +1618,13 @@ var LibraryGLEmulation = {
 
         getActiveTexture: () => s_activeTexture,
 
-        traverseState: (keyView) => {
+        traverseState(keyView) {
           for (var texUnit of s_texUnits) {
             texUnit.traverseState(keyView);
           }
         },
 
-        getTexUnitType: (texUnitID) => {
+        getTexUnitType(texUnitID) {
 #if ASSERTIONS
           assert(texUnitID >= 0 &&
                  texUnitID < s_texUnits.length);
@@ -1633,7 +1633,7 @@ var LibraryGLEmulation = {
         },
 
         // Hooks:
-        hook_activeTexture: (texture) => {
+        hook_activeTexture(texture) {
           s_activeTexture = texture - GL_TEXTURE0;
           // Check if the current matrix mode is GL_TEXTURE.
           if (GLImmediate.currentMatrix >= 2) {
@@ -1642,7 +1642,7 @@ var LibraryGLEmulation = {
           }
         },
 
-        hook_enable: (cap) => {
+        hook_enable(cap) {
           var cur = getCurTexUnit();
           switch (cap) {
             case GL_TEXTURE_1D:
@@ -1676,7 +1676,7 @@ var LibraryGLEmulation = {
           }
         },
 
-        hook_disable: (cap) => {
+        hook_disable(cap) {
           var cur = getCurTexUnit();
           switch (cap) {
             case GL_TEXTURE_1D:
@@ -1960,7 +1960,7 @@ var LibraryGLEmulation = {
           }
         },
 
-        hook_getTexEnvfv: (target, pname, param) => {
+        hook_getTexEnvfv(target, pname, param) {
           if (target != GL_TEXTURE_ENV)
             return;
 
