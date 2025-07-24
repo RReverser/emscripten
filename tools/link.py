@@ -1403,6 +1403,7 @@ def phase_linker_setup(options, linker_args):  # noqa: C901, PLR0912, PLR0915
     # Needed to assign the embind exports to the ES exports.
     if settings.MODULARIZE == 'instance':
       settings.DEFAULT_LIBRARY_FUNCS_TO_INCLUDE += ['$addOnPostCtor']
+    settings.ALLOW_TABLE_GROWTH = 1
 
   if options.emit_tsd:
     settings.EMIT_TSD = True

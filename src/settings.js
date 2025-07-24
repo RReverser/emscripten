@@ -263,7 +263,7 @@ var MEMORY64 = 0;
 var INITIAL_TABLE = -1;
 
 // If true, allows more functions to be added to the table at runtime. This is
-// necessary for dynamic linking, and set automatically in that mode.
+// necessary for dynamic linking and Embind, and set automatically in those modes.
 // [link]
 var ALLOW_TABLE_GROWTH = false;
 
