@@ -11812,6 +11812,32 @@ int main () {
       num_times_export_is_referenced = output.count('thisIsAFunctionExportedFromAsmJsOrWasmWithVeryLongFunction')
       self.assertEqual(num_times_export_is_referenced, 1)
 
+  def test_embind_size_details(self):
+    self.run_codesize_test('embind_val_hello_world.cpp', [
+      '-lembind',
+      '-sMINIMAL_RUNTIME=2',
+        '-sENVIRONMENT=web',
+        '-sTEXTDECODER=2',
+        '-sDYNAMIC_EXECUTION=0',
+        '-sABORTING_MALLOC=0',
+        '-sALLOW_MEMORY_GROWTH=0',
+        '-sDECLARE_ASM_MODULE_EXPORTS',
+        '-sMALLOC=emmalloc',
+        '-sGL_EMULATE_GLES_VERSION_STRING_FORMAT=0',
+        '-sGL_EXTENSIONS_IN_PREFIXED_FORMAT=0',
+        '-sGL_SUPPORT_AUTOMATIC_ENABLE_EXTENSIONS=0',
+        '-sGL_SUPPORT_SIMPLE_ENABLE_EXTENSIONS=0',
+        '-sGL_TRACK_ERRORS=0',
+        '-sGL_POOL_TEMP_BUFFERS=0',
+        '-sGL_WORKAROUND_SAFARI_GETCONTEXT_BUG=0',
+        '-sGL_ENABLE_GET_PROC_ADDRESS=0',
+        '-sNO_FILESYSTEM',
+        '-sSTRICT',
+        '--output-eol', 'linux',
+        '-Oz',
+        '-DNDEBUG',
+        '-ffast-math'])
+
   @parameterized({
     'audio_worklet': ('audio_worklet', False, True),
     'hello_world_wasm': ('hello_world', False, True),
